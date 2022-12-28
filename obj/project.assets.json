@@ -2123,21 +2123,17 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Admin\\.nuget\\packages\\": {},
-    "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder": {}
+    "C:\\Users\\Admin\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "c:\\Users\\Admin\\OneDrive\\Desktop\\Projecct\\Restaurant Management System\\POS-API\\POSOnSiteApi.csproj",
-      "projectName": "POSOnSiteApi",
-      "projectPath": "c:\\Users\\Admin\\OneDrive\\Desktop\\Projecct\\Restaurant Management System\\POS-API\\POSOnSiteApi.csproj",
+      "projectUniqueName": "C:\\Users\\Admin\\OneDrive\\Desktop\\GA-HRM-Onsite\\ga-hrm-onsite-api\\GaHrmOnSiteApi.csproj",
+      "projectName": "GaHrmOnSiteApi",
+      "projectPath": "C:\\Users\\Admin\\OneDrive\\Desktop\\GA-HRM-Onsite\\ga-hrm-onsite-api\\GaHrmOnSiteApi.csproj",
       "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-      "outputPath": "c:\\Users\\Admin\\OneDrive\\Desktop\\Projecct\\Restaurant Management System\\POS-API\\obj\\",
+      "outputPath": "C:\\Users\\Admin\\OneDrive\\Desktop\\GA-HRM-Onsite\\ga-hrm-onsite-api\\obj\\",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
-      ],
       "configFilePaths": [
         "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
