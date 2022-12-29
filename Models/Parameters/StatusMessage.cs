@@ -1,4 +1,4 @@
-namespace GaHrmOnSiteApi.Models
+namespace POSApi.Models
 {
     public class StatusMessage<T>
     {
