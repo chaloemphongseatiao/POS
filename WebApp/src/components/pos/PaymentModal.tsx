@@ -55,13 +55,14 @@ export default function PaymentModal({ open, total, paymentMethod, onConfirm, on
                 />
               </div>
 
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {uniqueAmounts.map((amt) => (
                   <button
                     key={amt}
                     type="button"
+                    aria-label={`รับเงิน ${amt.toLocaleString()} บาท`}
                     onClick={() => setAmountPaid(String(amt))}
-                    className="rounded-xl bg-white/50 border border-white/80 py-2 text-sm font-medium text-slate-600 transition-all duration-150 hover:bg-primary hover:text-white hover:border-primary hover:shadow-md hover:shadow-primary/20 active:scale-95"
+                    className="rounded-xl bg-white/50 border border-white/80 py-2 text-sm font-medium text-slate-600 transition-all duration-150 hover:bg-primary hover:text-white hover:border-primary hover:shadow-md hover:shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95"
                   >
                     {amt.toLocaleString()}
                   </button>

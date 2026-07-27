@@ -85,8 +85,14 @@ export default function LoginPage() {
             </div>
 
             <label className="flex items-center gap-2.5 cursor-pointer select-none group">
-              <div
-                onClick={() => setRemember((r) => !r)}
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+                className="sr-only"
+              />
+              <span
+                aria-hidden="true"
                 className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 border transition-all duration-150 ${
                   remember
                     ? "border-brand-400 bg-brand-500"
@@ -98,7 +104,7 @@ export default function LoginPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2 6l3 3 5-5" />
                   </svg>
                 )}
-              </div>
+              </span>
               <span className="text-sm text-brand-900/60">จดจำฉันไว้</span>
             </label>
 

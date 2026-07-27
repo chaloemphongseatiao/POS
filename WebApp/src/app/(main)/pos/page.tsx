@@ -135,6 +135,8 @@ export default function PosPage() {
       >
         {toast && (
           <div
+            role={toast.type === "error" ? "alert" : "status"}
+            aria-live={toast.type === "error" ? "assertive" : "polite"}
             className={cn(
               "flex items-start gap-3 rounded-2xl px-4 py-3 min-w-[240px] max-w-xs backdrop-blur-xl border shadow-xl",
               toast.type === "success"
@@ -154,7 +156,12 @@ export default function PosPage() {
                 </p>
               ))}
             </div>
-            <button onClick={() => setToast(null)} className="opacity-60 hover:opacity-100 ml-1">
+            <button
+              type="button"
+              aria-label="ปิดการแจ้งเตือน"
+              onClick={() => setToast(null)}
+              className="ml-1 rounded opacity-60 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+            >
               <XCircle className="w-4 h-4" />
             </button>
           </div>
@@ -172,9 +179,10 @@ export default function PosPage() {
         </div>
 
         {/* Search */}
-        <div className="glass flex items-center gap-2.5 rounded-2xl px-4 py-2.5 transition-shadow duration-150 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+        <div className="glass flex w-full items-center gap-2.5 rounded-2xl px-4 py-2.5 transition-shadow duration-150 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
           <Barcode className="w-[18px] h-[18px] text-primary flex-shrink-0" />
           <input
+            aria-label="ค้นหาสินค้าหรือสแกน Barcode"
             placeholder="ค้นหาสินค้า หรือสแกน Barcode แล้วกด Enter..."
             className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none"
             value={search}
@@ -211,6 +219,8 @@ export default function PosPage() {
         {/* Category filter */}
         <div className="flex gap-2 overflow-x-auto pb-1">
           <button
+            type="button"
+            aria-pressed={selectedCategory === null}
             onClick={() => setSelectedCategory(null)}
             className={cn(
               "px-5 py-2.5 rounded-2xl text-sm font-semibold whitespace-nowrap flex-shrink-0 transition-all",
@@ -224,6 +234,8 @@ export default function PosPage() {
           {categories.map((cat) => (
             <button
               key={cat.id}
+              type="button"
+              aria-pressed={selectedCategory === cat.id}
               onClick={() => setSelectedCategory(cat.id)}
               className={cn(
                 "px-5 py-2.5 rounded-2xl text-sm font-semibold whitespace-nowrap flex-shrink-0 transition-all",
@@ -247,8 +259,11 @@ export default function PosPage() {
               return (
                 <button
                   key={product.id}
+                  type="button"
+                  disabled={isOut}
+                  aria-label={`${product.name} ราคา ${formatCurrency(product.sellPrice)}${isOut ? " สินค้าหมด" : ""}`}
                   onClick={() => addProductToCart(product)}
-                  className="glass group rounded-[18px] p-3.5 text-left transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-950/10"
+                  className="glass group rounded-[18px] p-3.5 text-left transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-950/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
                 >
                   <div className="aspect-square bg-slate-100/70 rounded-xl mb-2.5 flex items-center justify-center overflow-hidden">
                     {product.imageUrl ? (
@@ -301,22 +316,31 @@ export default function PosPage() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
+                    type="button"
+                    aria-label={`ลดจำนวน ${item.name}`}
                     onClick={() => cart.updateQty(item.productId, item.quantity - 1)}
-                    className="w-6 h-6 rounded-lg bg-slate-900/10 flex items-center justify-center hover:bg-slate-900/15 text-slate-600"
+                    className="w-6 h-6 rounded-lg bg-slate-900/10 flex items-center justify-center hover:bg-slate-900/15 text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <Minus className="w-3 h-3" />
                   </button>
                   <span className="w-6 text-center text-sm font-bold text-slate-800">{item.quantity}</span>
                   <button
+                    type="button"
+                    aria-label={`เพิ่มจำนวน ${item.name}`}
                     onClick={() => cart.updateQty(item.productId, item.quantity + 1)}
-                    className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center hover:bg-indigo-600 text-white"
+                    className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center hover:bg-indigo-600 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <Plus className="w-3 h-3" />
                   </button>
                 </div>
                 <div className="text-right w-16 flex-shrink-0">
                   <p className="text-sm font-bold text-slate-900">{formatCurrency(item.sellPrice * item.quantity)}</p>
-                  <button onClick={() => cart.removeItem(item.productId)} className="text-red-400 hover:text-red-600">
+                  <button
+                    type="button"
+                    aria-label={`ลบ ${item.name} ออกจากรายการ`}
+                    onClick={() => cart.removeItem(item.productId)}
+                    className="rounded text-red-400 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
                     <Trash2 className="w-3.5 h-3.5 ml-auto" />
                   </button>
                 </div>
@@ -362,6 +386,8 @@ export default function PosPage() {
             {(["CASH", "QR_PROMPT_PAY"] as PaymentMethod[]).map((m) => (
               <button
                 key={m}
+                type="button"
+                aria-pressed={paymentMethod === m}
                 onClick={() => setPaymentMethod(m)}
                 className={cn(
                   "py-2.5 text-xs font-semibold rounded-xl transition-colors",
@@ -386,6 +412,7 @@ export default function PosPage() {
 
           {cart.items.length > 0 && (
             <button
+              type="button"
               onClick={() => cart.clearCart()}
               className="w-full text-xs text-slate-400 hover:text-red-500 transition-colors"
             >

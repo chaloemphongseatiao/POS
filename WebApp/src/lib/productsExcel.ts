@@ -6,11 +6,8 @@ const HEADERS = [
   "Barcode",
   "ชื่อสินค้า",
   "หมวดหมู่",
-  "ราคาทุน",
   "ราคาขาย",
   "หน่วย",
-  "Stock",
-  "จุดแจ้งเตือน",
   "สถานะ",
   "คำอธิบาย",
   "URL รูปภาพ",
@@ -23,17 +20,14 @@ export function exportProductsExcel(products: Product[]) {
     Barcode: product.barcode ?? "",
     "ชื่อสินค้า": product.name,
     "หมวดหมู่": product.category.name,
-    "ราคาทุน": Number(product.costPrice),
     "ราคาขาย": Number(product.sellPrice),
     "หน่วย": product.unit,
-    Stock: product.stock?.quantity ?? 0,
-    "จุดแจ้งเตือน": product.lowStockAt,
     "สถานะ": product.isActive ? "ใช้งาน" : "ปิดใช้งาน",
     "คำอธิบาย": product.description ?? "",
     "URL รูปภาพ": product.imageUrl ?? "",
   }));
   const worksheet = XLSX.utils.json_to_sheet(rows, { header: [...HEADERS] });
-  worksheet["!cols"] = [16, 28, 20, 12, 12, 10, 10, 14, 14, 32, 40].map((wch) => ({ wch }));
+  worksheet["!cols"] = [16, 28, 20, 12, 10, 14, 32, 40].map((wch) => ({ wch }));
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "สินค้า");
   XLSX.writeFile(workbook, `products-${new Date().toISOString().slice(0, 10)}.xlsx`);

@@ -13,6 +13,8 @@ export default function ToastContainer() {
       {toasts.map((toast) => (
         <div
           key={toast.id}
+          role={toast.type === "error" ? "alert" : "status"}
+          aria-live={toast.type === "error" ? "assertive" : "polite"}
           className="flex items-start gap-3 rounded-2xl px-4 py-3 shadow-xl animate-in slide-in-from-right-4 duration-300"
           style={{
             background:
@@ -43,8 +45,10 @@ export default function ToastContainer() {
           </p>
 
           <button
+            type="button"
+            aria-label="ปิดการแจ้งเตือน"
             onClick={() => removeToast(toast.id)}
-            className={`flex-shrink-0 rounded-lg p-0.5 transition-colors ${
+            className={`flex-shrink-0 rounded-lg p-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
               toast.type === "error" ? "text-red-400 hover:text-red-600 hover:bg-red-100" :
               toast.type === "success" ? "text-emerald-400 hover:text-emerald-600 hover:bg-emerald-100" :
               "text-brand-400 hover:text-brand-600 hover:bg-brand-100"

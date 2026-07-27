@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
+import { ChangeEvent, useEffect, useRef } from "react";
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Product, Category } from "@/lib/types";
 import { Combobox } from "@/components/ui/combobox";
-import { ImageOff } from "lucide-react";
+import { useToast } from "@/lib/hooks/useToast";
+import { ImageOff, Upload } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB (Vercel serverless request body limit is ~4.5MB)
 
 interface FormData {
   barcode: string;
@@ -32,7 +35,9 @@ interface Props {
 }
 
 export default function ProductFormDialog({ open, product, categories, onSave, onClose, loading }: Props) {
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormData>();
+  const { register, handleSubmit, reset, control, setValue, formState: { errors } } = useForm<FormData>();
+  const addToast = useToast((state) => state.addToast);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const imageUrl = useWatch({ control, name: "imageUrl", defaultValue: "" });
 
@@ -51,6 +56,26 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
       reset({ unit: "ชิ้น", imageUrl: "" });
     }
   }, [product, reset]);
+
+  function handleFileSelect(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      addToast("กรุณาเลือกไฟล์รูปภาพ", "error");
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      addToast("ไฟล์รูปภาพต้องมีขนาดไม่เกิน 2MB", "error");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => setValue("imageUrl", reader.result as string, { shouldDirty: true });
+    reader.onerror = () => addToast("อ่านไฟล์รูปภาพไม่สำเร็จ", "error");
+    reader.readAsDataURL(file);
+  }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -77,7 +102,19 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
             <div className="flex-1 space-y-2.5 pt-1">
               <div>
                 <label htmlFor="pf-imageUrl" className="text-sm font-medium">URL รูปภาพ</label>
-                <Input id="pf-imageUrl" {...register("imageUrl")} placeholder="https://..." className="mt-1" />
+                <div className="mt-1 flex gap-2">
+                  <Input id="pf-imageUrl" {...register("imageUrl")} placeholder="https://..." className="flex-1" />
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                  <Button type="button" aria-label="อัปโหลดรูปภาพ" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} title="อัปโหลดรูปภาพ">
+                    <Upload className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
               <div>
                 <label htmlFor="pf-name" className="text-sm font-medium">ชื่อสินค้า *</label>
@@ -92,7 +129,7 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-3 gap-y-3.5">
+          <div className="grid grid-cols-1 gap-x-3 gap-y-3.5 sm:grid-cols-2">
             <div>
               <label htmlFor="pf-barcode" className="text-sm font-medium">Barcode</label>
               <Input id="pf-barcode" {...register("barcode")} placeholder="8850..." className="mt-1" />

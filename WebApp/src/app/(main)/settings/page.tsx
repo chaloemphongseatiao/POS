@@ -55,8 +55,8 @@ function UsersTab() {
           <Plus className="w-4 h-4 mr-1" />เพิ่ม
         </Button>
       </CardHeader>
-      <CardContent>
-        <table className="w-full text-sm">
+      <CardContent className="overflow-x-auto">
+        <table className="w-full min-w-[620px] text-sm">
           <thead>
             <tr className="border-b border-white/50">
               <th className="text-left py-2 font-medium text-slate-500">ชื่อ</th>
@@ -85,14 +85,14 @@ function UsersTab() {
                 </td>
                 <td className="py-2.5">
                   <div className="flex gap-1 justify-end">
-                    <Button size="icon" variant="ghost" onClick={() => {
+                    <Button aria-label={`แก้ไขผู้ใช้ ${u.displayName}`} size="icon" variant="ghost" onClick={() => {
                       setEditUser(u);
                       setForm({ username: u.username, password: "", displayName: u.displayName, role: u.role });
                       setShowForm(true);
                     }}>
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <Button size="icon" variant="ghost" onClick={() => toggleMutation.mutate(u.id)}>
+                    <Button aria-label={`${u.isActive ? "ปิด" : "เปิด"}ผู้ใช้ ${u.displayName}`} size="icon" variant="ghost" onClick={() => toggleMutation.mutate(u.id)}>
                       {u.isActive ? <ToggleRight className="w-4 h-4 text-green-500" /> : <ToggleLeft className="w-4 h-4 text-gray-400" />}
                     </Button>
                   </div>
@@ -121,8 +121,9 @@ function UsersTab() {
                 <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required={!editUser} />
               </div>
               <div>
-                <label className="text-sm font-medium">บทบาท</label>
+                <label htmlFor="user-role" className="text-sm font-medium">บทบาท</label>
                 <select
+                  id="user-role"
                   value={form.role}
                   onChange={(e) => setForm({ ...form, role: e.target.value as UserRole })}
                   className="flex h-10 w-full rounded-xl border border-white/75 bg-white/55 px-3.5 py-2 text-sm shadow-sm shadow-brand-200/20 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/40"
@@ -202,10 +203,11 @@ function CategoriesTab() {
                   <Badge variant={count.activeCount > 0 ? "success" : "secondary"}>
                     {count.activeCount > 0 ? "Active" : "Inactive"}
                   </Badge>
-                  <Button size="icon" variant="ghost" onClick={() => { setEditCat(c); setEditName(c.name); }}>
+                  <Button aria-label={`แก้ไขหมวดหมู่ ${c.name}`} size="icon" variant="ghost" onClick={() => { setEditCat(c); setEditName(c.name); }}>
                     <Pencil className="w-3.5 h-3.5" />
                   </Button>
                   <Button
+                    aria-label={`ลบหมวดหมู่ ${c.name}`}
                     size="icon"
                     variant="ghost"
                     className="text-red-400 hover:text-red-600"
@@ -545,10 +547,13 @@ export default function SettingsPage() {
         <h1 className="page-title">ตั้งค่าร้านค้า</h1>
         <p className="page-description">Store Settings</p>
       </div>
-      <div className="glass inline-flex gap-1 rounded-2xl p-1.5">
+      <div className="glass inline-flex gap-1 rounded-2xl p-1.5" role="tablist" aria-label="หมวดการตั้งค่า">
         {TABS.map((t, i) => (
           <button
             key={t}
+            type="button"
+            role="tab"
+            aria-selected={tab === i}
             onClick={() => setTab(i)}
             className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all ${
               tab === i

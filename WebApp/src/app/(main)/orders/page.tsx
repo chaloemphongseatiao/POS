@@ -233,19 +233,19 @@ export default function OrdersPage() {
           <CalendarRange className="w-4 h-4" />
           เลือกช่วงวันที่
         </div>
-        <div className="flex flex-wrap items-end gap-3">
-          <div>
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="w-full sm:w-auto">
             <p className="text-xs text-gray-500 mb-1">วันที่เริ่มต้น</p>
             <Input
               type="date"
               value={fromDate}
               max={toDate}
               onChange={(e) => handleFromDate(e.target.value)}
-              className="h-9 text-sm w-40"
+              className="h-9 w-full min-w-0 text-sm sm:w-36"
             />
           </div>
-          <span className="text-gray-400 mb-1.5">—</span>
-          <div>
+          <span className="mb-1.5 hidden text-gray-400 sm:inline">—</span>
+          <div className="w-full sm:w-auto">
             <p className="text-xs text-gray-500 mb-1">วันที่สิ้นสุด</p>
             <Input
               type="date"
@@ -253,10 +253,10 @@ export default function OrdersPage() {
               min={fromDate}
               max={today}
               onChange={(e) => handleToDate(e.target.value)}
-              className="h-9 text-sm w-40"
+              className="h-9 w-full min-w-0 text-sm sm:w-36"
             />
           </div>
-          <div className="flex gap-1.5 mb-0.5">
+          <div className="mb-0.5 flex gap-1.5">
             {[
               { label: "วันนี้", days: 1 },
               { label: "7 วัน", days: 7 },
@@ -292,7 +292,7 @@ export default function OrdersPage() {
       {/* Table */}
       <div className="glass rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[920px] text-sm">
             <thead className="glass-header border-b border-white/40">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">เลขออเดอร์</th>
@@ -317,7 +317,20 @@ export default function OrdersPage() {
                 </tr>
               ) : (
                 orders.map((o) => (
-                  <tr key={o.id} className="glass-row-hover cursor-pointer transition-colors" onClick={() => setSelectedOrderId(o.id)}>
+                  <tr
+                    key={o.id}
+                    className="glass-row-hover cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                    onClick={() => setSelectedOrderId(o.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelectedOrderId(o.id);
+                      }
+                    }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`ดูรายละเอียดคำสั่งซื้อ ${o.orderNumber}`}
+                  >
                     <td className="px-4 py-3 font-mono text-xs text-gray-700 font-medium">{o.orderNumber}</td>
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
                       {new Date(o.createdAt).toLocaleString("th-TH", {
@@ -355,10 +368,10 @@ export default function OrdersPage() {
 
         {/* Pagination */}
         {total > 0 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-white/40 glass-header">
+          <div className="flex flex-col gap-3 border-t border-white/40 px-3 py-3 glass-header sm:flex-row sm:items-center sm:justify-between sm:px-4">
             <p className="text-sm text-gray-500">แสดง {startItem}–{endItem} จาก {total} รายการ</p>
-            <div className="flex items-center gap-1">
-              <Button variant="outline" size="icon" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+            <div className="flex items-center justify-center gap-1">
+              <Button aria-label="หน้าก่อนหน้า" variant="outline" size="icon" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               {Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -372,13 +385,13 @@ export default function OrdersPage() {
                   p === "..." ? (
                     <span key={`e-${i}`} className="px-2 text-gray-400">…</span>
                   ) : (
-                    <Button key={p} variant={page === p ? "default" : "outline"} size="icon"
+                    <Button key={p} aria-label={`หน้า ${p}`} aria-current={page === p ? "page" : undefined} variant={page === p ? "default" : "outline"} size="icon"
                       onClick={() => setPage(p as number)} className="w-9 h-9 text-sm">
                       {p}
                     </Button>
                   )
                 )}
-              <Button variant="outline" size="icon" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+              <Button aria-label="หน้าถัดไป" variant="outline" size="icon" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>

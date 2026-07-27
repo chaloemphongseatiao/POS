@@ -60,7 +60,7 @@ export default function Sidebar() {
         </button>
       </aside>
 
-      <nav className="fixed inset-x-3 bottom-3 z-30 grid grid-cols-5 rounded-2xl border border-white/75 bg-white/75 pb-[env(safe-area-inset-bottom)] shadow-xl shadow-indigo-950/10 backdrop-blur-xl md:hidden">
+      <nav className="fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-30 grid grid-cols-5 overflow-hidden rounded-2xl border border-white/75 bg-white/90 shadow-xl shadow-indigo-950/10 backdrop-blur-xl md:hidden">
         {visibleItems.map((item) => {
           const active = pathname.startsWith(item.href);
           return (
@@ -69,12 +69,12 @@ export default function Sidebar() {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex min-h-16 flex-col items-center justify-center gap-1 text-[11px] font-semibold text-slate-500",
+                "flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 px-1 text-[10px] font-semibold text-slate-500 sm:text-[11px]",
                 active && "text-primary"
               )}
             >
               <item.icon className="size-5" />
-              <span>{item.label}</span>
+              <span className="max-w-full truncate">{item.label}</span>
             </Link>
           );
         })}

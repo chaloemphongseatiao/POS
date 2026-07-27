@@ -162,7 +162,7 @@ export default function ProductsPage() {
           <h1 className="page-title">สินค้าและหมวดหมู่</h1>
           <p className="page-description">Products & Categories</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
           <input
             ref={importInputRef}
             type="file"
@@ -172,17 +172,18 @@ export default function ProductsPage() {
           />
           <Button
             variant="outline"
+            className="w-full sm:w-auto"
             onClick={() => importInputRef.current?.click()}
             disabled={importMutation.isPending}
           >
             <Upload className="w-4 h-4 mr-2" />
             {importMutation.isPending ? "กำลัง Import..." : "นำเข้า Excel"}
           </Button>
-          <Button variant="outline" onClick={handleExport} disabled={isExporting}>
+          <Button className="w-full sm:w-auto" variant="outline" onClick={handleExport} disabled={isExporting}>
             <Download className="w-4 h-4 mr-2" />
             {isExporting ? "กำลัง Export..." : "ส่งออก Excel"}
           </Button>
-          <Button onClick={() => { setEditProduct(null); setShowForm(true); }}>
+          <Button className="col-span-2 w-full sm:w-auto" onClick={() => { setEditProduct(null); setShowForm(true); }}>
             <Plus className="w-4 h-4 mr-2" />
             เพิ่มสินค้า
           </Button>
@@ -200,7 +201,7 @@ export default function ProductsPage() {
 
         <div className="min-w-0 flex-1 space-y-4">
           {/* Search */}
-          <div className="relative max-w-sm">
+          <div className="relative w-full sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               placeholder="ค้นหาสินค้า..."
@@ -213,24 +214,22 @@ export default function ProductsPage() {
           {/* Table */}
           <div className="glass rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[760px] text-sm">
             <thead className="glass-header border-b border-white/40">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">สินค้า</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Barcode</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">หมวดหมู่</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600">ราคาทุน</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">ราคาขาย</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600">Stock</th>
                 <th className="text-center px-4 py-3 font-medium text-gray-600">สถานะ</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/40">
               {isLoading ? (
-                <tr><td colSpan={8} className="text-center py-8 text-gray-400">กำลังโหลด...</td></tr>
+                <tr><td colSpan={6} className="text-center py-8 text-gray-400">กำลังโหลด...</td></tr>
               ) : products.length === 0 ? (
-                <tr><td colSpan={8} className="text-center py-8 text-gray-400">ไม่พบสินค้า</td></tr>
+                <tr><td colSpan={6} className="text-center py-8 text-gray-400">ไม่พบสินค้า</td></tr>
               ) : (
                 products.map((p) => {
                   const qty = p.stock?.quantity ?? 0;
@@ -253,15 +252,7 @@ export default function ProductsPage() {
                       </td>
                       <td className="px-4 py-3 text-gray-500 font-mono text-xs">{p.barcode || "—"}</td>
                       <td className="px-4 py-3 text-gray-600">{p.category.name}</td>
-                      <td className="px-4 py-3 text-right text-gray-600">
-                        {Number(p.costPrice) > 0 ? formatCurrency(p.costPrice) : "—"}
-                      </td>
                       <td className="px-4 py-3 text-right font-medium">{formatCurrency(p.sellPrice)}</td>
-                      <td className="px-4 py-3 text-right">
-                        <span className={isOut ? "text-red-600 font-bold" : isLow ? "text-yellow-600 font-medium" : ""}>
-                          {qty} {p.unit}
-                        </span>
-                      </td>
                       <td className="px-4 py-3 text-center">
                         {!p.isActive ? (
                           <Badge variant="secondary">ปิดใช้งาน</Badge>
@@ -275,10 +266,11 @@ export default function ProductsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 justify-end">
-                          <Button size="icon" variant="ghost" onClick={() => { setEditProduct(p); setShowForm(true); }}>
+                          <Button aria-label={`แก้ไขสินค้า ${p.name}`} size="icon" variant="ghost" onClick={() => { setEditProduct(p); setShowForm(true); }}>
                             <Pencil className="w-4 h-4" />
                           </Button>
                           <Button
+                            aria-label={`ลบสินค้า ${p.name}`}
                             size="icon" variant="ghost"
                             className="text-red-400 hover:text-red-600"
                             onClick={() => handleDelete(p)}
@@ -297,12 +289,13 @@ export default function ProductsPage() {
 
         {/* Pagination */}
         {total > 0 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-white/40 glass-header">
+          <div className="flex flex-col gap-3 border-t border-white/40 px-3 py-3 glass-header sm:flex-row sm:items-center sm:justify-between sm:px-4">
             <p className="text-sm text-gray-500">
               แสดง {startItem}–{endItem} จาก {total} รายการ
             </p>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center justify-center gap-1">
               <Button
+                aria-label="หน้าก่อนหน้า"
                 variant="outline" size="icon"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
@@ -323,6 +316,8 @@ export default function ProductsPage() {
                   ) : (
                     <Button
                       key={p}
+                      aria-label={`หน้า ${p}`}
+                      aria-current={page === p ? "page" : undefined}
                       variant={page === p ? "default" : "outline"}
                       size="icon"
                       onClick={() => setPage(p as number)}
@@ -334,6 +329,7 @@ export default function ProductsPage() {
                 )}
 
               <Button
+                aria-label="หน้าถัดไป"
                 variant="outline" size="icon"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}

@@ -17,6 +17,8 @@ export default function CategoryPanel({ categories, counts, grandTotal, selected
       <h2 className="mb-3 px-1 text-sm font-bold text-slate-900">หมวดหมู่</h2>
       <div className="space-y-1.5">
         <button
+          type="button"
+          aria-pressed={selectedId === undefined}
           onClick={() => onSelect(undefined)}
           className={cn(
             "flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition-colors",
@@ -33,6 +35,8 @@ export default function CategoryPanel({ categories, counts, grandTotal, selected
           return (
             <button
               key={cat.id}
+              type="button"
+              aria-pressed={active}
               onClick={() => onSelect(cat.id)}
               className={cn(
                 "flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left transition-colors",
