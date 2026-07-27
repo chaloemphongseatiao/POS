@@ -22,7 +22,7 @@ app.use(cors({
     : true, // อนุญาตทุก origin ในโหมด dev (LAN)
 }));
 app.use(morgan("dev"));
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "4mb" }));
 
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
