@@ -43,3 +43,29 @@ export async function deleteProduct(id: number) {
   const { data } = await apiClient.delete(`/api/products/${id}`);
   return data;
 }
+
+export interface ProductImportRow {
+  row: number;
+  barcode?: string;
+  name: string;
+  description?: string;
+  costPrice: number;
+  sellPrice: number;
+  unit: string;
+  imageUrl?: string;
+  lowStockAt: number;
+  category: string;
+  stock: number;
+  isActive: boolean;
+}
+
+export interface ProductImportResult {
+  total: number;
+  created: number;
+  updated: number;
+}
+
+export async function importProducts(rows: ProductImportRow[]): Promise<ProductImportResult> {
+  const { data } = await apiClient.post<ProductImportResult>("/api/products/import", { rows });
+  return data;
+}

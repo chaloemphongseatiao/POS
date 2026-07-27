@@ -8,18 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Product, Category } from "@/lib/types";
 import { Combobox } from "@/components/ui/combobox";
 import { ImageOff } from "lucide-react";
+import { cn } from "@/lib/utils/cn";
 
 interface FormData {
   barcode: string;
   name: string;
   description: string;
-  costPrice?: number;
   sellPrice: number;
   unit: string;
   imageUrl: string;
-  lowStockAt: number;
   categoryId: number;
-  initialStock: number;
 }
 
 export type { FormData as ProductFormData };
@@ -44,15 +42,13 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
         barcode: product.barcode || "",
         name: product.name,
         description: product.description || "",
-        costPrice: product.costPrice != null ? parseFloat(product.costPrice) : undefined,
         sellPrice: parseFloat(product.sellPrice),
         unit: product.unit,
         imageUrl: product.imageUrl || "",
-        lowStockAt: product.lowStockAt,
         categoryId: product.category.id,
       });
     } else {
-      reset({ unit: "ชิ้น", lowStockAt: 5, initialStock: 0, imageUrl: "" });
+      reset({ unit: "ชิ้น", imageUrl: "" });
     }
   }, [product, reset]);
 
@@ -63,7 +59,7 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
           <DialogTitle>{product ? "แก้ไขสินค้า" : "เพิ่มสินค้าใหม่"}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSave)} className="space-y-3">
+        <form onSubmit={handleSubmit(onSave)} className="space-y-4">
           {/* Image preview */}
           <div className="flex items-start gap-4">
             <div className="w-24 h-24 rounded-2xl border border-white/70 bg-white/40 backdrop-blur-sm flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -78,69 +74,68 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
                 <ImageOff className="w-8 h-8 text-brand-300/60" />
               )}
             </div>
-            <div className="flex-1 space-y-2 pt-1">
+            <div className="flex-1 space-y-2.5 pt-1">
               <div>
-                <label className="text-sm font-medium">URL รูปภาพ</label>
-                <Input {...register("imageUrl")} placeholder="https://..." className="mt-1" />
+                <label htmlFor="pf-imageUrl" className="text-sm font-medium">URL รูปภาพ</label>
+                <Input id="pf-imageUrl" {...register("imageUrl")} placeholder="https://..." className="mt-1" />
               </div>
               <div>
-                <label className="text-sm font-medium">ชื่อสินค้า *</label>
-                <Input {...register("name", { required: true })}
-                  className={`mt-1 ${errors.name ? "border-red-400" : ""}`} />
+                <label htmlFor="pf-name" className="text-sm font-medium">ชื่อสินค้า *</label>
+                <Input
+                  id="pf-name"
+                  {...register("name", { required: true })}
+                  aria-invalid={!!errors.name}
+                  className={cn("mt-1", errors.name && "border-red-400 focus-visible:ring-red-400/40")}
+                />
+                {errors.name && <p className="mt-1 text-xs text-red-500">กรุณากรอกชื่อสินค้า</p>}
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-3.5">
             <div>
-              <label className="text-sm font-medium">Barcode</label>
-              <Input {...register("barcode")} placeholder="8850..." />
+              <label htmlFor="pf-barcode" className="text-sm font-medium">Barcode</label>
+              <Input id="pf-barcode" {...register("barcode")} placeholder="8850..." className="mt-1" />
             </div>
             <div>
-              <label className="text-sm font-medium">หมวดหมู่ *</label>
+              <label htmlFor="pf-categoryId" className="text-sm font-medium">หมวดหมู่ *</label>
               <Controller
                 name="categoryId"
                 control={control}
                 rules={{ required: true, validate: (v) => v > 0 }}
                 render={({ field }) => (
                   <Combobox
+                    id="pf-categoryId"
                     options={categories.map((c) => ({ value: String(c.id), label: c.name }))}
                     value={field.value ? String(field.value) : ""}
                     onChange={(v) => field.onChange(v ? Number(v) : 0)}
                     placeholder="-- เลือกหมวดหมู่ --"
                     searchPlaceholder="ค้นหาหมวดหมู่..."
-                    className="w-full"
+                    className={cn("mt-1 w-full", errors.categoryId && "border-red-400")}
                   />
                 )}
               />
+              {errors.categoryId && <p className="mt-1 text-xs text-red-500">กรุณาเลือกหมวดหมู่</p>}
             </div>
             <div>
-              <label className="text-sm font-medium">ราคาทุน (บาท)</label>
-              <Input type="number" step="0.01" min="0" placeholder="ไม่บังคับ"
-                {...register("costPrice", { setValueAs: (v) => v === "" ? undefined : Number(v) })} />
+              <label htmlFor="pf-sellPrice" className="text-sm font-medium">ราคาขาย (บาท) *</label>
+              <Input
+                id="pf-sellPrice"
+                type="number"
+                step="0.01"
+                {...register("sellPrice", { required: true, valueAsNumber: true })}
+                aria-invalid={!!errors.sellPrice}
+                className={cn("mt-1", errors.sellPrice && "border-red-400 focus-visible:ring-red-400/40")}
+              />
+              {errors.sellPrice && <p className="mt-1 text-xs text-red-500">กรุณากรอกราคาขาย</p>}
             </div>
             <div>
-              <label className="text-sm font-medium">ราคาขาย (บาท) *</label>
-              <Input type="number" step="0.01"
-                {...register("sellPrice", { required: true, valueAsNumber: true })} />
+              <label htmlFor="pf-unit" className="text-sm font-medium">หน่วย</label>
+              <Input id="pf-unit" {...register("unit")} placeholder="ชิ้น, กล่อง, ขวด..." className="mt-1" />
             </div>
-            <div>
-              <label className="text-sm font-medium">หน่วย</label>
-              <Input {...register("unit")} placeholder="ชิ้น, กล่อง, ขวด..." />
-            </div>
-            <div>
-              <label className="text-sm font-medium">แจ้งเตือนเมื่อเหลือ (ชิ้น)</label>
-              <Input type="number" {...register("lowStockAt", { valueAsNumber: true })} />
-            </div>
-            {!product && (
-              <div>
-                <label className="text-sm font-medium">ยอด Stock เริ่มต้น</label>
-                <Input type="number" {...register("initialStock", { valueAsNumber: true })} />
-              </div>
-            )}
             <div className="col-span-2">
-              <label className="text-sm font-medium">คำอธิบาย</label>
-              <Input {...register("description")} />
+              <label htmlFor="pf-description" className="text-sm font-medium">คำอธิบาย</label>
+              <Input id="pf-description" {...register("description")} className="mt-1" />
             </div>
           </div>
 

@@ -101,6 +101,96 @@ export async function updateProduct(
   return prisma.product.update({ where: { id }, data, select: productSelect });
 }
 
+export interface ProductImportRow {
+  row: number;
+  barcode?: string;
+  name: string;
+  description?: string;
+  costPrice: number;
+  sellPrice: number;
+  unit: string;
+  imageUrl?: string;
+  lowStockAt: number;
+  category: string;
+  stock: number;
+  isActive: boolean;
+}
+
+export async function importProducts(rows: ProductImportRow[]) {
+  if (!Array.isArray(rows) || rows.length === 0)
+    throw createError("ไม่พบข้อมูลสินค้าสำหรับ import", 400);
+  if (rows.length > 5000)
+    throw createError("Import ได้สูงสุด 5,000 รายการต่อครั้ง", 400);
+
+  const categories = await prisma.category.findMany({ select: { id: true, name: true } });
+  const categoryMap = new Map(categories.map((category) => [category.name.trim().toLocaleLowerCase(), category.id]));
+  const seenBarcodes = new Set<string>();
+  const errors: string[] = [];
+
+  for (const item of rows) {
+    if (!item.name?.trim()) errors.push(`แถว ${item.row}: ต้องระบุชื่อสินค้า`);
+    if (!item.category?.trim()) errors.push(`แถว ${item.row}: ต้องระบุหมวดหมู่`);
+    else if (!categoryMap.has(item.category.trim().toLocaleLowerCase()))
+      errors.push(`แถว ${item.row}: ไม่พบหมวดหมู่ "${item.category}"`);
+    if (!Number.isFinite(item.sellPrice) || item.sellPrice < 0)
+      errors.push(`แถว ${item.row}: ราคาขายไม่ถูกต้อง`);
+    if (!Number.isFinite(item.costPrice) || item.costPrice < 0)
+      errors.push(`แถว ${item.row}: ราคาทุนไม่ถูกต้อง`);
+    if (!Number.isInteger(item.stock) || item.stock < 0)
+      errors.push(`แถว ${item.row}: Stock ต้องเป็นจำนวนเต็มตั้งแต่ 0`);
+    if (!Number.isInteger(item.lowStockAt) || item.lowStockAt < 0)
+      errors.push(`แถว ${item.row}: จุดแจ้งเตือนต้องเป็นจำนวนเต็มตั้งแต่ 0`);
+
+    const barcode = item.barcode?.trim();
+    if (barcode) {
+      if (seenBarcodes.has(barcode)) errors.push(`แถว ${item.row}: Barcode "${barcode}" ซ้ำในไฟล์`);
+      seenBarcodes.add(barcode);
+    }
+  }
+
+  if (errors.length > 0) throw createError(errors.slice(0, 20).join("\n"), 400);
+
+  return prisma.$transaction(async (tx) => {
+    let created = 0;
+    let updated = 0;
+
+    for (const item of rows) {
+      const barcode = item.barcode?.trim() || null;
+      const data = {
+        barcode,
+        name: item.name.trim(),
+        description: item.description?.trim() || null,
+        costPrice: item.costPrice,
+        sellPrice: item.sellPrice,
+        unit: item.unit?.trim() || "ชิ้น",
+        imageUrl: item.imageUrl?.trim() || null,
+        lowStockAt: item.lowStockAt,
+        categoryId: categoryMap.get(item.category.trim().toLocaleLowerCase())!,
+        isActive: item.isActive,
+      };
+      const existing = barcode
+        ? await tx.product.findUnique({ where: { barcode }, select: { id: true } })
+        : null;
+
+      if (existing) {
+        await tx.product.update({ where: { id: existing.id }, data });
+        await tx.stock.upsert({
+          where: { productId: existing.id },
+          create: { productId: existing.id, quantity: item.stock },
+          update: { quantity: item.stock },
+        });
+        updated++;
+      } else {
+        const product = await tx.product.create({ data, select: { id: true } });
+        await tx.stock.create({ data: { productId: product.id, quantity: item.stock } });
+        created++;
+      }
+    }
+
+    return { total: rows.length, created, updated };
+  });
+}
+
 export async function deleteProduct(id: number) {
   const orderItemCount = await prisma.orderItem.count({ where: { productId: id } });
   if (orderItemCount > 0)

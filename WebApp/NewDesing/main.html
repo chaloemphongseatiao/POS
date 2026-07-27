@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="5a5737d1-5f6d-46dd-ad5a-ff5502dcc4e1"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<style>/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("6c53e1b1-5cb7-4ec4-94fb-e9eaf49cdd09") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("18be613d-0af1-4082-91ad-244feb3f72c9") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("3477aa0c-9ea3-4c70-bd64-c813c64fa589") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("3c8799ea-8436-475a-8bc6-4fa87c967aff") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("17e1a4e9-3dea-4aed-829a-74053b9e82b4") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("30b23f16-76b5-4c1f-9e45-b0617a57650e") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("781bce6a-b1ab-45ce-adf0-f8dc5df066ef") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("e533e36c-3527-4222-93cc-cb4c5b92fce2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("bef53b7b-1163-4fa0-b3b6-ebb05b7eef70") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("c6fc5b43-d745-4294-aa95-4f032a574f5e") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("4a03e9f5-ca3f-49bb-96f5-b90bfafc93ea") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("591ead9e-035d-4d0b-b711-61a072a19d39") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("914a003b-c34a-400e-9d9b-3012c73f7a2e") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("23710b4b-c073-4115-ab5f-05588d25ce4c") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("6c64da53-3056-4c07-ad33-83ea43e24ef0") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("b28f4d05-8058-44dc-b420-87c6415f9290") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("4a03e9f5-ca3f-49bb-96f5-b90bfafc93ea") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("591ead9e-035d-4d0b-b711-61a072a19d39") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("914a003b-c34a-400e-9d9b-3012c73f7a2e") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("23710b4b-c073-4115-ab5f-05588d25ce4c") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("6c64da53-3056-4c07-ad33-83ea43e24ef0") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("b28f4d05-8058-44dc-b420-87c6415f9290") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("4a03e9f5-ca3f-49bb-96f5-b90bfafc93ea") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("591ead9e-035d-4d0b-b711-61a072a19d39") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("914a003b-c34a-400e-9d9b-3012c73f7a2e") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("23710b4b-c073-4115-ab5f-05588d25ce4c") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("6c64da53-3056-4c07-ad33-83ea43e24ef0") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("b28f4d05-8058-44dc-b420-87c6415f9290") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("4a03e9f5-ca3f-49bb-96f5-b90bfafc93ea") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("591ead9e-035d-4d0b-b711-61a072a19d39") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("914a003b-c34a-400e-9d9b-3012c73f7a2e") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("23710b4b-c073-4115-ab5f-05588d25ce4c") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("6c64da53-3056-4c07-ad33-83ea43e24ef0") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("b28f4d05-8058-44dc-b420-87c6415f9290") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("02c74f51-35fa-4807-a1e7-cc53fd27a878") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* thai */
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("ff967dc5-dcd3-4f98-8511-93329d771ffb") format('woff2');
+  unicode-range: U+02D7, U+0303, U+0331, U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("af8afe0b-8dd4-4ad2-a24e-56abc36c167a") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("d20a0781-b9dd-4a7e-b895-3d330ff1d878") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("54cbb954-0774-440e-82eb-fcbe0f066bc3") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* thai */
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("7c1ad1c7-ed66-4ce2-95ac-457b72c5e0aa") format('woff2');
+  unicode-range: U+02D7, U+0303, U+0331, U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("d99be195-f3fd-41e4-8d1d-080b4d74bddc") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("c04771b2-8da5-494a-8578-954dd8a27ea3") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("b3b1e4be-001f-4a8b-85c8-a6737fdf1f9e") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* thai */
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("430d9e7f-8f54-4c59-b3fe-b7409c9101e0") format('woff2');
+  unicode-range: U+02D7, U+0303, U+0331, U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("c9177989-765b-4364-b999-e7263823fb19") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("4212f711-b989-4b3d-9649-92159ebf0545") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("fddf8446-4fbf-4766-aae1-caed58bb38e6") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* thai */
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("d0b5274c-166d-4f5e-9689-a1303bdf5ec4") format('woff2');
+  unicode-range: U+02D7, U+0303, U+0331, U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("343f9b69-97b5-4417-8f06-af68f90fef09") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("9714a475-31a2-4a04-89aa-790d799b1898") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>/* fallback */
+@font-face {
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  src: url("47f55d10-2a85-4d7b-9cb0-13d178853da0") format('woff2');
+}
+
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+</style>
+<script src="59721464-69e4-4957-80b3-fc48313d3d74"></script>
+<style>
+  body { margin: 0; background: oklch(0.97 0.01 258); }
+  * { box-sizing: border-box; font-family: 'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif; }
+  .gicon { font-family: 'Material Icons'; font-style: normal; line-height: 1; }
+  @keyframes gspin { to { transform: rotate(360deg); } }
+  .gspinner { animation: gspin 0.8s linear infinite; }
+  @keyframes toastIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
+  .gtoast { animation: toastIn 0.25s ease-out; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: rgba(80,90,140,0.25); border-radius: 8px; }
+  input:focus, select:focus { outline: none; }
+  a { color: oklch(0.5 0.16 258); text-decoration: none; }
+  a:hover { color: oklch(0.4 0.18 258); }
+</style>
+</helmet>
+
+<div style="position:relative; min-height:100vh; width:100%; overflow:hidden; background:oklch(0.97 0.01 258);">
+  <div style="position:fixed; top:-10%; left:-8%; width:520px; height:520px; border-radius:50%; background:oklch(0.82 0.11 258); filter:blur(90px); opacity:0.45; pointer-events:none;"></div>
+  <div style="position:fixed; bottom:-12%; right:-6%; width:560px; height:560px; border-radius:50%; background:oklch(0.85 0.12 330); filter:blur(100px); opacity:0.35; pointer-events:none;"></div>
+  <div style="position:fixed; top:35%; right:18%; width:380px; height:380px; border-radius:50%; background:oklch(0.86 0.1 190); filter:blur(90px); opacity:0.3; pointer-events:none;"></div>
+
+  <div style="position:fixed; top:24px; right:24px; z-index:100; display:flex; flex-direction:column; gap:10px; width:320px;">
+    <sc-for list="{{ toasts }}" as="t" hint-placeholder-count="0">
+      <div class="gtoast" style="display:flex; align-items:center; gap:10px; padding:14px 16px; border-radius:14px; background:rgba(255,255,255,0.85); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.9); box-shadow:0 10px 28px rgba(60,70,140,0.18);">
+        <span class="gicon" style="font-size:20px; color:{{ t.iconColor }};">{{ t.icon }}</span>
+        <div style="flex:1; font-size:13px; font-weight:600; color:oklch(0.25 0.02 258);">{{ t.message }}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+    <div style="position:relative; z-index:1; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;">
+      <div style="width:400px; background:rgba(255,255,255,0.6); backdrop-filter:blur(28px); border:1px solid rgba(255,255,255,0.75); border-radius:26px; padding:40px; box-shadow:0 20px 60px rgba(80,90,140,0.18); display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:12px; margin-bottom:8px;">
+          <div style="width:56px; height:56px; border-radius:16px; background:linear-gradient(135deg, oklch(0.62 0.16 258), oklch(0.55 0.17 280)); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(70,80,180,0.3);">
+            <span class="gicon" style="font-size:28px; color:white;">point_of_sale</span>
+          </div>
+          <div style="font-size:20px; font-weight:800; color:oklch(0.22 0.02 258);">เข้าสู่ระบบ POS</div>
+          <div style="font-size:12.5px; color:oklch(0.5 0.02 258);">Point of Sale · Liquid Glass</div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label style="font-size:12px; font-weight:700; color:oklch(0.4 0.02 258);">ชื่อผู้ใช้ / Username</label>
+          <input value="{{ loginUsername }}" sc-camel-on-change="{{ onLoginUsername }}" placeholder="ชื่อผู้ใช้งาน" style="padding:13px 16px; border-radius:13px; border:1px solid rgba(120,120,160,0.25); background:rgba(255,255,255,0.7); font-size:14px; color:oklch(0.22 0.02 258);">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label style="font-size:12px; font-weight:700; color:oklch(0.4 0.02 258);">รหัสผ่าน / Password</label>
+          <input type="password" value="{{ loginPassword }}" sc-camel-on-change="{{ onLoginPassword }}" sc-camel-on-key-down="{{ onLoginKeyDown }}" placeholder="••••••" style="padding:13px 16px; border-radius:13px; border:1px solid rgba(120,120,160,0.25); background:rgba(255,255,255,0.7); font-size:14px; color:oklch(0.22 0.02 258);">
+        </div>
+
+        <sc-if value="{{ hasLoginError }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:12.5px; font-weight:700; color:oklch(0.5 0.18 25);">{{ loginError }}</div>
+        </sc-if>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:2px;">
+          <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:oklch(0.45 0.02 258); cursor:pointer;">
+            <input type="checkbox" checked="{{ rememberMe }}" sc-camel-on-change="{{ onRememberChange }}">
+            จำฉันไว้
+          </label>
+          <a href="#" style="font-size:12.5px; font-weight:700;">ลืมรหัสผ่าน?</a>
+        </div>
+
+        <sc-if value="{{ loginNotLoading }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:15px; text-align:center; border-radius:14px; background:linear-gradient(135deg, oklch(0.62 0.16 258), oklch(0.55 0.17 280)); color:white; font-weight:700; font-size:14px; cursor:pointer; box-shadow:0 8px 20px rgba(70,80,180,0.3); margin-top:6px;" sc-camel-on-click="{{ handleLogin }}">เข้าสู่ระบบ</div>
+        </sc-if>
+        <sc-if value="{{ loginLoading }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:15px; text-align:center; border-radius:14px; background:oklch(0.65 0.1 258); color:white; font-weight:700; font-size:14px; margin-top:6px; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <span class="gicon gspinner" style="font-size:18px;">progress_activity</span>กำลังตรวจสอบข้อมูล...
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isLoggedIn }}" hint-placeholder-val="{{ false }}">
+  <div style="position:relative; display:flex; height:100vh; overflow:hidden; z-index:1;">
+
+    <!-- SIDEBAR -->
+    <div style="width:96px; flex-shrink:0; height:100%; overflow-y:auto; display:flex; flex-direction:column; align-items:center; padding:24px 0; gap:8px; background:rgba(255,255,255,0.45); backdrop-filter:blur(24px); border-right:1px solid rgba(255,255,255,0.6); box-shadow:1px 0 24px rgba(80,90,140,0.06);">
+      <div style="width:44px; height:44px; border-radius:14px; background:linear-gradient(135deg, oklch(0.62 0.16 258), oklch(0.55 0.17 280)); display:flex; align-items:center; justify-content:center; box-shadow:0 6px 16px rgba(70,80,180,0.3); margin-bottom:24px;">
+        <span class="gicon" style="font-size:22px; color:white;">point_of_sale</span>
+      </div>
+
+      <sc-if value="{{ isPos }}" hint-placeholder-val="{{ true }}">
+        <div style="width:64px; display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 0; border-radius:16px; background:rgba(255,255,255,0.7); box-shadow:0 4px 14px rgba(70,80,180,0.15); cursor:pointer;" sc-camel-on-click="{{ goPos }}">
+          <span class="gicon" style="font-size:20px; color:oklch(0.5 0.16 258);">shopping_cart</span>
+          <span style="font-size:11px; font-weight:700; color:oklch(0.4 0.18 258);">ขาย</span>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isPosInactive }}" hint-placeholder-val="{{ false }}">
+        <div style="width:64px; display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 0; border-radius:16px; cursor:pointer;" sc-camel-on-click="{{ goPos }}">
+          <span class="gicon" style="font-size:20px; color:oklch(0.55 0.02 258);">shopping_cart</span>
+          <span style="font-size:11px; font-weight:600; color:oklch(0.55 0.02 258);">ขาย</span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isProducts }}" hint-placeholder-val="{{ false }}">
+        <div style="width:64px; display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 0; border-radius:16px; background:rgba(255,255,255,0.7); box-shadow:0 4px 14px rgba(70,80,180,0.15); cursor:pointer;" sc-camel-on-click="{{ goProducts }}">
+          <span class="gicon" style="font-size:20px; color:oklch(0.5 0.16 258);">category</span>
+          <span style="font-size:11px; font-weight:700; color:oklch(0.4 0.18 258);">สินค้า</span>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isProductsInactive }}" hint-placeholder-val="{{ true }}">
+        <div style="width:64px; display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 0; border-radius:16px; cursor:pointer;" sc-camel-on-click="{{ goProducts }}">
+          <span class="gicon" style="font-size:20px; color:oklch(0.55 0.02 258);">category</span>
+          <span style="font-size:11px; font-weight:600; color:oklch(0.55 0.02 258);">สินค้า</span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isHistory }}" hint-placeholder-val="{{ false }}">
+        <div style="width:64px; display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 0; border-radius:16px; background:rgba(255,255,255,0.7); box-shadow:0 4px 14px rgba(70,80,180,0.15); cursor:pointer;" sc-camel-on-click="{{ goHistory }}">
+          <span class="gicon" style="font-size:20px; color:oklch(0.5 0.16 258);">history</span>
+          <span style="font-size:11px; font-weight:700; color:oklch(0.4 0.18 258);">ประวัติ</span>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isHistoryInactive }}" hint-placeholder-val="{{ true }}">
+        <div style="width:64px; display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 0; border-radius:16px; cursor:pointer;" sc-camel-on-click="{{ goHistory }}">
+          <span class="gicon" style="font-size:20px; color:oklch(0.55 0.02 258);">history</span>
+          <span style="font-size:11px; font-weight:600; color:oklch(0.55 0.02 258);">ประวัติ</span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ false }}">
+        <div style="width:64px; display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 0; border-radius:16px; background:rgba(255,255,255,0.7); box-shadow:0 4px 14px rgba(70,80,180,0.15); cursor:pointer;" sc-camel-on-click="{{ goDashboard }}">
+          <span class="gicon" style="font-size:20px; color:oklch(0.5 0.16 258);">dashboard</span>
+          <span style="font-size:11px; font-weight:700; color:oklch(0.4 0.18 258);">สรุป</span>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isDashboardInactive }}" hint-placeholder-val="{{ true }}">
+        <div style="width:64px; display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 0; border-radius:16px; cursor:pointer;" sc-camel-on-click="{{ goDashboard }}">
+          <span class="gicon" style="font-size:20px; color:oklch(0.55 0.02 258);">dashboard</span>
+          <span style="font-size:11px; font-weight:600; color:oklch(0.55 0.02 258);">สรุป</span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+        <div style="width:64px; display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 0; border-radius:16px; background:rgba(255,255,255,0.7); box-shadow:0 4px 14px rgba(70,80,180,0.15); cursor:pointer;" sc-camel-on-click="{{ goSettings }}">
+          <span class="gicon" style="font-size:20px; color:oklch(0.5 0.16 258);">settings</span>
+          <span style="font-size:11px; font-weight:700; color:oklch(0.4 0.18 258);">ตั้งค่า</span>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isSettingsInactive }}" hint-placeholder-val="{{ true }}">
+        <div style="width:64px; display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 0; border-radius:16px; cursor:pointer;" sc-camel-on-click="{{ goSettings }}">
+          <span class="gicon" style="font-size:20px; color:oklch(0.55 0.02 258);">settings</span>
+          <span style="font-size:11px; font-weight:600; color:oklch(0.55 0.02 258);">ตั้งค่า</span>
+        </div>
+      </sc-if>
+
+      <div style="flex:1;"></div>
+      <div style="width:64px; display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 0; border-radius:16px; cursor:pointer;" sc-camel-on-click="{{ handleLogout }}">
+        <span class="gicon" style="font-size:20px; color:oklch(0.55 0.02 258);">logout</span>
+        <span style="font-size:11px; font-weight:600; color:oklch(0.55 0.02 258);">ออก</span>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div style="flex:1; min-width:0; min-height:0; padding:32px 40px; display:flex; flex-direction:column; gap:24px; overflow-y:auto;">
+
+      <!-- ===================== POS VIEW ===================== -->
+      <sc-if value="{{ isPos }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; flex-direction:column; gap:20px; height:100%;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:20px;">
+            <div>
+              <div style="font-size:26px; font-weight:800; color:oklch(0.22 0.02 258); letter-spacing:-0.01em;">หน้าขายสินค้า</div>
+              <div style="font-size:13px; color:oklch(0.5 0.02 258); margin-top:2px;">Point of Sale · 27 กรกฎาคม 2569</div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+              <div style="display:flex; align-items:center; gap:10px; width:320px; padding:10px 16px; border-radius:14px; background:rgba(255,255,255,0.6); backdrop-filter:blur(18px); border:1px solid rgba(255,255,255,0.75); box-shadow:0 4px 16px rgba(80,90,140,0.1);">
+                <span class="gicon" style="font-size:18px; color:oklch(0.4 0.16 258); flex-shrink:0;">barcode_reader</span>
+                <input ref="{{ barcodeRef }}" value="{{ barcodeInput }}" sc-camel-on-change="{{ onBarcodeChange }}" sc-camel-on-key-down="{{ onBarcodeKeyDown }}" placeholder="ยิงบาร์โค้ดสินค้า แล้วกด Enter" style="flex:1; min-width:0; border:none; background:transparent; font-size:13px; font-weight:600; color:oklch(0.25 0.02 258);">
+              </div>
+              <sc-if value="{{ hasBarcodeError }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:11.5px; font-weight:700; color:oklch(0.5 0.18 25);">{{ barcodeError }}</div>
+              </sc-if>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:24px; flex:1; min-height:0;">
+            <div style="flex:1.5; min-width:0; display:flex; flex-direction:column; gap:16px;">
+              <div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:2px;">
+                <sc-for list="{{ posCategoryTabs }}" as="cat" hint-placeholder-count="4">
+                  <sc-if value="{{ cat.active }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:10px 20px; border-radius:14px; background:linear-gradient(135deg, oklch(0.62 0.16 258), oklch(0.55 0.17 280)); color:white; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 6px 16px rgba(70,80,180,0.28); white-space:nowrap; flex-shrink:0;" sc-camel-on-click="{{ cat.onClick }}">{{ cat.name }}</div>
+                  </sc-if>
+                  <sc-if value="{{ cat.inactive }}" hint-placeholder-val="{{ true }}">
+                    <div style="padding:10px 20px; border-radius:14px; background:rgba(255,255,255,0.55); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.7); color:oklch(0.4 0.02 258); font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap; flex-shrink:0;" sc-camel-on-click="{{ cat.onClick }}">{{ cat.name }}</div>
+                  </sc-if>
+                </sc-for>
+              </div>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:14px; overflow-y:auto; padding-right:6px; align-content:start;">
+                <sc-for list="{{ posProducts }}" as="p" hint-placeholder-count="8">
+                  <div style="background:rgba(255,255,255,0.55); backdrop-filter:blur(18px); border:1px solid rgba(255,255,255,0.7); border-radius:18px; padding:16px; cursor:pointer; box-shadow:0 4px 18px rgba(80,90,140,0.08); transition:transform 0.15s;" style-hover="transform:translateY(-3px); box-shadow:0 10px 24px rgba(80,90,140,0.16);" sc-camel-on-click="{{ p.onAdd }}">
+                    <div style="width:100%; aspect-ratio:1.3; border-radius:12px; background:repeating-linear-gradient(135deg, oklch(0.93 0.02 258), oklch(0.93 0.02 258) 8px, oklch(0.9 0.02 258) 8px, oklch(0.9 0.02 258) 16px); margin-bottom:10px; display:flex; align-items:center; justify-content:center;">
+                      <span style="font-family:'IBM Plex Mono', monospace; font-size:10px; color:oklch(0.55 0.02 258);">รูปสินค้า</span>
+                    </div>
+                    <div style="font-size:14px; font-weight:700; color:oklch(0.22 0.02 258);">{{ p.name }}</div>
+                    <div style="font-size:11px; color:oklch(0.5 0.02 258); margin-bottom:8px;">{{ p.nameEn }}</div>
+                    <div style="font-size:15px; font-weight:800; color:oklch(0.5 0.16 258);">{{ p.priceLabel }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <!-- CART -->
+            <div style="width:380px; flex-shrink:0; display:flex; flex-direction:column; background:rgba(255,255,255,0.6); backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,0.75); border-radius:22px; box-shadow:0 10px 32px rgba(80,90,140,0.12); overflow:hidden;">
+              <div style="padding:20px 22px 14px; border-bottom:1px solid rgba(120,120,160,0.12); display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:16px; font-weight:800; color:oklch(0.22 0.02 258);">รายการสั่งซื้อ</div>
+                <div style="font-size:12px; font-weight:600; color:oklch(0.5 0.02 258);">{{ cartCountLabel }}</div>
+              </div>
+
+              <sc-if value="{{ cartEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:40px; text-align:center; color:oklch(0.55 0.02 258); font-size:13px;">ยังไม่มีสินค้าในรายการ<br>แตะสินค้าเพื่อเพิ่ม</div>
+              </sc-if>
+              <sc-if value="{{ cartNotEmpty }}" hint-placeholder-val="{{ true }}">
+                <div style="flex:1; overflow-y:auto; padding:12px 16px; display:flex; flex-direction:column; gap:10px;">
+                  <sc-for list="{{ cartItems }}" as="item" hint-placeholder-count="2">
+                    <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:rgba(255,255,255,0.5); border-radius:14px;">
+                      <div style="flex:1; min-width:0;">
+                        <div style="font-size:13px; font-weight:700; color:oklch(0.22 0.02 258); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ item.name }}</div>
+                        <div style="font-size:12px; color:oklch(0.5 0.02 258);">{{ item.priceLabel }}</div>
+                      </div>
+                      <div style="display:flex; align-items:center; gap:6px;">
+                        <div style="width:24px; height:24px; border-radius:8px; background:rgba(120,120,160,0.14); display:flex; align-items:center; justify-content:center; cursor:pointer; font-weight:700; color:oklch(0.4 0.02 258);" sc-camel-on-click="{{ item.onDec }}">−</div>
+                        <div style="width:20px; text-align:center; font-size:13px; font-weight:700;">{{ item.qty }}</div>
+                        <div style="width:24px; height:24px; border-radius:8px; background:oklch(0.62 0.16 258); display:flex; align-items:center; justify-content:center; cursor:pointer; font-weight:700; color:white;" sc-camel-on-click="{{ item.onInc }}">+</div>
+                      </div>
+                      <div style="width:60px; text-align:right; font-size:13px; font-weight:800; color:oklch(0.22 0.02 258);">{{ item.lineTotalLabel }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <div style="padding:16px 22px 22px; border-top:1px solid rgba(120,120,160,0.14); display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; justify-content:space-between; font-size:13px; color:oklch(0.48 0.02 258);"><span>ยอดรวม</span><span>{{ subtotalLabel }}</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:11.5px; color:oklch(0.58 0.02 258);"><span>(รวมภาษีมูลค่าเพิ่ม 7% แล้ว)</span><span>{{ vatLabel }}</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:19px; font-weight:800; color:oklch(0.22 0.02 258); margin-top:4px;"><span>รวมทั้งสิ้น</span><span>{{ totalLabel }}</span></div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
+                  <div style="padding:14px; border-radius:14px; background:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.8); text-align:center; font-size:13px; font-weight:700; color:oklch(0.35 0.02 258); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;" sc-camel-on-click="{{ openCashModal }}"><span class="gicon" style="font-size:17px;">payments</span>เงินสด</div>
+                  <div style="padding:14px; border-radius:14px; background:linear-gradient(135deg, oklch(0.62 0.16 258), oklch(0.55 0.17 280)); text-align:center; font-size:13px; font-weight:700; color:white; cursor:pointer; box-shadow:0 6px 16px rgba(70,80,180,0.28);" sc-camel-on-click="{{ openQrModal }}">QR พร้อมเพย์</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===================== PRODUCTS VIEW ===================== -->
+      <sc-if value="{{ isProducts }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between;">
+            <div>
+              <div style="font-size:26px; font-weight:800; color:oklch(0.22 0.02 258); letter-spacing:-0.01em;">สินค้าและหมวดหมู่</div>
+              <div style="font-size:13px; color:oklch(0.5 0.02 258); margin-top:2px;">Products &amp; Categories</div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <input type="file" ref="{{ importFileRef }}" accept=".csv" sc-camel-on-change="{{ onImportFile }}" style="display:none;">
+              <div style="padding:12px 18px; border-radius:14px; background:rgba(255,255,255,0.6); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.75); color:oklch(0.35 0.02 258); font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;" sc-camel-on-click="{{ triggerImport }}"><span class="gicon" style="font-size:16px;">upload_file</span>นำเข้า Excel</div>
+              <div style="padding:12px 18px; border-radius:14px; background:rgba(255,255,255,0.6); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.75); color:oklch(0.35 0.02 258); font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;" sc-camel-on-click="{{ exportExcel }}"><span class="gicon" style="font-size:16px;">download</span>ส่งออก Excel</div>
+              <div style="padding:12px 20px; border-radius:14px; background:linear-gradient(135deg, oklch(0.62 0.16 258), oklch(0.55 0.17 280)); color:white; font-size:13px; font-weight:700; cursor:pointer; box-shadow:0 6px 16px rgba(70,80,180,0.28);" sc-camel-on-click="{{ openAddProduct }}">+ เพิ่มสินค้า</div>
+            </div>
+          </div>
+          <sc-if value="{{ hasImportMessage }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:12.5px; font-weight:700; color:oklch(0.4 0.15 155);">{{ importMessage }}</div>
+          </sc-if>
+
+          <div style="display:flex; gap:24px; align-items:flex-start;">
+            <div style="width:280px; flex-shrink:0; background:rgba(255,255,255,0.55); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.7); border-radius:20px; padding:18px; box-shadow:0 8px 24px rgba(80,90,140,0.1);">
+              <div style="font-size:14px; font-weight:800; color:oklch(0.22 0.02 258); margin-bottom:12px;">หมวดหมู่</div>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <sc-for list="{{ mgmtCategories }}" as="cat" hint-placeholder-count="4">
+                  <div style="display:flex; align-items:center; justify-content:between; gap:8px; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,0.5);">
+                    <div style="flex:1; min-width:0;">
+                      <div style="font-size:13px; font-weight:700; color:oklch(0.25 0.02 258);">{{ cat.name }}</div>
+                      <div style="font-size:11px; color:oklch(0.55 0.02 258);">{{ cat.countLabel }}</div>
+                    </div>
+                    <sc-if value="{{ cat.isActive }}" hint-placeholder-val="{{ true }}">
+                      <div style="padding:4px 10px; border-radius:999px; background:oklch(0.9 0.08 155); color:oklch(0.4 0.12 155); font-size:11px; font-weight:700; cursor:pointer;" sc-camel-on-click="{{ cat.onToggle }}">Active</div>
+                    </sc-if>
+                    <sc-if value="{{ cat.isInactive }}" hint-placeholder-val="{{ false }}">
+                      <div style="padding:4px 10px; border-radius:999px; background:rgba(120,120,160,0.16); color:oklch(0.45 0.02 258); font-size:11px; font-weight:700; cursor:pointer;" sc-camel-on-click="{{ cat.onToggle }}">Inactive</div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="flex:1; min-width:0; background:rgba(255,255,255,0.55); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.7); border-radius:20px; overflow:hidden; box-shadow:0 8px 24px rgba(80,90,140,0.1);">
+              <div style="display:grid; grid-template-columns:64px 2fr 1.2fr 1fr 0.8fr 0.6fr; padding:14px 20px; font-size:11px; font-weight:700; color:oklch(0.5 0.02 258); text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid rgba(120,120,160,0.14);">
+                <div></div><div>สินค้า</div><div>หมวดหมู่</div><div>ราคา</div><div>สถานะ</div><div></div>
+              </div>
+              <sc-for list="{{ mgmtProducts }}" as="p" hint-placeholder-count="6">
+                <div style="display:grid; grid-template-columns:64px 2fr 1.2fr 1fr 0.8fr 0.6fr; align-items:center; padding:14px 20px; border-bottom:1px solid rgba(120,120,160,0.08);">
+                  <div style="width:48px; height:48px;">
+                    <image-slot id="{{ p.imageId }}" shape="rounded" radius="10" placeholder="รูป"></image-slot>
+                  </div>
+                  <div>
+                    <div style="font-size:13.5px; font-weight:700; color:oklch(0.22 0.02 258);">{{ p.name }}</div>
+                    <div style="font-size:11.5px; color:oklch(0.55 0.02 258);">{{ p.nameEn }}</div>
+                  </div>
+                  <div style="font-size:13px; color:oklch(0.4 0.02 258);">{{ p.categoryName }}</div>
+                  <div style="font-size:13px; font-weight:700; color:oklch(0.22 0.02 258);">{{ p.priceLabel }}</div>
+                  <div>
+                    <sc-if value="{{ p.isActive }}" hint-placeholder-val="{{ true }}">
+                      <div style="display:inline-block; padding:4px 10px; border-radius:999px; background:oklch(0.9 0.08 155); color:oklch(0.4 0.12 155); font-size:11px; font-weight:700; cursor:pointer;" sc-camel-on-click="{{ p.onToggle }}">Active</div>
+                    </sc-if>
+                    <sc-if value="{{ p.isInactive }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:inline-block; padding:4px 10px; border-radius:999px; background:rgba(120,120,160,0.16); color:oklch(0.45 0.02 258); font-size:11px; font-weight:700; cursor:pointer;" sc-camel-on-click="{{ p.onToggle }}">Inactive</div>
+                    </sc-if>
+                  </div>
+                  <div style="text-align:right;">
+                    <div style="display:inline-block; width:28px; height:28px; border-radius:9px; background:rgba(220,80,80,0.12); color:oklch(0.5 0.18 25); display:flex; align-items:center; justify-content:center; cursor:pointer;" sc-camel-on-click="{{ p.onDelete }}"><span class="gicon" style="font-size:16px;">delete</span></div>
+                  </div>
+                </div>
+              </sc-for>
+              <div style="display:flex; align-items:center; justify-content:center; gap:16px; padding:14px 20px;">
+                <div style="width:32px; height:32px; border-radius:10px; background:rgba(120,120,160,0.12); display:flex; align-items:center; justify-content:center; cursor:pointer;" sc-camel-on-click="{{ onProductsPrev }}"><span class="gicon" style="font-size:18px; color:oklch(0.4 0.02 258);">chevron_left</span></div>
+                <div style="font-size:12.5px; font-weight:700; color:oklch(0.45 0.02 258);">{{ productsPageLabel }}</div>
+                <div style="width:32px; height:32px; border-radius:10px; background:rgba(120,120,160,0.12); display:flex; align-items:center; justify-content:center; cursor:pointer;" sc-camel-on-click="{{ onProductsNext }}"><span class="gicon" style="font-size:18px; color:oklch(0.4 0.02 258);">chevron_right</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===================== HISTORY VIEW ===================== -->
+      <sc-if value="{{ isHistory }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          <div>
+            <div style="font-size:26px; font-weight:800; color:oklch(0.22 0.02 258); letter-spacing:-0.01em;">ประวัติการขาย</div>
+            <div style="font-size:13px; color:oklch(0.5 0.02 258); margin-top:2px;">Sales History &amp; Receipts</div>
+          </div>
+
+          <div style="display:flex; gap:24px; align-items:flex-start;">
+            <div style="flex:1; min-width:0; background:rgba(255,255,255,0.55); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.7); border-radius:20px; overflow:hidden; box-shadow:0 8px 24px rgba(80,90,140,0.1);">
+              <div style="display:grid; grid-template-columns:1fr 0.8fr 1.6fr 1fr 1fr; padding:14px 20px; font-size:11px; font-weight:700; color:oklch(0.5 0.02 258); text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid rgba(120,120,160,0.14);">
+                <div>เลขที่บิล</div><div>เวลา</div><div>รายการ</div><div>ยอดรวม</div><div>ชำระโดย</div>
+              </div>
+              <sc-for list="{{ historyRows }}" as="o" hint-placeholder-count="5">
+                <div style="display:grid; grid-template-columns:1fr 0.8fr 1.6fr 1fr 1fr; align-items:center; padding:14px 20px; border-bottom:1px solid rgba(120,120,160,0.08); cursor:pointer;" style-hover="background:rgba(255,255,255,0.5);" sc-camel-on-click="{{ o.onSelect }}">
+                  <div style="font-size:13px; font-weight:700; color:oklch(0.22 0.02 258); font-family:'IBM Plex Mono', monospace;">{{ o.id }}</div>
+                  <div style="font-size:13px; color:oklch(0.5 0.02 258);">{{ o.time }}</div>
+                  <div style="font-size:13px; color:oklch(0.4 0.02 258); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ o.summary }}</div>
+                  <div style="font-size:13px; font-weight:800; color:oklch(0.22 0.02 258);">{{ o.totalLabel }}</div>
+                  <div style="font-size:12.5px; color:oklch(0.5 0.16 258); font-weight:700;">{{ o.payment }}</div>
+                </div>
+              </sc-for>
+              <div style="display:flex; align-items:center; justify-content:center; gap:16px; padding:14px 20px;">
+                <div style="width:32px; height:32px; border-radius:10px; background:rgba(120,120,160,0.12); display:flex; align-items:center; justify-content:center; cursor:pointer;" sc-camel-on-click="{{ onHistoryPrev }}"><span class="gicon" style="font-size:18px; color:oklch(0.4 0.02 258);">chevron_left</span></div>
+                <div style="font-size:12.5px; font-weight:700; color:oklch(0.45 0.02 258);">{{ historyPageLabel }}</div>
+                <div style="width:32px; height:32px; border-radius:10px; background:rgba(120,120,160,0.12); display:flex; align-items:center; justify-content:center; cursor:pointer;" sc-camel-on-click="{{ onHistoryNext }}"><span class="gicon" style="font-size:18px; color:oklch(0.4 0.02 258);">chevron_right</span></div>
+              </div>
+            </div>
+
+            <sc-if value="{{ hasSelectedOrder }}" hint-placeholder-val="{{ false }}">
+              <div style="width:320px; flex-shrink:0; background:rgba(255,255,255,0.65); backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,0.8); border-radius:20px; padding:24px; box-shadow:0 10px 30px rgba(80,90,140,0.14); font-family:'IBM Plex Mono', monospace;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                  <div style="font-size:13px; font-weight:700; color:oklch(0.22 0.02 258);">ใบเสร็จ {{ selectedOrder.id }}</div>
+                  <div style="cursor:pointer; color:oklch(0.5 0.02 258); font-size:16px;" sc-camel-on-click="{{ closeReceipt }}">×</div>
+                </div>
+                <div style="font-size:11px; color:oklch(0.5 0.02 258); margin-bottom:12px;">27 ก.ค. 2569 · {{ selectedOrder.time }} น.</div>
+                <div style="display:flex; flex-direction:column; gap:6px; padding-bottom:12px; border-bottom:1px dashed rgba(120,120,160,0.3);">
+                  <sc-for list="{{ selectedOrder.items }}" as="it" hint-placeholder-count="2">
+                    <div style="display:flex; justify-content:space-between; font-size:12px; color:oklch(0.3 0.02 258);">
+                      <span>{{ it.name }} x{{ it.qty }}</span><span>{{ it.lineTotalLabel }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; padding-top:12px; font-size:12px; color:oklch(0.45 0.02 258);">
+                  <div style="display:flex; justify-content:space-between;"><span>ยอดรวม</span><span>{{ selectedOrder.subtotalLabel }}</span></div>
+                  <div style="display:flex; justify-content:space-between; font-size:11px; color:oklch(0.58 0.02 258);"><span>(รวม VAT 7% แล้ว)</span><span>{{ selectedOrder.vatLabel }}</span></div>
+                  <div style="display:flex; justify-content:space-between; font-size:15px; font-weight:700; color:oklch(0.22 0.02 258); margin-top:4px;"><span>รวม</span><span>{{ selectedOrder.totalLabel }}</span></div>
+                  <div style="display:flex; justify-content:space-between; margin-top:8px;"><span>ชำระโดย</span><span>{{ selectedOrder.payment }}</span></div>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===================== DASHBOARD VIEW ===================== -->
+      <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          <div>
+            <div style="font-size:26px; font-weight:800; color:oklch(0.22 0.02 258); letter-spacing:-0.01em;">ภาพรวมยอดขาย</div>
+            <div style="font-size:13px; color:oklch(0.5 0.02 258); margin-top:2px;">Dashboard · วันนี้ 27 ก.ค. 2569</div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:18px;">
+            <div style="background:rgba(255,255,255,0.55); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.7); border-radius:18px; padding:20px; box-shadow:0 8px 24px rgba(80,90,140,0.1);">
+              <div style="font-size:12px; font-weight:700; color:oklch(0.5 0.02 258); text-transform:uppercase; letter-spacing:0.03em;">ยอดขายวันนี้</div>
+              <div style="font-size:30px; font-weight:800; color:oklch(0.22 0.02 258); margin-top:8px;">{{ todayTotalLabel }}</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.55); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.7); border-radius:18px; padding:20px; box-shadow:0 8px 24px rgba(80,90,140,0.1);">
+              <div style="font-size:12px; font-weight:700; color:oklch(0.5 0.02 258); text-transform:uppercase; letter-spacing:0.03em;">จำนวนบิล</div>
+              <div style="font-size:30px; font-weight:800; color:oklch(0.22 0.02 258); margin-top:8px;">{{ orderCountLabel }}</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.55); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.7); border-radius:18px; padding:20px; box-shadow:0 8px 24px rgba(80,90,140,0.1);">
+              <div style="font-size:12px; font-weight:700; color:oklch(0.5 0.02 258); text-transform:uppercase; letter-spacing:0.03em;">ค่าเฉลี่ยต่อบิล</div>
+              <div style="font-size:30px; font-weight:800; color:oklch(0.22 0.02 258); margin-top:8px;">{{ avgTicketLabel }}</div>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:24px; align-items:flex-start;">
+            <div style="flex:1; background:rgba(255,255,255,0.55); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.7); border-radius:20px; padding:22px; box-shadow:0 8px 24px rgba(80,90,140,0.1);">
+              <div style="font-size:15px; font-weight:800; color:oklch(0.22 0.02 258); margin-bottom:16px;">สินค้าขายดี</div>
+              <div style="display:flex; flex-direction:column; gap:14px;">
+                <sc-for list="{{ topProducts }}" as="tp" hint-placeholder-count="4">
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px;">
+                      <span style="font-weight:700; color:oklch(0.25 0.02 258);">{{ tp.name }}</span>
+                      <span style="color:oklch(0.5 0.02 258);">{{ tp.qtyLabel }}</span>
+                    </div>
+                    <div style="height:8px; border-radius:999px; background:rgba(120,120,160,0.14); overflow:hidden;">
+                      <div style="height:100%; border-radius:999px; background:linear-gradient(90deg, oklch(0.62 0.16 258), oklch(0.55 0.17 280)); width:{{ tp.barWidth }};"></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="width:340px; flex-shrink:0; background:rgba(255,255,255,0.55); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.7); border-radius:20px; padding:22px; box-shadow:0 8px 24px rgba(80,90,140,0.1);">
+              <div style="font-size:15px; font-weight:800; color:oklch(0.22 0.02 258); margin-bottom:16px;">รายการล่าสุด</div>
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <sc-for list="{{ recentOrders }}" as="o" hint-placeholder-count="4">
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(120,120,160,0.1);">
+                    <div>
+                      <div style="font-size:12.5px; font-weight:700; color:oklch(0.25 0.02 258); font-family:'IBM Plex Mono', monospace;">{{ o.id }}</div>
+                      <div style="font-size:11px; color:oklch(0.55 0.02 258);">{{ o.time }} · {{ o.payment }}</div>
+                    </div>
+                    <div style="font-size:13px; font-weight:800; color:oklch(0.22 0.02 258);">{{ o.totalLabel }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===================== SETTINGS VIEW ===================== -->
+      <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          <div>
+            <div style="font-size:26px; font-weight:800; color:oklch(0.22 0.02 258); letter-spacing:-0.01em;">ตั้งค่าร้านค้า</div>
+            <div style="font-size:13px; color:oklch(0.5 0.02 258); margin-top:2px;">Store Settings</div>
+          </div>
+
+          <div style="display:flex; gap:24px; align-items:flex-start;">
+            <div style="width:340px; flex-shrink:0; background:rgba(255,255,255,0.55); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.7); border-radius:20px; padding:24px; box-shadow:0 8px 24px rgba(80,90,140,0.1); display:flex; flex-direction:column; gap:16px;">
+              <div style="font-size:15px; font-weight:800; color:oklch(0.22 0.02 258);">ข้อมูลร้านค้า</div>
+              <div style="width:140px; height:140px; align-self:center;">
+                <image-slot id="store-logo" shape="rounded" radius="20" placeholder="โลโก้ร้าน"></image-slot>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:12px; font-weight:700; color:oklch(0.4 0.02 258);">ชื่อร้านค้า / Store Name</label>
+                <input value="{{ storeName }}" sc-camel-on-change="{{ onStoreNameChange }}" placeholder="เช่น ร้านกาแฟลิควิดกลาส" style="padding:12px 14px; border-radius:12px; border:1px solid rgba(120,120,160,0.25); background:rgba(255,255,255,0.7); font-size:14px; color:oklch(0.22 0.02 258);">
+              </div>
+              <div style="padding:14px; text-align:center; border-radius:14px; background:linear-gradient(135deg, oklch(0.62 0.16 258), oklch(0.55 0.17 280)); color:white; font-weight:700; font-size:13px; cursor:pointer; box-shadow:0 6px 16px rgba(70,80,180,0.28);" sc-camel-on-click="{{ saveStoreInfo }}">บันทึกข้อมูลร้าน</div>
+              <sc-if value="{{ hasStoreSavedMessage }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:12px; font-weight:700; color:oklch(0.4 0.15 155); text-align:center;">{{ storeSavedMessage }}</div>
+              </sc-if>
+            </div>
+
+            <div style="flex:1; min-width:0; background:rgba(255,255,255,0.55); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.7); border-radius:20px; padding:24px; box-shadow:0 8px 24px rgba(80,90,140,0.1);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div style="font-size:15px; font-weight:800; color:oklch(0.22 0.02 258);">หมวดหมู่สินค้า</div>
+                <div style="padding:10px 18px; border-radius:12px; background:linear-gradient(135deg, oklch(0.62 0.16 258), oklch(0.55 0.17 280)); color:white; font-size:13px; font-weight:700; cursor:pointer; box-shadow:0 6px 16px rgba(70,80,180,0.28);" sc-camel-on-click="{{ openAddCategory }}">+ เพิ่มหมวดหมู่</div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <sc-for list="{{ settingsCategories }}" as="cat" hint-placeholder-count="4">
+                  <div style="display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:14px; background:rgba(255,255,255,0.5);">
+                    <div style="flex:1; min-width:0;">
+                      <div style="font-size:13.5px; font-weight:700; color:oklch(0.25 0.02 258);">{{ cat.name }}</div>
+                      <div style="font-size:11.5px; color:oklch(0.55 0.02 258);">{{ cat.countLabel }}</div>
+                    </div>
+                    <sc-if value="{{ cat.isActive }}" hint-placeholder-val="{{ true }}">
+                      <div style="padding:4px 10px; border-radius:999px; background:oklch(0.9 0.08 155); color:oklch(0.4 0.12 155); font-size:11px; font-weight:700; cursor:pointer;" sc-camel-on-click="{{ cat.onToggle }}">Active</div>
+                    </sc-if>
+                    <sc-if value="{{ cat.isInactive }}" hint-placeholder-val="{{ false }}">
+                      <div style="padding:4px 10px; border-radius:999px; background:rgba(120,120,160,0.16); color:oklch(0.45 0.02 258); font-size:11px; font-weight:700; cursor:pointer;" sc-camel-on-click="{{ cat.onToggle }}">Inactive</div>
+                    </sc-if>
+                    <div style="width:28px; height:28px; border-radius:9px; background:rgba(220,80,80,0.12); color:oklch(0.5 0.18 25); display:flex; align-items:center; justify-content:center; cursor:pointer;" sc-camel-on-click="{{ cat.onDelete }}"><span class="gicon" style="font-size:16px;">delete</span></div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ADD CATEGORY MODAL -->
+  <sc-if value="{{ isAddCategoryModal }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(30,30,50,0.35); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:50;" sc-camel-on-click="{{ closeAddCategory }}">
+      <div style="width:380px; background:rgba(255,255,255,0.9); backdrop-filter:blur(30px); border:1px solid rgba(255,255,255,0.9); border-radius:24px; padding:28px; box-shadow:0 20px 60px rgba(60,70,140,0.25); display:flex; flex-direction:column; gap:12px;" sc-camel-on-click="{{ stopClick }}">
+        <div style="font-size:17px; font-weight:800; color:oklch(0.22 0.02 258); margin-bottom:6px;">เพิ่มหมวดหมู่ใหม่</div>
+        <input value="{{ newCategory.nameTh }}" sc-camel-on-change="{{ onNewCategoryNameTh }}" placeholder="ชื่อหมวดหมู่ (ไทย)" style="padding:12px 14px; border-radius:12px; border:1px solid rgba(120,120,160,0.25); background:rgba(255,255,255,0.7); font-size:14px;">
+        <input value="{{ newCategory.nameEn }}" sc-camel-on-change="{{ onNewCategoryNameEn }}" placeholder="Category Name (English)" style="padding:12px 14px; border-radius:12px; border:1px solid rgba(120,120,160,0.25); background:rgba(255,255,255,0.7); font-size:14px;">
+        <div style="padding:14px; text-align:center; border-radius:14px; background:linear-gradient(135deg, oklch(0.62 0.16 258), oklch(0.55 0.17 280)); color:white; font-weight:700; cursor:pointer; margin-top:6px; box-shadow:0 6px 16px rgba(70,80,180,0.28);" sc-camel-on-click="{{ saveNewCategory }}">บันทึกหมวดหมู่</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- CASH MODAL -->
+  <sc-if value="{{ isCashModal }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(30,30,50,0.35); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:50;" sc-camel-on-click="{{ closePayment }}">
+      <div style="width:380px; background:rgba(255,255,255,0.85); backdrop-filter:blur(30px); border:1px solid rgba(255,255,255,0.9); border-radius:24px; padding:28px; box-shadow:0 20px 60px rgba(60,70,140,0.25);" sc-camel-on-click="{{ stopClick }}">
+        <div style="font-size:17px; font-weight:800; color:oklch(0.22 0.02 258); margin-bottom:4px;">รับชำระเงินสด</div>
+        <div style="font-size:13px; color:oklch(0.5 0.02 258); margin-bottom:18px;">ยอดที่ต้องชำระ <strong>{{ totalLabel }}</strong></div>
+        <input value="{{ cashReceived }}" sc-camel-on-change="{{ onCashInput }}" placeholder="จำนวนเงินที่รับ" style="width:100%; padding:14px 16px; border-radius:14px; border:1px solid rgba(120,120,160,0.25); background:rgba(255,255,255,0.7); font-size:18px; font-weight:700; color:oklch(0.22 0.02 258); margin-bottom:12px;">
+        <div style="display:flex; gap:8px; margin-bottom:16px;">
+          <sc-for list="{{ quickCashOptions }}" as="q" hint-placeholder-count="4">
+            <div style="flex:1; text-align:center; padding:8px 4px; border-radius:10px; background:rgba(120,120,160,0.1); font-size:12px; font-weight:700; color:oklch(0.4 0.02 258); cursor:pointer;" sc-camel-on-click="{{ q.onClick }}">{{ q.label }}</div>
+          </sc-for>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:700; color:oklch(0.35 0.16 155); margin-bottom:18px;"><span>เงินทอน</span><span>{{ changeLabel }}</span></div>
+        <sc-if value="{{ paymentProcessing }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px; text-align:center; border-radius:14px; background:oklch(0.65 0.1 258); color:white; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <span class="gicon gspinner" style="font-size:18px;">progress_activity</span>กำลังดำเนินการ...
+          </div>
+        </sc-if>
+        <sc-if value="{{ cashValid }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px; text-align:center; border-radius:14px; background:linear-gradient(135deg, oklch(0.62 0.16 258), oklch(0.55 0.17 280)); color:white; font-weight:700; cursor:pointer; box-shadow:0 6px 16px rgba(70,80,180,0.28);" sc-camel-on-click="{{ confirmCash }}">ยืนยันรับเงิน</div>
+        </sc-if>
+        <sc-if value="{{ cashInvalid }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:14px; text-align:center; border-radius:14px; background:rgba(120,120,160,0.15); color:oklch(0.55 0.02 258); font-weight:700;">ยืนยันรับเงิน</div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- QR MODAL -->
+  <sc-if value="{{ isQrModal }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(30,30,50,0.35); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:50;" sc-camel-on-click="{{ closePayment }}">
+      <div style="width:340px; background:rgba(255,255,255,0.85); backdrop-filter:blur(30px); border:1px solid rgba(255,255,255,0.9); border-radius:24px; padding:28px; text-align:center; box-shadow:0 20px 60px rgba(60,70,140,0.25);" sc-camel-on-click="{{ stopClick }}">
+        <div style="font-size:17px; font-weight:800; color:oklch(0.22 0.02 258); margin-bottom:6px;">สแกน QR เพื่อชำระเงิน</div>
+        <div style="font-size:13px; color:oklch(0.5 0.02 258); margin-bottom:18px;">ยอดชำระ <strong>{{ totalLabel }}</strong></div>
+        <div style="width:200px; height:200px; margin:0 auto 18px; border-radius:16px; background:repeating-linear-gradient(45deg, oklch(0.2 0 0), oklch(0.2 0 0) 6px, white 6px, white 12px); display:flex; align-items:center; justify-content:center;">
+          <div style="width:170px; height:170px; background:white; border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace; font-size:11px; color:oklch(0.4 0.02 258);">QR PROMPTPAY</div>
+        </div>
+        <sc-if value="{{ paymentProcessing }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px; border-radius:14px; background:oklch(0.65 0.1 258); color:white; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <span class="gicon gspinner" style="font-size:18px;">progress_activity</span>กำลังตรวจสอบการชำระเงิน...
+          </div>
+        </sc-if>
+        <sc-if value="{{ qrNotProcessing }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:14px; border-radius:14px; background:linear-gradient(135deg, oklch(0.62 0.16 258), oklch(0.55 0.17 280)); color:white; font-weight:700; cursor:pointer; box-shadow:0 6px 16px rgba(70,80,180,0.28);" sc-camel-on-click="{{ confirmQr }}">ยืนยันการชำระเงินแล้ว</div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ADD PRODUCT MODAL -->
+  <sc-if value="{{ isAddProductModal }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(30,30,50,0.35); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:50;" sc-camel-on-click="{{ closeAddProduct }}">
+      <div style="width:420px; background:rgba(255,255,255,0.9); backdrop-filter:blur(30px); border:1px solid rgba(255,255,255,0.9); border-radius:24px; padding:28px; box-shadow:0 20px 60px rgba(60,70,140,0.25); display:flex; flex-direction:column; gap:12px;" sc-camel-on-click="{{ stopClick }}">
+        <div style="font-size:17px; font-weight:800; color:oklch(0.22 0.02 258); margin-bottom:6px;">เพิ่มสินค้าใหม่</div>
+        <input value="{{ newProduct.nameTh }}" sc-camel-on-change="{{ onNewNameTh }}" placeholder="ชื่อสินค้า (ไทย)" style="padding:12px 14px; border-radius:12px; border:1px solid rgba(120,120,160,0.25); background:rgba(255,255,255,0.7); font-size:14px;">
+        <input value="{{ newProduct.nameEn }}" sc-camel-on-change="{{ onNewNameEn }}" placeholder="Product Name (English)" style="padding:12px 14px; border-radius:12px; border:1px solid rgba(120,120,160,0.25); background:rgba(255,255,255,0.7); font-size:14px;">
+        <sc-raw-select value="{{ newProduct.categoryId }}" sc-camel-on-change="{{ onNewCategory }}" style="padding:12px 14px; border-radius:12px; border:1px solid rgba(120,120,160,0.25); background:rgba(255,255,255,0.7); font-size:14px;">
+          <sc-for list="{{ categoryOptions }}" as="c" hint-placeholder-count="4">
+            <option value="{{ c.id }}">{{ c.name }}</option>
+          </sc-for>
+        </sc-raw-select>
+        <input value="{{ newProduct.price }}" sc-camel-on-change="{{ onNewPrice }}" placeholder="ราคา (บาท)" style="padding:12px 14px; border-radius:12px; border:1px solid rgba(120,120,160,0.25); background:rgba(255,255,255,0.7); font-size:14px;">
+
+        <div style="font-size:12px; font-weight:700; color:oklch(0.4 0.02 258); margin-top:4px;">รูปภาพสินค้า</div>
+        <div style="display:flex; gap:12px; align-items:center;">
+          <div style="width:64px; height:64px; flex-shrink:0; border-radius:14px; overflow:hidden; background-repeat:no-repeat; background-position:center; background-size:cover; background-color:oklch(0.93 0.02 258); background-image:{{ newProductImageCss }}; display:flex; align-items:center; justify-content:center;">
+            <sc-if value="{{ hasNoNewProductImage }}" hint-placeholder-val="{{ true }}">
+              <span class="gicon" style="font-size:22px; color:oklch(0.6 0.02 258);">image</span>
+            </sc-if>
+          </div>
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:8px;">
+            <input type="file" ref="{{ newProductFileRef }}" accept="image/*" sc-camel-on-change="{{ onNewProductFile }}" style="display:none;">
+            <div style="padding:9px 14px; border-radius:10px; background:rgba(120,120,160,0.12); color:oklch(0.35 0.02 258); font-size:12.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; justify-content:center;" sc-camel-on-click="{{ triggerNewProductFile }}"><span class="gicon" style="font-size:15px;">upload</span>อัปโหลดไฟล์</div>
+            <input value="{{ newProduct.imageUrlInput }}" sc-camel-on-change="{{ onNewProductImageUrl }}" placeholder="วางลิงก์รูปภาพ (URL)" style="padding:9px 12px; border-radius:10px; border:1px solid rgba(120,120,160,0.25); background:rgba(255,255,255,0.7); font-size:12.5px;">
+          </div>
+        </div>
+
+        <div style="padding:14px; text-align:center; border-radius:14px; background:linear-gradient(135deg, oklch(0.62 0.16 258), oklch(0.55 0.17 280)); color:white; font-weight:700; cursor:pointer; margin-top:6px; box-shadow:0 6px 16px rgba(70,80,180,0.28);" sc-camel-on-click="{{ saveNewProduct }}">บันทึกสินค้า</div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="">
+const CATEGORIES = [
+  { id: 'hot', name: 'เครื่องดื่มร้อน', nameEn: 'Hot Drinks', status: 'Active' },
+  { id: 'cold', name: 'เครื่องดื่มเย็น', nameEn: 'Cold Drinks', status: 'Active' },
+  { id: 'bakery', name: 'เบเกอรี่', nameEn: 'Bakery', status: 'Active' },
+  { id: 'snack', name: 'ของทานเล่น', nameEn: 'Snacks', status: 'Inactive' },
+];
+
+const PRODUCTS = [
+  { id: 'p1', name: 'เอสเพรสโซ่', nameEn: 'Espresso', price: 45, categoryId: 'hot', status: 'Active', barcode: '8850001000010' },
+  { id: 'p2', name: 'อเมริกาโน่ร้อน', nameEn: 'Americano', price: 50, categoryId: 'hot', status: 'Active', barcode: '8850001000027' },
+  { id: 'p3', name: 'คาปูชิโน่', nameEn: 'Cappuccino', price: 60, categoryId: 'hot', status: 'Active', barcode: '8850001000034' },
+  { id: 'p4', name: 'ลาเต้ร้อน', nameEn: 'Latte', price: 60, categoryId: 'hot', status: 'Active', barcode: '8850001000041' },
+  { id: 'p5', name: 'มอคค่า', nameEn: 'Mocha', price: 65, categoryId: 'hot', status: 'Active', barcode: '8850001000058' },
+  { id: 'p6', name: 'ชาไทยร้อน', nameEn: 'Thai Tea Hot', price: 45, categoryId: 'hot', status: 'Active', barcode: '8850001000065' },
+  { id: 'p7', name: 'อเมริกาโน่เย็น', nameEn: 'Iced Americano', price: 55, categoryId: 'cold', status: 'Active', barcode: '8850001000072' },
+  { id: 'p8', name: 'ลาเต้เย็น', nameEn: 'Iced Latte', price: 65, categoryId: 'cold', status: 'Active', barcode: '8850001000089' },
+  { id: 'p9', name: 'โคลด์บรูว์', nameEn: 'Cold Brew', price: 70, categoryId: 'cold', status: 'Active', barcode: '8850001000096' },
+  { id: 'p10', name: 'ชาไทยเย็น', nameEn: 'Iced Thai Tea', price: 50, categoryId: 'cold', status: 'Active', barcode: '8850001000102' },
+  { id: 'p11', name: 'ช็อกโกแลตเย็น', nameEn: 'Iced Chocolate', price: 70, categoryId: 'cold', status: 'Active', barcode: '8850001000119' },
+  { id: 'p12', name: 'เลมอนเนด', nameEn: 'Lemonade', price: 55, categoryId: 'cold', status: 'Active', barcode: '8850001000126' },
+  { id: 'p13', name: 'ครัวซองต์เนย', nameEn: 'Butter Croissant', price: 55, categoryId: 'bakery', status: 'Active', barcode: '8850001000133' },
+  { id: 'p14', name: 'มัฟฟินช็อกโกแลต', nameEn: 'Chocolate Muffin', price: 50, categoryId: 'bakery', status: 'Active', barcode: '8850001000140' },
+  { id: 'p15', name: 'บานาน่าเบรด', nameEn: 'Banana Bread', price: 45, categoryId: 'bakery', status: 'Active', barcode: '8850001000157' },
+  { id: 'p16', name: 'ชีสเค้ก', nameEn: 'Cheesecake Slice', price: 85, categoryId: 'bakery', status: 'Active', barcode: '8850001000164' },
+  { id: 'p17', name: 'ซินนามอนโรล', nameEn: 'Cinnamon Roll', price: 60, categoryId: 'bakery', status: 'Active', barcode: '8850001000171' },
+  { id: 'p18', name: 'มันฝรั่งทอดกรอบ', nameEn: 'Potato Chips', price: 35, categoryId: 'snack', status: 'Inactive', barcode: '8850001000188' },
+  { id: 'p19', name: 'คุกกี้', nameEn: 'Cookies', price: 40, categoryId: 'snack', status: 'Inactive', barcode: '8850001000195' },
+];
+
+const HISTORY = [
+  { id: 'ORD-1049', time: '14:32', payment: 'QR พร้อมเพย์', items: [{ name: 'ลาเต้เย็น', qty: 2, price: 65 }, { name: 'ครัวซองต์เนย', qty: 1, price: 55 }] },
+  { id: 'ORD-1048', time: '13:58', payment: 'เงินสด', items: [{ name: 'อเมริกาโน่ร้อน', qty: 1, price: 50 }] },
+  { id: 'ORD-1047', time: '13:20', payment: 'เงินสด', items: [{ name: 'ชาไทยเย็น', qty: 3, price: 50 }, { name: 'ชีสเค้ก', qty: 1, price: 85 }] },
+  { id: 'ORD-1046', time: '12:45', payment: 'QR พร้อมเพย์', items: [{ name: 'คาปูชิโน่', qty: 2, price: 60 }, { name: 'มัฟฟินช็อกโกแลต', qty: 2, price: 50 }] },
+  { id: 'ORD-1045', time: '11:52', payment: 'เงินสด', items: [{ name: 'โคลด์บรูว์', qty: 1, price: 70 }] },
+  { id: 'ORD-1044', time: '10:15', payment: 'QR พร้อมเพย์', items: [{ name: 'มอคค่า', qty: 1, price: 65 }, { name: 'ซินนามอนโรล', qty: 1, price: 60 }] },
+];
+
+function baht(n) { return '฿' + n.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
+function orderTotals(items) {
+  const subtotal = items.reduce((s, i) => s + i.qty * i.price, 0);
+  const vat = subtotal - subtotal / 1.07; // VAT already included in listed prices — informational only
+  return { subtotal, vat, total: subtotal };
+}
+
+class Component extends DCLogic {
+  state = {
+    view: 'login',
+    loginCompanyCode: '',
+    loginUsername: '',
+    loginPassword: '',
+    loginError: '',
+    rememberMe: false,
+    categories: CATEGORIES,
+    activeCategory: 'all',
+    products: PRODUCTS,
+    cart: [],
+    paymentModalOpen: null,
+    cashReceived: '',
+    history: HISTORY,
+    selectedOrderId: null,
+    showAddProduct: false,
+    newProduct: { nameTh: '', nameEn: '', categoryId: 'hot', price: '', imageUrl: '', imageUrlInput: '' },
+    nextOrderNum: 1050,
+    barcodeInput: '',
+    barcodeError: '',
+    importMessage: '',
+    storeName: '',
+    storeSavedMessage: '',
+    showAddCategory: false,
+    newCategory: { nameTh: '', nameEn: '' },
+    productsPage: 1,
+    historyPage: 1,
+    loginLoading: false,
+    paymentProcessing: false,
+    toasts: [],
+  };
+  toastSeq = 1;
+
+  pageSize = 8;
+
+  barcodeRef = React.createRef();
+  barcodeErrorTimer = null;
+  importFileRef = React.createRef();
+  importMsgTimer = null;
+  newProductFileRef = React.createRef();
+
+  triggerImport() { if (this.importFileRef.current) this.importFileRef.current.click(); }
+
+  exportExcel() {
+    const catNameById = {};
+    this.state.categories.forEach(c => catNameById[c.id] = c.name);
+    const header = ['ชื่อสินค้า', 'Product Name (EN)', 'หมวดหมู่', 'ราคา', 'สถานะ'];
+    const rows = this.state.products.map(p => [p.name, p.nameEn, catNameById[p.categoryId] || '', p.price, p.status]);
+    const csv = [header, ...rows].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'products.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  showImportMessage(msg) { this.addToast(msg, 'success'); }
+
+  onImportFile(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = String(ev.target.result || '');
+      const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+      const parseLine = (line) => {
+        const out = []; let cur = ''; let inQ = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (inQ) {
+            if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+            else if (ch === '"') { inQ = false; }
+            else cur += ch;
+          } else {
+            if (ch === '"') inQ = true;
+            else if (ch === ',') { out.push(cur); cur = ''; }
+            else cur += ch;
+          }
+        }
+        out.push(cur);
+        return out;
+      };
+      const dataLines = lines.slice(1);
+      const catIdByName = {};
+      this.state.categories.forEach(c => { catIdByName[c.name] = c.id; catIdByName[c.nameEn] = c.id; });
+      const imported = dataLines.map((line, idx) => {
+        const cols = parseLine(line);
+        const [nameTh, nameEn, catName, price, status] = cols;
+        return {
+          id: 'imp' + Date.now() + '_' + idx,
+          name: (nameTh || '').trim(), nameEn: (nameEn || '').trim(),
+          categoryId: catIdByName[(catName || '').trim()] || this.state.categories[0].id,
+          price: parseFloat(price) || 0,
+          status: (status || '').trim() === 'Inactive' ? 'Inactive' : 'Active',
+        };
+      }).filter(p => p.name);
+      this.setState(s => ({ products: [...s.products, ...imported] }));
+      this.showImportMessage('นำเข้าสำเร็จ ' + imported.length + ' รายการ');
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
+  componentDidMount() { this.focusBarcode(); }
+  componentDidUpdate() { this.focusBarcode(); }
+  focusBarcode() {
+    if (this.state.view === 'pos' && this.barcodeRef.current && document.activeElement !== this.barcodeRef.current) {
+      this.barcodeRef.current.focus();
+    }
+  }
+
+  scanBarcode(code) {
+    const trimmed = (code || '').trim();
+    if (!trimmed) return;
+    const product = this.state.products.find(p => p.barcode === trimmed);
+    const catActive = product && this.state.categories.find(c => c.id === product.categoryId && c.status === 'Active');
+    if (product && product.status === 'Active' && catActive) {
+      this.addToCart(product);
+      this.setState({ barcodeInput: '', barcodeError: '' });
+    } else {
+      this.setState({ barcodeInput: '', barcodeError: 'ไม่พบสินค้าสำหรับบาร์โค้ดนี้' });
+      clearTimeout(this.barcodeErrorTimer);
+      this.barcodeErrorTimer = setTimeout(() => this.setState({ barcodeError: '' }), 2500);
+      this.addToast('ไม่พบสินค้าสำหรับบาร์โค้ดนี้', 'error');
+    }
+  }
+
+  setView(v) { this.setState({ view: v }); }
+
+  addToast(message, type) {
+    const id = this.toastSeq++;
+    const icon = type === 'error' ? 'error' : type === 'info' ? 'info' : 'check_circle';
+    const iconColor = type === 'error' ? 'oklch(0.55 0.18 25)' : type === 'info' ? 'oklch(0.55 0.14 258)' : 'oklch(0.5 0.14 155)';
+    this.setState(s => ({ toasts: [...s.toasts, { id, message, icon, iconColor }] }));
+    setTimeout(() => this.setState(s => ({ toasts: s.toasts.filter(t => t.id !== id) })), 3200);
+  }
+
+  handleLogin() {
+    const s = this.state;
+    if (!s.loginUsername.trim() || !s.loginPassword.trim()) {
+      this.setState({ loginError: 'กรุณากรอกข้อมูลให้ครบทุกช่อง' });
+      return;
+    }
+    this.setState({ loginLoading: true, loginError: '' });
+    setTimeout(() => {
+      this.setState({ view: 'pos', loginLoading: false, loginPassword: '' });
+      this.addToast('เข้าสู่ระบบสำเร็จ', 'success');
+    }, 700);
+  }
+  handleLogout() { this.setState({ view: 'login', loginPassword: '' }); }
+  selectCategory(id) { this.setState({ activeCategory: id }); }
+
+  addToCart(product) {
+    this.setState(s => {
+      const existing = s.cart.find(i => i.id === product.id);
+      if (existing) {
+        return { cart: s.cart.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i) };
+      }
+      return { cart: [...s.cart, { id: product.id, name: product.name, price: product.price, qty: 1 }] };
+    });
+  }
+  incQty(id) { this.setState(s => ({ cart: s.cart.map(i => i.id === id ? { ...i, qty: i.qty + 1 } : i) })); }
+  decQty(id) { this.setState(s => ({ cart: s.cart.map(i => i.id === id ? { ...i, qty: i.qty - 1 } : i).filter(i => i.qty > 0) })); }
+  removeFromCart(id) { this.setState(s => ({ cart: s.cart.filter(i => i.id !== id) })); }
+
+  openPayment(method) { this.setState({ paymentModalOpen: method, cashReceived: '' }); }
+  closePayment() { this.setState({ paymentModalOpen: null, cashReceived: '' }); }
+
+  completeOrder(payment) {
+    const items = this.state.cart.map(i => ({ name: i.name, qty: i.qty, price: i.price }));
+    const now = new Date();
+    const time = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const order = { id: 'ORD-' + this.state.nextOrderNum, time, payment, items };
+    this.setState(s => ({
+      history: [order, ...s.history],
+      nextOrderNum: s.nextOrderNum + 1,
+      cart: [],
+      paymentModalOpen: null,
+      cashReceived: '',
+      paymentProcessing: false,
+    }));
+    this.addToast('ชำระเงินสำเร็จ ' + order.id, 'success');
+  }
+  confirmCash() {
+    const { total } = orderTotals(this.state.cart);
+    if (parseFloat(this.state.cashReceived || '0') >= total) {
+      this.setState({ paymentProcessing: true });
+      setTimeout(() => this.completeOrder('เงินสด'), 900);
+    }
+  }
+  confirmQr() {
+    this.setState({ paymentProcessing: true });
+    setTimeout(() => this.completeOrder('QR พร้อมเพย์'), 900);
+  }
+
+  selectOrder(id) { this.setState({ selectedOrderId: id }); }
+  closeReceipt() { this.setState({ selectedOrderId: null }); }
+
+  toggleProductStatus(id) {
+    this.setState(s => ({ products: s.products.map(p => p.id === id ? { ...p, status: p.status === 'Active' ? 'Inactive' : 'Active' } : p) }));
+  }
+  toggleCategoryStatus(id) {
+    this.setState(s => ({ categories: s.categories.map(c => c.id === id ? { ...c, status: c.status === 'Active' ? 'Inactive' : 'Active' } : c) }));
+  }
+  deleteProduct(id) { this.setState(s => ({ products: s.products.filter(p => p.id !== id) })); }
+  deleteCategory(id) { this.setState(s => ({ categories: s.categories.filter(c => c.id !== id) })); }
+
+  saveStoreInfo() { this.addToast('บันทึกข้อมูลร้านเรียบร้อย', 'success'); }
+
+  openAddCategory() { this.setState({ showAddCategory: true, newCategory: { nameTh: '', nameEn: '' } }); }
+  closeAddCategory() { this.setState({ showAddCategory: false }); }
+  saveNewCategory() {
+    const nc = this.state.newCategory;
+    if (!nc.nameTh) return;
+    const category = { id: 'c' + Date.now(), name: nc.nameTh, nameEn: nc.nameEn || nc.nameTh, status: 'Active' };
+    this.setState(s => ({ categories: [...s.categories, category], showAddCategory: false }));
+    this.addToast('เพิ่มหมวดหมู่ "' + category.name + '" สำเร็จ', 'success');
+  }
+
+  openAddProduct() { this.setState({ showAddProduct: true, newProduct: { nameTh: '', nameEn: '', categoryId: 'hot', price: '', imageUrl: '', imageUrlInput: '' } }); }
+  closeAddProduct() { this.setState({ showAddProduct: false }); }
+  saveNewProduct() {
+    const np = this.state.newProduct;
+    if (!np.nameTh || !np.price) return;
+    const product = { id: 'p' + Date.now(), name: np.nameTh, nameEn: np.nameEn || np.nameTh, price: parseFloat(np.price) || 0, categoryId: np.categoryId, status: 'Active', image: np.imageUrl || '' };
+    this.setState(s => ({ products: [...s.products, product], showAddProduct: false }));
+    this.addToast('เพิ่มสินค้า "' + product.name + '" สำเร็จ', 'success');
+  }
+  onNewProductFile(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => this.setState(s => ({ newProduct: { ...s.newProduct, imageUrl: String(ev.target.result || ''), imageUrlInput: '' } }));
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  }
+
+  renderVals() {
+    const s = this.state;
+    const view = s.view;
+    const activeCats = s.categories.filter(c => c.status === 'Active');
+
+    const posCategoryTabs = [{ id: 'all', name: 'ทั้งหมด' }, ...activeCats].map(c => ({
+      id: c.id, name: c.name, active: s.activeCategory === c.id, inactive: s.activeCategory !== c.id,
+      onClick: () => this.selectCategory(c.id),
+    }));
+
+    const catStatus = {};
+    s.categories.forEach(c => catStatus[c.id] = c.status);
+    const posProducts = s.products
+      .filter(p => p.status === 'Active' && catStatus[p.categoryId] === 'Active')
+      .filter(p => s.activeCategory === 'all' || p.categoryId === s.activeCategory)
+      .map(p => ({ id: p.id, name: p.name, nameEn: p.nameEn, priceLabel: baht(p.price), onAdd: () => this.addToCart(p) }));
+
+    const cartItems = s.cart.map(i => ({
+      id: i.id, name: i.name, qty: i.qty, priceLabel: baht(i.price) + ' / หน่วย',
+      lineTotalLabel: baht(i.qty * i.price),
+      onInc: () => this.incQty(i.id), onDec: () => this.decQty(i.id), onRemove: () => this.removeFromCart(i.id),
+    }));
+    const { subtotal, vat, total } = orderTotals(s.cart);
+    const cashReceivedNum = parseFloat(s.cashReceived || '0');
+    const change = cashReceivedNum - total;
+
+    const catNameById = {};
+    s.categories.forEach(c => catNameById[c.id] = c.name);
+
+    const mgmtCategories = s.categories.map(c => ({
+      name: c.name, isActive: c.status === 'Active', isInactive: c.status !== 'Active',
+      countLabel: s.products.filter(p => p.categoryId === c.id).length + ' รายการ',
+      onToggle: () => this.toggleCategoryStatus(c.id),
+    }));
+    const mgmtProductsAll = s.products.map(p => ({
+      id: p.id, imageId: 'prod-img-' + p.id, name: p.name, nameEn: p.nameEn, categoryName: catNameById[p.categoryId] || '-',
+      priceLabel: baht(p.price), isActive: p.status === 'Active', isInactive: p.status !== 'Active',
+      onToggle: () => this.toggleProductStatus(p.id), onDelete: () => this.deleteProduct(p.id),
+    }));
+    const productsPageCount = Math.max(1, Math.ceil(mgmtProductsAll.length / this.pageSize));
+    const productsPage = Math.min(s.productsPage, productsPageCount);
+    const mgmtProducts = mgmtProductsAll.slice((productsPage - 1) * this.pageSize, productsPage * this.pageSize);
+
+    const historyRowsAll = s.history.map(o => {
+      const { total } = orderTotals(o.items);
+      return {
+        id: o.id, time: o.time, payment: o.payment,
+        summary: o.items.map(i => i.name + ' x' + i.qty).join(', '),
+        totalLabel: baht(total), onSelect: () => this.selectOrder(o.id),
+      };
+    });
+    const historyPageCount = Math.max(1, Math.ceil(historyRowsAll.length / this.pageSize));
+    const historyPage = Math.min(s.historyPage, historyPageCount);
+    const historyRows = historyRowsAll.slice((historyPage - 1) * this.pageSize, historyPage * this.pageSize);
+    const selOrder = s.history.find(o => o.id === s.selectedOrderId);
+    let selectedOrder = null;
+    if (selOrder) {
+      const t = orderTotals(selOrder.items);
+      selectedOrder = {
+        id: selOrder.id, time: selOrder.time, payment: selOrder.payment,
+        items: selOrder.items.map(i => ({ name: i.name, qty: i.qty, lineTotalLabel: baht(i.qty * i.price) })),
+        subtotalLabel: baht(t.subtotal), vatLabel: baht(t.vat), totalLabel: baht(t.total),
+      };
+    }
+
+    const allTotals = s.history.map(o => orderTotals(o.items).total);
+    const todayTotal = allTotals.reduce((a, b) => a + b, 0);
+    const orderCount = s.history.length;
+    const avgTicket = orderCount ? todayTotal / orderCount : 0;
+
+    const qtyByName = {};
+    s.history.forEach(o => o.items.forEach(i => { qtyByName[i.name] = (qtyByName[i.name] || 0) + i.qty; }));
+    const topArr = Object.entries(qtyByName).sort((a, b) => b[1] - a[1]).slice(0, 4);
+    const maxQty = topArr.length ? topArr[0][1] : 1;
+    const topProducts = topArr.map(([name, qty]) => ({ name, qtyLabel: qty + ' แก้ว/ชิ้น', barWidth: Math.round((qty / maxQty) * 100) + '%' }));
+
+    const recentOrders = historyRowsAll.slice(0, 5);
+
+    return {
+      isLogin: view === 'login', isLoggedIn: view !== 'login',
+      loginCompanyCode: s.loginCompanyCode, loginUsername: s.loginUsername, loginPassword: s.loginPassword,
+      onLoginCompanyCode: (e) => this.setState({ loginCompanyCode: e.target.value }),
+      onLoginUsername: (e) => this.setState({ loginUsername: e.target.value }),
+      onLoginPassword: (e) => this.setState({ loginPassword: e.target.value }),
+      onLoginKeyDown: (e) => { if (e.key === 'Enter') this.handleLogin(); },
+      rememberMe: s.rememberMe, onRememberChange: (e) => this.setState({ rememberMe: e.target.checked }),
+      loginError: s.loginError, hasLoginError: !!s.loginError,
+      handleLogin: () => this.handleLogin(), handleLogout: () => this.handleLogout(),
+
+      toasts: s.toasts,
+      loginLoading: s.loginLoading, loginNotLoading: !s.loginLoading,
+      paymentProcessing: s.paymentProcessing, qrNotProcessing: !s.paymentProcessing,
+
+      isPos: view === 'pos', isPosInactive: view !== 'pos',
+      isProducts: view === 'products', isProductsInactive: view !== 'products',
+      isHistory: view === 'history', isHistoryInactive: view !== 'history',
+      isDashboard: view === 'dashboard', isDashboardInactive: view !== 'dashboard',
+      isSettings: view === 'settings', isSettingsInactive: view !== 'settings',
+      goPos: () => this.setView('pos'), goProducts: () => this.setView('products'),
+      goHistory: () => this.setView('history'), goDashboard: () => this.setView('dashboard'),
+      goSettings: () => this.setView('settings'),
+
+      storeName: s.storeName, onStoreNameChange: (e) => this.setState({ storeName: e.target.value }),
+      saveStoreInfo: () => this.saveStoreInfo(),
+      storeSavedMessage: s.storeSavedMessage, hasStoreSavedMessage: !!s.storeSavedMessage,
+      settingsCategories: s.categories.map(c => ({
+        name: c.name, isActive: c.status === 'Active', isInactive: c.status !== 'Active',
+        countLabel: s.products.filter(p => p.categoryId === c.id).length + ' รายการ',
+        onToggle: () => this.toggleCategoryStatus(c.id), onDelete: () => this.deleteCategory(c.id),
+      })),
+      isAddCategoryModal: s.showAddCategory,
+      openAddCategory: () => this.openAddCategory(), closeAddCategory: () => this.closeAddCategory(),
+      newCategory: s.newCategory,
+      onNewCategoryNameTh: (e) => this.setState(st => ({ newCategory: { ...st.newCategory, nameTh: e.target.value } })),
+      onNewCategoryNameEn: (e) => this.setState(st => ({ newCategory: { ...st.newCategory, nameEn: e.target.value } })),
+      saveNewCategory: () => this.saveNewCategory(),
+
+      posCategoryTabs, posProducts,
+      barcodeRef: this.barcodeRef,
+      barcodeInput: s.barcodeInput,
+      onBarcodeChange: (e) => this.setState({ barcodeInput: e.target.value }),
+      onBarcodeKeyDown: (e) => { if (e.key === 'Enter') this.scanBarcode(e.target.value); },
+      barcodeError: s.barcodeError, hasBarcodeError: !!s.barcodeError,
+      cartItems, cartEmpty: cartItems.length === 0, cartNotEmpty: cartItems.length > 0,
+      cartCountLabel: cartItems.reduce((a, i) => a + i.qty, 0) + ' ชิ้น',
+      subtotalLabel: baht(subtotal), vatLabel: baht(vat), totalLabel: baht(total),
+      openCashModal: () => this.openPayment('cash'), openQrModal: () => this.openPayment('qr'),
+      closePayment: () => this.closePayment(), stopClick: (e) => e && e.stopPropagation && e.stopPropagation(),
+
+      isCashModal: s.paymentModalOpen === 'cash', isQrModal: s.paymentModalOpen === 'qr',
+      cashReceived: s.cashReceived, onCashInput: (e) => this.setState({ cashReceived: e.target.value }),
+      changeLabel: change > 0 ? baht(change) : baht(0),
+      cashValid: cashReceivedNum >= total && total > 0 && !s.paymentProcessing,
+      cashInvalid: !(cashReceivedNum >= total && total > 0) && !s.paymentProcessing,
+      quickCashOptions: [
+        { label: 'พอดี', onClick: () => this.setState({ cashReceived: String(Math.ceil(total)) }) },
+        { label: '฿100', onClick: () => this.setState({ cashReceived: '100' }) },
+        { label: '฿500', onClick: () => this.setState({ cashReceived: '500' }) },
+        { label: '฿1000', onClick: () => this.setState({ cashReceived: '1000' }) },
+      ],
+      confirmCash: () => this.confirmCash(), confirmQr: () => this.confirmQr(),
+
+      mgmtCategories, mgmtProducts,
+      productsPageLabel: 'หน้า ' + productsPage + ' / ' + productsPageCount,
+      productsPrevDisabled: productsPage <= 1, productsNextDisabled: productsPage >= productsPageCount,
+      onProductsPrev: () => this.setState({ productsPage: Math.max(1, productsPage - 1) }),
+      onProductsNext: () => this.setState({ productsPage: Math.min(productsPageCount, productsPage + 1) }),
+      importFileRef: this.importFileRef,
+      triggerImport: () => this.triggerImport(),
+      onImportFile: (e) => this.onImportFile(e),
+      exportExcel: () => this.exportExcel(),
+      importMessage: s.importMessage, hasImportMessage: !!s.importMessage,
+      isAddProductModal: s.showAddProduct,
+      openAddProduct: () => this.openAddProduct(), closeAddProduct: () => this.closeAddProduct(),
+      newProduct: s.newProduct,
+      hasNewProductImage: !!s.newProduct.imageUrl, hasNoNewProductImage: !s.newProduct.imageUrl,
+      newProductImageCss: s.newProduct.imageUrl ? 'url(' + JSON.stringify(s.newProduct.imageUrl) + ')' : 'none',
+      newProductFileRef: this.newProductFileRef,
+      triggerNewProductFile: () => { if (this.newProductFileRef.current) this.newProductFileRef.current.click(); },
+      onNewProductFile: (e) => this.onNewProductFile(e),
+      onNewProductImageUrl: (e) => { const v = e.target.value; this.setState(st => ({ newProduct: { ...st.newProduct, imageUrlInput: v, imageUrl: v } })); },
+      onNewNameTh: (e) => this.setState(st => ({ newProduct: { ...st.newProduct, nameTh: e.target.value } })),
+      onNewNameEn: (e) => this.setState(st => ({ newProduct: { ...st.newProduct, nameEn: e.target.value } })),
+      onNewCategory: (e) => this.setState(st => ({ newProduct: { ...st.newProduct, categoryId: e.target.value } })),
+      onNewPrice: (e) => this.setState(st => ({ newProduct: { ...st.newProduct, price: e.target.value } })),
+      categoryOptions: s.categories.map(c => ({ id: c.id, name: c.name })),
+      saveNewProduct: () => this.saveNewProduct(),
+
+      historyRows, hasSelectedOrder: !!selectedOrder, selectedOrder, closeReceipt: () => this.closeReceipt(),
+      historyPageLabel: 'หน้า ' + historyPage + ' / ' + historyPageCount,
+      historyPrevDisabled: historyPage <= 1, historyNextDisabled: historyPage >= historyPageCount,
+      onHistoryPrev: () => this.setState({ historyPage: Math.max(1, historyPage - 1) }),
+      onHistoryNext: () => this.setState({ historyPage: Math.min(historyPageCount, historyPage + 1) }),
+
+      todayTotalLabel: baht(todayTotal), orderCountLabel: String(orderCount), avgTicketLabel: baht(avgTicket),
+      topProducts, recentOrders,
+    };
+  }
+}
+
+</script>
+
+
+</body></html>

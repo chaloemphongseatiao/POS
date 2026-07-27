@@ -1,23 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { ChangeEvent, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listProducts, createProduct, updateProduct, deleteProduct } from "@/lib/api/products";
+import { listProducts, createProduct, updateProduct, deleteProduct, importProducts } from "@/lib/api/products";
 import { listCategories } from "@/lib/api/categories";
 import { Product } from "@/lib/types";
+import { exportProductsExcel, readProductsExcel } from "@/lib/productsExcel";
+import { useToast } from "@/lib/hooks/useToast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Combobox } from "@/components/ui/combobox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import ProductFormDialog, { ProductFormData } from "@/components/products/ProductFormDialog";
+import CategoryPanel from "@/components/products/CategoryPanel";
+import { useCategoryCounts } from "@/lib/hooks/useCategoryCounts";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
-import { Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, Download, Upload } from "lucide-react";
 
 const PAGE_SIZE = 20;
 
 export default function ProductsPage() {
   const qc = useQueryClient();
+  const addToast = useToast((state) => state.addToast);
+  const importInputRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState<number | undefined>();
   const [page, setPage] = useState(1);
@@ -26,6 +31,7 @@ export default function ProductsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [savedInfo, setSavedInfo] = useState<{ name: string; isNew: boolean } | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["products-all", search, categoryId, page],
@@ -40,6 +46,8 @@ export default function ProductsPage() {
     queryKey: ["categories"],
     queryFn: listCategories,
   });
+
+  const { counts: categoryCounts, grandTotal } = useCategoryCounts();
 
   const createMutation = useMutation({
     mutationFn: createProduct,
@@ -71,6 +79,39 @@ export default function ProductsPage() {
       setDeleteError(msg);
     },
   });
+
+  const importMutation = useMutation({
+    mutationFn: importProducts,
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ["products-all"] });
+      addToast(`Import สำเร็จ ${result.total} รายการ (เพิ่ม ${result.created}, อัปเดต ${result.updated})`, "success");
+    },
+  });
+
+  async function handleExport() {
+    setIsExporting(true);
+    try {
+      const result = await listProducts({ search, categoryId, all: true, page: 1, limit: 100000 });
+      exportProductsExcel(result.products);
+      addToast(`Export สำเร็จ ${result.products.length} รายการ`, "success");
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
+  async function handleImportFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    try {
+      const rows = await readProductsExcel(file);
+      if (rows.length === 0) throw new Error("ไม่พบข้อมูลสินค้าในไฟล์");
+      importMutation.mutate(rows);
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : "อ่านไฟล์ Excel ไม่สำเร็จ", "error");
+    }
+  }
 
   function closeForm() {
     setShowForm(false);
@@ -115,43 +156,64 @@ export default function ProductsPage() {
   const endItem = Math.min(page * PAGE_SIZE, total);
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="page-shell">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl font-bold">จัดการสินค้า</h1>
-          <p className="text-sm text-gray-500">{total} รายการ</p>
+          <h1 className="page-title">สินค้าและหมวดหมู่</h1>
+          <p className="page-description">Products & Categories</p>
         </div>
-        <Button onClick={() => { setEditProduct(null); setShowForm(true); }}>
-          <Plus className="w-4 h-4 mr-2" />
-          เพิ่มสินค้า
-        </Button>
-      </div>
-
-      {/* Search + Filter */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
-            placeholder="ค้นหาสินค้า..."
-            className="pl-9"
-            value={search}
-            onChange={(e) => handleSearch(e.target.value)}
+        <div className="flex flex-wrap gap-2">
+          <input
+            ref={importInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={handleImportFile}
           />
+          <Button
+            variant="outline"
+            onClick={() => importInputRef.current?.click()}
+            disabled={importMutation.isPending}
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            {importMutation.isPending ? "กำลัง Import..." : "นำเข้า Excel"}
+          </Button>
+          <Button variant="outline" onClick={handleExport} disabled={isExporting}>
+            <Download className="w-4 h-4 mr-2" />
+            {isExporting ? "กำลัง Export..." : "ส่งออก Excel"}
+          </Button>
+          <Button onClick={() => { setEditProduct(null); setShowForm(true); }}>
+            <Plus className="w-4 h-4 mr-2" />
+            เพิ่มสินค้า
+          </Button>
         </div>
-        <Combobox
-          options={categories.map((c) => ({ value: String(c.id), label: c.name }))}
-          value={categoryId ? String(categoryId) : ""}
-          onChange={(v) => handleCategory(v)}
-          placeholder="ทุกหมวดหมู่"
-          searchPlaceholder="ค้นหาหมวดหมู่..."
-          className="min-w-[180px]"
-        />
       </div>
 
-      {/* Table */}
-      <div className="glass rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
+        <CategoryPanel
+          categories={categories}
+          counts={categoryCounts}
+          grandTotal={grandTotal}
+          selectedId={categoryId}
+          onSelect={(id) => handleCategory(id ? String(id) : "")}
+        />
+
+        <div className="min-w-0 flex-1 space-y-4">
+          {/* Search */}
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="ค้นหาสินค้า..."
+              className="pl-9"
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+            />
+          </div>
+
+          {/* Table */}
+          <div className="glass rounded-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
             <thead className="glass-header border-b border-white/40">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">สินค้า</th>
@@ -281,6 +343,8 @@ export default function ProductsPage() {
             </div>
           </div>
         )}
+          </div>
+        </div>
       </div>
 
       <ProductFormDialog

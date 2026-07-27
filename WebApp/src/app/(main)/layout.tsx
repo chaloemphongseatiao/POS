@@ -19,7 +19,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   if (!token) return null;
 
   return (
-    <div className="flex min-h-dvh bg-background">
+    <div className="flex min-h-dvh">
       <LoadingBar />
       <Sidebar />
       <main className="min-w-0 flex-1 overflow-auto pb-20 md:pb-0">{children}</main>

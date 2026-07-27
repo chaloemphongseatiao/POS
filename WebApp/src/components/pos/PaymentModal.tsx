@@ -32,10 +32,10 @@ export default function PaymentModal({ open, total, paymentMethod, onConfirm, on
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="bg-gray-50 rounded-lg p-4 text-center">
-            <p className="text-sm text-gray-500">ยอดที่ต้องชำระ</p>
-            <p className="text-4xl font-bold text-primary mt-1">{formatCurrency(total)}</p>
-            <p className="text-xs text-gray-400 mt-1">
+          <div className="rounded-2xl bg-white/50 border border-white/70 p-4 text-center">
+            <p className="text-sm text-slate-500">ยอดที่ต้องชำระ</p>
+            <p className="text-4xl font-extrabold text-primary mt-1 tabular-nums">{formatCurrency(total)}</p>
+            <p className="text-xs text-slate-400 mt-1">
               {paymentMethod === "CASH" ? "เงินสด" : "QR พร้อมเพย์"}
             </p>
           </div>
@@ -43,8 +43,9 @@ export default function PaymentModal({ open, total, paymentMethod, onConfirm, on
           {paymentMethod === "CASH" && (
             <>
               <div>
-                <label className="block text-sm font-medium mb-1">รับเงินมา</label>
+                <label htmlFor="pm-amountPaid" className="block text-sm font-medium mb-1">รับเงินมา</label>
                 <Input
+                  id="pm-amountPaid"
                   type="number"
                   placeholder="0.00"
                   value={amountPaid}
@@ -58,8 +59,9 @@ export default function PaymentModal({ open, total, paymentMethod, onConfirm, on
                 {uniqueAmounts.map((amt) => (
                   <button
                     key={amt}
+                    type="button"
                     onClick={() => setAmountPaid(String(amt))}
-                    className="border rounded-lg py-2 text-sm hover:bg-primary hover:text-white transition-colors"
+                    className="rounded-xl bg-white/50 border border-white/80 py-2 text-sm font-medium text-slate-600 transition-all duration-150 hover:bg-primary hover:text-white hover:border-primary hover:shadow-md hover:shadow-primary/20 active:scale-95"
                   >
                     {amt.toLocaleString()}
                   </button>
@@ -67,9 +69,11 @@ export default function PaymentModal({ open, total, paymentMethod, onConfirm, on
               </div>
 
               {paid >= total && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
-                  <p className="text-sm text-green-600">เงินทอน</p>
-                  <p className="text-3xl font-bold text-green-600">{formatCurrency(change)}</p>
+                <div
+                  className="rounded-2xl bg-emerald-50/80 border border-emerald-100/80 p-3 text-center [animation:fade-up-in_200ms_ease-out]"
+                >
+                  <p className="text-sm text-emerald-600">เงินทอน</p>
+                  <p className="text-3xl font-bold text-emerald-600 tabular-nums">{formatCurrency(change)}</p>
                 </div>
               )}
             </>

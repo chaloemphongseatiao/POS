@@ -8,6 +8,17 @@ echo   POS System - LAN Setup
 echo ============================================
 echo.
 
+net session >nul 2>&1
+if not %errorlevel%==0 (
+  echo [ERROR] This script must be run as Administrator.
+  echo Right-click setup-lan.bat and choose "Run as administrator",
+  echo otherwise the firewall rules for ports 3000/3001 will NOT be added
+  echo and other devices on the LAN will not be able to connect.
+  echo.
+  pause
+  exit /b 1
+)
+
 rem Find the first non-loopback IPv4 address.
 set "SERVER_IP="
 for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /i "IPv4" ^| findstr /v "127.0.0.1"') do (
@@ -34,9 +45,11 @@ echo [+] Updated WebApp\.env.local
 >> "%~dp0WebAPI\.env" echo NODE_ENV=development
 echo [+] Updated WebAPI\.env
 
-netsh advfirewall firewall add rule name="POS API Port 3001" dir=in action=allow protocol=TCP localport=3001 >nul 2>&1
-netsh advfirewall firewall add rule name="POS Web Port 3000" dir=in action=allow protocol=TCP localport=3000 >nul 2>&1
-echo [+] Added Firewall rules for ports 3000 and 3001
+netsh advfirewall firewall show rule name="POS API Port 3001" >nul 2>&1
+if not %errorlevel%==0 netsh advfirewall firewall add rule name="POS API Port 3001" dir=in action=allow protocol=TCP localport=3001
+netsh advfirewall firewall show rule name="POS Web Port 3000" >nul 2>&1
+if not %errorlevel%==0 netsh advfirewall firewall add rule name="POS Web Port 3000" dir=in action=allow protocol=TCP localport=3000
+echo [+] Firewall rules for ports 3000 and 3001 verified
 
 echo.
 echo ============================================

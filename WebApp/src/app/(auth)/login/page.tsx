@@ -2,20 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { login } from "@/lib/api/auth";
-import { getPublicSettings } from "@/lib/api/settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShoppingCart, User, Lock, AlertCircle } from "lucide-react";
+import { User, Lock, AlertCircle } from "lucide-react";
 import LoadingBar from "@/components/ui/LoadingBar";
 
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useAuth();
-  const { data: settings } = useQuery({ queryKey: ["public-settings"], queryFn: getPublicSettings });
-  const storeLogo = settings?.store_logo;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -41,30 +37,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-dvh flex items-center justify-center bg-slate-100 p-4">
+    <div className="flex min-h-dvh items-center justify-center p-4">
       <LoadingBar />
 
       <div className="w-full max-w-[400px]">
 
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          {storeLogo ? (
-            <img src={storeLogo} alt="โลโก้ร้าน" className="size-16 rounded-xl object-cover mb-4 shadow-sm" />
-          ) : (
-            <div className="size-16 rounded-xl flex items-center justify-center mb-4 bg-[#0f1f3d] shadow-sm">
-              <ShoppingCart className="size-7 text-white" />
-            </div>
-          )}
-          <h1 className="text-2xl font-semibold text-slate-950 text-balance">ร้านตั้งมารวย</h1>
-          <p className="text-sm text-slate-600 mt-1">Point of Sale System</p>
-        </div>
-
         {/* Card */}
-        <div className="rounded-xl bg-white p-6 shadow-sm sm:p-8">
+        <div className="glass rounded-[26px] p-6 sm:p-8">
 
-          <div className="mb-6">
-            <h2 className="text-xl font-bold text-brand-950/80">เข้าสู่ระบบ</h2>
-            <p className="text-sm text-brand-500/55 mt-0.5">กรอกข้อมูลเพื่อเข้าใช้งาน</p>
+          <div className="mb-6 flex flex-col items-center text-center">
+            <img src="/logo.png" alt="โลโก้ร้าน" className="mb-4 size-20 object-contain" />
+            <h2 className="text-xl font-bold text-brand-950/80">ร้านตั้งมารวย</h2>
+            <p className="text-sm text-brand-500/55 mt-0.5">เข้าสู่ระบบ POS</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

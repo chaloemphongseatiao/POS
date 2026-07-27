@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, CheckCircle2, AlertCircle, AlertTriangle, ImagePlus, X } from "lucide-react";
+import { useCategoryCounts } from "@/lib/hooks/useCategoryCounts";
+import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, CheckCircle2, AlertCircle, AlertTriangle, ImagePlus, X, Loader2 } from "lucide-react";
 
 function UsersTab() {
   const qc = useQueryClient();
@@ -19,7 +20,7 @@ function UsersTab() {
   const [editUser, setEditUser] = useState<User | null>(null);
   const [form, setForm] = useState({ username: "", password: "", displayName: "", role: "CASHIER" as UserRole });
 
-  const { data: users = [] } = useQuery({ queryKey: ["users"], queryFn: listUsers });
+  const { data: users = [], isLoading: isUsersLoading } = useQuery({ queryKey: ["users"], queryFn: listUsers });
 
   const createMutation = useMutation({
     mutationFn: createUser,
@@ -57,17 +58,19 @@ function UsersTab() {
       <CardContent>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b">
-              <th className="text-left py-2 font-medium text-gray-500">ชื่อ</th>
-              <th className="text-left py-2 font-medium text-gray-500">Username</th>
-              <th className="text-left py-2 font-medium text-gray-500">บทบาท</th>
-              <th className="text-center py-2 font-medium text-gray-500">สถานะ</th>
+            <tr className="border-b border-white/50">
+              <th className="text-left py-2 font-medium text-slate-500">ชื่อ</th>
+              <th className="text-left py-2 font-medium text-slate-500">Username</th>
+              <th className="text-left py-2 font-medium text-slate-500">บทบาท</th>
+              <th className="text-center py-2 font-medium text-slate-500">สถานะ</th>
               <th className="py-2"></th>
             </tr>
           </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id} className="border-b last:border-0">
+          <tbody className="divide-y divide-white/40">
+            {isUsersLoading ? (
+              <tr><td colSpan={5} className="text-center py-8 text-gray-400">กำลังโหลด...</td></tr>
+            ) : users.map((u) => (
+              <tr key={u.id} className="glass-row-hover transition-colors">
                 <td className="py-2.5 font-medium">{u.displayName}</td>
                 <td className="py-2.5 text-gray-500">{u.username}</td>
                 <td className="py-2.5">
@@ -122,7 +125,7 @@ function UsersTab() {
                 <select
                   value={form.role}
                   onChange={(e) => setForm({ ...form, role: e.target.value as UserRole })}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="flex h-10 w-full rounded-xl border border-white/75 bg-white/55 px-3.5 py-2 text-sm shadow-sm shadow-brand-200/20 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/40"
                 >
                   <option value="CASHIER">Cashier (แคชเชียร์)</option>
                   <option value="ADMIN">Admin (ผู้ดูแล)</option>
@@ -142,16 +145,18 @@ function UsersTab() {
 
 function CategoriesTab() {
   const qc = useQueryClient();
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const [newName, setNewName] = useState("");
   const [editCat, setEditCat] = useState<Category | null>(null);
   const [editName, setEditName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
 
-  const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: listCategories });
+  const { data: categories = [], isLoading: isCategoriesLoading } = useQuery({ queryKey: ["categories"], queryFn: listCategories });
+  const { counts } = useCategoryCounts();
 
   const createMutation = useMutation({
     mutationFn: createCategory,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["categories"] }); setNewName(""); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["categories"] }); setNewName(""); setShowAddDialog(false); },
   });
 
   const updateMutation = useMutation({
@@ -166,22 +171,22 @@ function CategoriesTab() {
 
   return (
     <Card>
-      <CardHeader><CardTitle>หมวดหมู่สินค้า</CardTitle></CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex gap-2">
-          <Input
-            placeholder="ชื่อหมวดหมู่ใหม่..."
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && newName && createMutation.mutate(newName)}
-          />
-          <Button onClick={() => newName && createMutation.mutate(newName)} disabled={!newName}>
-            <Plus className="w-4 h-4" />
-          </Button>
-        </div>
-        <div className="space-y-2">
-          {categories.map((c) => (
-            <div key={c.id} className="flex items-center gap-2 p-2 border rounded-lg">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>หมวดหมู่สินค้า</CardTitle>
+        <Button size="sm" onClick={() => { setNewName(""); setShowAddDialog(true); }}>
+          <Plus className="w-4 h-4 mr-1" />เพิ่มหมวดหมู่
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {isCategoriesLoading ? (
+          <div className="flex items-center justify-center gap-2 py-8 text-gray-400">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">กำลังโหลด...</span>
+          </div>
+        ) : categories.map((c) => {
+          const count = counts.get(c.id) ?? { total: 0, activeCount: 0 };
+          return (
+            <div key={c.id} className="flex items-center gap-2 p-2.5 rounded-xl bg-white/50 border border-white/70">
               {editCat?.id === c.id ? (
                 <>
                   <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="flex-1 h-8" autoFocus />
@@ -190,7 +195,13 @@ function CategoriesTab() {
                 </>
               ) : (
                 <>
-                  <span className="flex-1">{c.name}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{c.name}</p>
+                    <p className="text-xs text-slate-400">{count.total} รายการ</p>
+                  </div>
+                  <Badge variant={count.activeCount > 0 ? "success" : "secondary"}>
+                    {count.activeCount > 0 ? "Active" : "Inactive"}
+                  </Badge>
                   <Button size="icon" variant="ghost" onClick={() => { setEditCat(c); setEditName(c.name); }}>
                     <Pencil className="w-3.5 h-3.5" />
                   </Button>
@@ -205,8 +216,29 @@ function CategoriesTab() {
                 </>
               )}
             </div>
-          ))}
-        </div>
+          );
+        })}
+
+        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader><DialogTitle>เพิ่มหมวดหมู่ใหม่</DialogTitle></DialogHeader>
+            <form
+              onSubmit={(e) => { e.preventDefault(); if (newName) createMutation.mutate(newName); }}
+              className="space-y-3"
+            >
+              <div>
+                <label className="text-sm font-medium">ชื่อหมวดหมู่ *</label>
+                <Input value={newName} onChange={(e) => setNewName(e.target.value)} required autoFocus />
+              </div>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)} className="flex-1">ยกเลิก</Button>
+                <Button type="submit" className="flex-1" disabled={!newName || createMutation.isPending}>
+                  {createMutation.isPending ? "กำลังบันทึก..." : "บันทึก"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
           <DialogContent className="max-w-sm">
@@ -244,7 +276,7 @@ function CategoriesTab() {
 
 function StoreTab() {
   const qc = useQueryClient();
-  const { data: settings = {} } = useQuery({ queryKey: ["settings"], queryFn: getSettings });
+  const { data: settings = {}, isLoading: isSettingsLoading } = useQuery({ queryKey: ["settings"], queryFn: getSettings });
   const [storeName, setStoreName] = useState("");
   const [storeAddress, setStoreAddress] = useState("");
   const [storeLogo, setStoreLogo] = useState("");
@@ -294,6 +326,20 @@ function StoreTab() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
+  if (isSettingsLoading) {
+    return (
+      <Card>
+        <CardHeader><CardTitle>ข้อมูลร้านค้า</CardTitle></CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center gap-2 py-8 text-gray-400">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">กำลังโหลด...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader><CardTitle>ข้อมูลร้านค้า</CardTitle></CardHeader>
@@ -314,7 +360,7 @@ function StoreTab() {
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
                 onChange={handleLogoChange}
-                className="block text-sm text-gray-500 file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:opacity-90"
+                className="block rounded-xl text-sm text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:opacity-90"
               />
               <p className="text-xs text-gray-500">PNG, JPEG หรือ WebP ขนาดไม่เกิน 1 MB</p>
               {storeLogo && (
@@ -354,7 +400,7 @@ function StoreTab() {
 
 function LineTab() {
   const qc = useQueryClient();
-  const { data: settings = {} } = useQuery({ queryKey: ["settings"], queryFn: getSettings });
+  const { data: settings = {}, isLoading: isSettingsLoading } = useQuery({ queryKey: ["settings"], queryFn: getSettings });
   const [token, setToken] = useState("");
   const [userId, setUserId] = useState("");
   const [testResult, setTestResult] = useState<"success" | "error" | null>(null);
@@ -383,6 +429,20 @@ function LineTab() {
   });
 
   const hasConfig = !!(settings.line_channel_token && settings.line_user_id);
+
+  if (isSettingsLoading) {
+    return (
+      <Card>
+        <CardHeader><CardTitle>LINE แจ้งเตือน</CardTitle></CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center gap-2 py-8 text-gray-400">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">กำลังโหลด...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -466,30 +526,43 @@ function LineTab() {
   );
 }
 
-const TABS = ["ผู้ใช้งาน", "หมวดหมู่", "ข้อมูลร้านค้า", "LINE แจ้งเตือน"];
+function OverviewTab() {
+  return (
+    <div className="grid gap-5 lg:grid-cols-[380px_1fr] lg:items-start">
+      <StoreTab />
+      <CategoriesTab />
+    </div>
+  );
+}
+
+const TABS = ["ภาพรวม", "ผู้ใช้งาน", "LINE แจ้งเตือน"];
 
 export default function SettingsPage() {
   const [tab, setTab] = useState(0);
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">ตั้งค่า</h1>
-      <div className="flex gap-2 border-b">
+    <div className="page-shell">
+      <div>
+        <h1 className="page-title">ตั้งค่าร้านค้า</h1>
+        <p className="page-description">Store Settings</p>
+      </div>
+      <div className="glass inline-flex gap-1 rounded-2xl p-1.5">
         {TABS.map((t, i) => (
           <button
             key={t}
             onClick={() => setTab(i)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
-              tab === i ? "border-primary text-primary" : "border-transparent text-gray-500 hover:text-gray-700"
+            className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all ${
+              tab === i
+                ? "bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/25"
+                : "text-slate-600 hover:bg-white/60"
             }`}
           >
             {t}
           </button>
         ))}
       </div>
-      {tab === 0 && <UsersTab />}
-      {tab === 1 && <CategoriesTab />}
-      {tab === 2 && <StoreTab />}
-      {tab === 3 && <LineTab />}
+      {tab === 0 && <OverviewTab />}
+      {tab === 1 && <UsersTab />}
+      {tab === 2 && <LineTab />}
     </div>
   );
 }

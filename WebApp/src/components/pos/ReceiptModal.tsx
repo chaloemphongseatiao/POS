@@ -24,11 +24,11 @@ export default function ReceiptModal({ open, order, onClose }: Props) {
           <DialogTitle>ใบเสร็จรับเงิน</DialogTitle>
         </DialogHeader>
 
-        <div id="receipt-content" className="space-y-3 text-sm">
-          <div className="text-center border-b pb-3">
+        <div id="receipt-content" className="space-y-3 text-sm font-mono rounded-2xl bg-white/50 border border-white/70 p-4">
+          <div className="text-center border-b border-dashed border-slate-300 pb-3">
             <p className="font-bold text-base">ร้านค้า POS</p>
-            <p className="text-gray-500 text-xs">{order.orderNumber}</p>
-            <p className="text-gray-400 text-xs">
+            <p className="text-slate-500 text-xs">{order.orderNumber}</p>
+            <p className="text-slate-400 text-xs">
               {new Date(order.createdAt).toLocaleString("th-TH")}
             </p>
           </div>
@@ -38,15 +38,15 @@ export default function ReceiptModal({ open, order, onClose }: Props) {
               <div key={item.id} className="flex justify-between">
                 <div>
                   <span>{item.product.name}</span>
-                  <span className="text-gray-400 ml-1 text-xs">x{item.quantity} {item.product.unit}</span>
+                  <span className="text-slate-400 ml-1 text-xs">x{item.quantity} {item.product.unit}</span>
                 </div>
                 <span>{formatCurrency(item.subtotal)}</span>
               </div>
             ))}
           </div>
 
-          <div className="border-t pt-2 space-y-1">
-            <div className="flex justify-between text-gray-500">
+          <div className="border-t border-dashed border-slate-300 pt-2 space-y-1">
+            <div className="flex justify-between text-slate-500">
               <span>ราคารวม</span>
               <span>{formatCurrency(order.subtotal)}</span>
             </div>
@@ -60,19 +60,19 @@ export default function ReceiptModal({ open, order, onClose }: Props) {
               <span>ยอดรวม</span>
               <span>{formatCurrency(order.totalAmt)}</span>
             </div>
-            <div className="flex justify-between text-gray-500">
+            <div className="flex justify-between text-slate-500">
               <span>ชำระ ({paymentLabel})</span>
               <span>{formatCurrency(order.amountPaid)}</span>
             </div>
             {Number(order.changeAmt) > 0 && (
-              <div className="flex justify-between text-green-600 font-medium">
+              <div className="flex justify-between text-emerald-600 font-medium">
                 <span>เงินทอน</span>
                 <span>{formatCurrency(order.changeAmt)}</span>
               </div>
             )}
           </div>
 
-          <p className="text-center text-gray-400 text-xs pt-2 border-t">
+          <p className="text-center text-slate-400 text-xs pt-2 border-t border-dashed border-slate-300">
             ขอบคุณที่ใช้บริการ
           </p>
         </div>

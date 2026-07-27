@@ -33,6 +33,10 @@ export async function update(req: Request, res: Response, next: NextFunction) {
   try { res.json(await svc.updateProduct(Number(req.params.id), req.body)); } catch (err) { next(err); }
 }
 
+export async function importMany(req: Request, res: Response, next: NextFunction) {
+  try { res.json(await svc.importProducts(req.body?.rows)); } catch (err) { next(err); }
+}
+
 export async function hardDelete(req: Request, res: Response, next: NextFunction) {
   try { res.json(await svc.deleteProduct(Number(req.params.id))); } catch (err) { next(err); }
 }

@@ -56,14 +56,14 @@ function OrderDetailModal({ orderId, onClose }: { orderId: number | null; onClos
         ) : (
           <div className="space-y-4 text-sm">
             {/* Info */}
-            <div className="grid grid-cols-2 gap-y-2 bg-gray-50 rounded-lg p-4">
-              <span className="text-gray-500">เลขออเดอร์</span>
+            <div className="grid grid-cols-2 gap-y-2 rounded-xl bg-white/50 border border-white/70 p-4">
+              <span className="text-slate-500">เลขออเดอร์</span>
               <span className="font-mono font-medium">{order.orderNumber}</span>
-              <span className="text-gray-500">วันที่</span>
+              <span className="text-slate-500">วันที่</span>
               <span>{new Date(order.createdAt).toLocaleString("th-TH")}</span>
-              <span className="text-gray-500">แคชเชียร์</span>
+              <span className="text-slate-500">แคชเชียร์</span>
               <span>{order.cashier.displayName}</span>
-              <span className="text-gray-500">ช่องทางชำระ</span>
+              <span className="text-slate-500">ช่องทางชำระ</span>
               <span>{payLabel}</span>
             </div>
 
@@ -213,12 +213,18 @@ export default function OrdersPage() {
   const completedOrders = orders.filter((o) => o.status === "COMPLETED");
   const totalRevenue = completedOrders.reduce((s, o) => s + Number(o.totalAmt), 0);
 
+  function itemsSummary(order: Order): string {
+    const names = order.items.map((item) => `${item.product.name} x${item.quantity}`);
+    if (names.length <= 2) return names.join(", ");
+    return `${names.slice(0, 2).join(", ")} +${names.length - 2}`;
+  }
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="page-shell">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">รายการขาย</h1>
-        <p className="text-sm text-gray-500">ประวัติการขายและออเดอร์ทั้งหมด</p>
+        <h1 className="page-title">ประวัติการขาย</h1>
+        <p className="page-description">Sales History & Receipts</p>
       </div>
 
       {/* Date filter */}
@@ -292,7 +298,7 @@ export default function OrdersPage() {
                 <th className="text-left px-4 py-3 font-medium text-gray-600">เลขออเดอร์</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">วันที่-เวลา</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">แคชเชียร์</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600">รายการ</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">รายการ</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">ยอดรวม</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">ชำระ</th>
                 <th className="text-center px-4 py-3 font-medium text-gray-600">สถานะ</th>
@@ -320,7 +326,7 @@ export default function OrdersPage() {
                       })}
                     </td>
                     <td className="px-4 py-3 text-gray-600">{o.cashier.displayName}</td>
-                    <td className="px-4 py-3 text-right text-gray-500">{o.items.length}</td>
+                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">{itemsSummary(o)}</td>
                     <td className="px-4 py-3 text-right font-semibold">
                       {o.status === "VOIDED"
                         ? <span className="line-through text-gray-400">{formatCurrency(o.totalAmt)}</span>

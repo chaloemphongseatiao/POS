@@ -15,7 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import PaymentModal from "@/components/pos/PaymentModal";
 import ReceiptModal from "@/components/pos/ReceiptModal";
 import { Product, PaymentMethod, Order } from "@/lib/types";
-import { Search, Trash2, Plus, Minus, ShoppingCart, CheckCircle2, XCircle } from "lucide-react";
+import { Search, Trash2, Plus, Minus, ShoppingCart, CheckCircle2, XCircle, Barcode } from "lucide-react";
+import { cn } from "@/lib/utils/cn";
 
 export default function PosPage() {
   const { user } = useAuth();
@@ -125,7 +126,7 @@ export default function PosPage() {
   );
 
   return (
-    <div className="flex min-h-[calc(100dvh-5rem)] flex-col overflow-hidden md:h-dvh md:min-h-0 lg:flex-row">
+    <div className="flex min-h-[calc(100dvh-5rem)] flex-col gap-5 p-4 md:h-dvh md:min-h-0 md:p-6 lg:flex-row lg:overflow-hidden">
       {/* Toast notification */}
       <div
         className={`fixed top-4 right-4 z-50 transition-all duration-300 ${
@@ -134,9 +135,12 @@ export default function PosPage() {
       >
         {toast && (
           <div
-            className={`flex items-start gap-3 px-4 py-3 rounded-xl shadow-xl text-white min-w-[240px] max-w-xs ${
-              toast.type === "success" ? "bg-green-600" : "bg-red-600"
-            }`}
+            className={cn(
+              "flex items-start gap-3 rounded-2xl px-4 py-3 min-w-[240px] max-w-xs backdrop-blur-xl border shadow-xl",
+              toast.type === "success"
+                ? "bg-emerald-50/90 border-emerald-100/80 text-emerald-700"
+                : "bg-red-50/90 border-red-100/80 text-red-700"
+            )}
           >
             {toast.type === "success" ? (
               <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0" />
@@ -145,12 +149,12 @@ export default function PosPage() {
             )}
             <div className="flex-1">
               {toast.message.split("\n").map((line, i) => (
-                <p key={i} className={i === 0 ? "font-semibold text-sm" : "text-xs opacity-90 mt-0.5"}>
+                <p key={i} className={i === 0 ? "font-semibold text-sm" : "text-xs opacity-80 mt-0.5"}>
                   {line}
                 </p>
               ))}
             </div>
-            <button onClick={() => setToast(null)} className="opacity-70 hover:opacity-100 ml-1">
+            <button onClick={() => setToast(null)} className="opacity-60 hover:opacity-100 ml-1">
               <XCircle className="w-4 h-4" />
             </button>
           </div>
@@ -158,75 +162,84 @@ export default function PosPage() {
       </div>
 
       {/* Left: Product Browser */}
-      <div className="flex min-h-[65dvh] flex-1 flex-col overflow-hidden lg:min-h-0">
-        {/* Search */}
-        <div className="p-4 bg-white border-b space-y-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              placeholder="ค้นหาสินค้า หรือสแกน Barcode..."
-              className="pl-9"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  if (/^\d{4,}$/.test(search.trim())) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    lookupByBarcode(search.trim());
-                  }
-                  return;
-                }
+      <div className="flex min-h-[65dvh] flex-1 flex-col gap-4 overflow-hidden lg:min-h-0">
+        <div>
+          <h1 className="text-xl font-bold text-slate-950 md:text-2xl tracking-tight">หน้าขายสินค้า</h1>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Point of Sale ·{" "}
+            {new Date().toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" })}
+          </p>
+        </div>
 
-                // Thai (and other non-Latin) keyboard layouts remap the digit
-                // row to language-specific glyphs, so scanner/manual digit
-                // input gets garbled. Force digit keys to real digits
-                // regardless of the active OS layout.
-                if (e.ctrlKey || e.metaKey || e.altKey) return;
-                const digit = digitFromCode(e.code);
-                if (digit === null) return;
-                e.preventDefault();
-                const input = e.currentTarget;
-                const start = input.selectionStart ?? search.length;
-                const end = input.selectionEnd ?? search.length;
-                setSearch(search.slice(0, start) + digit + search.slice(end));
-                requestAnimationFrame(() => {
-                  input.setSelectionRange(start + 1, start + 1);
-                });
-              }}
-            />
-          </div>
-          {/* Category filter */}
-          <div className="flex gap-2 overflow-x-auto pb-1">
+        {/* Search */}
+        <div className="glass flex items-center gap-2.5 rounded-2xl px-4 py-2.5 transition-shadow duration-150 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+          <Barcode className="w-[18px] h-[18px] text-primary flex-shrink-0" />
+          <input
+            placeholder="ค้นหาสินค้า หรือสแกน Barcode แล้วกด Enter..."
+            className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                if (/^\d{4,}$/.test(search.trim())) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  lookupByBarcode(search.trim());
+                }
+                return;
+              }
+
+              // Thai (and other non-Latin) keyboard layouts remap the digit
+              // row to language-specific glyphs, so scanner/manual digit
+              // input gets garbled. Force digit keys to real digits
+              // regardless of the active OS layout.
+              if (e.ctrlKey || e.metaKey || e.altKey) return;
+              const digit = digitFromCode(e.code);
+              if (digit === null) return;
+              e.preventDefault();
+              const input = e.currentTarget;
+              const start = input.selectionStart ?? search.length;
+              const end = input.selectionEnd ?? search.length;
+              setSearch(search.slice(0, start) + digit + search.slice(end));
+              requestAnimationFrame(() => {
+                input.setSelectionRange(start + 1, start + 1);
+              });
+            }}
+          />
+        </div>
+
+        {/* Category filter */}
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          <button
+            onClick={() => setSelectedCategory(null)}
+            className={cn(
+              "px-5 py-2.5 rounded-2xl text-sm font-semibold whitespace-nowrap flex-shrink-0 transition-all",
+              selectedCategory === null
+                ? "bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/30"
+                : "glass text-slate-600 hover:bg-white/75"
+            )}
+          >
+            ทั้งหมด
+          </button>
+          {categories.map((cat) => (
             <button
-              onClick={() => setSelectedCategory(null)}
-              className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap flex-shrink-0 transition-colors ${
-                selectedCategory === null
-                  ? "bg-primary text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
+              className={cn(
+                "px-5 py-2.5 rounded-2xl text-sm font-semibold whitespace-nowrap flex-shrink-0 transition-all",
+                selectedCategory === cat.id
+                  ? "bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/30"
+                  : "glass text-slate-600 hover:bg-white/75"
+              )}
             >
-              ทั้งหมด
+              {cat.name}
             </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap flex-shrink-0 transition-colors ${
-                  selectedCategory === cat.id
-                    ? "bg-primary text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
+          ))}
         </div>
 
         {/* Product Grid */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+        <div className="flex-1 overflow-y-auto pr-1 -mr-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5">
             {filteredProducts.map((product) => {
               const qty = product.stock?.quantity ?? 0;
               const isLow = qty > 0 && qty <= product.lowStockAt;
@@ -235,21 +248,20 @@ export default function PosPage() {
                 <button
                   key={product.id}
                   onClick={() => addProductToCart(product)}
-                  className="bg-white rounded-xl p-3 border text-left transition-all hover:shadow-md active:scale-95 hover:border-primary"
+                  className="glass group rounded-[18px] p-3.5 text-left transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-950/10"
                 >
-                  <div className="aspect-square bg-gray-100 rounded-lg mb-2 flex items-center justify-center overflow-hidden">
+                  <div className="aspect-square bg-slate-100/70 rounded-xl mb-2.5 flex items-center justify-center overflow-hidden">
                     {product.imageUrl ? (
-                      <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover rounded-lg" />
+                      <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                     ) : (
-                      <ShoppingCart className="w-8 h-8 text-gray-300" />
+                      <ShoppingCart className="w-8 h-8 text-slate-300" />
                     )}
                   </div>
-                  <p className="text-xs font-medium line-clamp-2 text-gray-800">{product.name}</p>
-                  <p className="text-sm font-bold text-primary mt-1">{formatCurrency(product.sellPrice)}</p>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-gray-400">คงเหลือ {qty} {product.unit}</span>
-                    {isLow && <Badge variant="warning" className="text-xs px-1">น้อย</Badge>}
-                    {isOut && <Badge variant="destructive" className="text-xs px-1">หมด</Badge>}
+                  <p className="text-xs font-semibold line-clamp-2 text-slate-800">{product.name}</p>
+                  <p className="text-sm font-extrabold text-primary mt-1">{formatCurrency(product.sellPrice)}</p>
+                  <div className="flex items-center justify-end mt-1.5 gap-1">
+                    {isLow && <Badge variant="warning" className="text-[10px] px-1.5 py-0">น้อย</Badge>}
+                    {isOut && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">หมด</Badge>}
                   </div>
                 </button>
               );
@@ -259,53 +271,53 @@ export default function PosPage() {
       </div>
 
       {/* Right: Cart */}
-      <div className="flex max-h-[70dvh] w-full flex-col border-t bg-white lg:max-h-none lg:w-80 lg:border-l lg:border-t-0 xl:w-96">
-        <div className="p-4 border-b">
-          <h2 className="font-bold text-gray-800">รายการสินค้า</h2>
-          <p className="text-xs text-gray-400">{cart.items.length} รายการ</p>
+      <div className="glass flex max-h-[70dvh] w-full flex-col rounded-3xl lg:max-h-none lg:w-[380px] lg:flex-shrink-0 xl:w-[400px]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/50">
+          <h2 className="font-extrabold text-slate-900">รายการสั่งซื้อ</h2>
+          <p className="text-xs font-semibold text-slate-500">{cart.items.length} รายการ</p>
         </div>
 
         {/* Cart items */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+        <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
           {cart.items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-300">
-              <ShoppingCart className="w-16 h-16 mb-3" />
-              <p className="text-sm">ยังไม่มีรายการสินค้า</p>
-              <p className="text-xs mt-1">คลิกสินค้าหรือสแกน Barcode</p>
+            <div className="flex flex-col items-center justify-center h-full text-slate-300 text-center px-6">
+              <ShoppingCart className="w-14 h-14 mb-3" />
+              <p className="text-sm text-slate-400">ยังไม่มีสินค้าในรายการ</p>
+              <p className="text-xs mt-1 text-slate-300">แตะสินค้าหรือสแกน Barcode เพื่อเพิ่ม</p>
             </div>
           ) : (
             cart.items.map((item) => (
-              <div key={item.productId} className="flex items-center gap-2 bg-gray-50 rounded-lg p-2">
+              <div key={item.productId} className="flex items-center gap-2.5 bg-white/50 rounded-2xl p-2.5">
                 {item.imageUrl ? (
-                  <img src={item.imageUrl} alt={item.name} className="w-9 h-9 rounded object-cover flex-shrink-0" />
+                  <img src={item.imageUrl} alt={item.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
                 ) : (
-                  <div className="w-9 h-9 rounded bg-gray-200 flex items-center justify-center flex-shrink-0 text-gray-400 text-xs">
+                  <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 text-slate-300 text-xs">
                     img
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{item.name}</p>
-                  <p className="text-xs text-primary">{formatCurrency(item.sellPrice)}</p>
+                  <p className="text-sm font-semibold truncate text-slate-800">{item.name}</p>
+                  <p className="text-xs text-slate-500">{formatCurrency(item.sellPrice)}</p>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => cart.updateQty(item.productId, item.quantity - 1)}
-                    className="w-6 h-6 rounded-full border flex items-center justify-center hover:bg-gray-200"
+                    className="w-6 h-6 rounded-lg bg-slate-900/10 flex items-center justify-center hover:bg-slate-900/15 text-slate-600"
                   >
                     <Minus className="w-3 h-3" />
                   </button>
-                  <span className="w-6 text-center text-sm font-bold">{item.quantity}</span>
+                  <span className="w-6 text-center text-sm font-bold text-slate-800">{item.quantity}</span>
                   <button
                     onClick={() => cart.updateQty(item.productId, item.quantity + 1)}
-                    className="w-6 h-6 rounded-full border flex items-center justify-center hover:bg-gray-200"
+                    className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center hover:bg-indigo-600 text-white"
                   >
                     <Plus className="w-3 h-3" />
                   </button>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium">{formatCurrency(item.sellPrice * item.quantity)}</p>
+                <div className="text-right w-16 flex-shrink-0">
+                  <p className="text-sm font-bold text-slate-900">{formatCurrency(item.sellPrice * item.quantity)}</p>
                   <button onClick={() => cart.removeItem(item.productId)} className="text-red-400 hover:text-red-600">
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-3.5 h-3.5 ml-auto" />
                   </button>
                 </div>
               </div>
@@ -314,10 +326,10 @@ export default function PosPage() {
         </div>
 
         {/* Totals + Payment */}
-        <div className="p-4 border-t space-y-3">
+        <div className="p-4 border-t border-white/50 space-y-3">
           {/* Discount */}
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-500 w-16 flex-shrink-0">ส่วนลด</label>
+            <label className="text-sm text-slate-500 w-16 flex-shrink-0">ส่วนลด</label>
             <Input
               type="number"
               className="h-8 text-sm"
@@ -329,8 +341,8 @@ export default function PosPage() {
 
           {/* Summary */}
           <div className="space-y-1 text-sm">
-            <div className="flex justify-between text-gray-500">
-              <span>รวม</span>
+            <div className="flex justify-between text-slate-500">
+              <span>ยอดรวม</span>
               <span>{formatCurrency(cart.subtotal())}</span>
             </div>
             {cart.discountAmt > 0 && (
@@ -339,21 +351,24 @@ export default function PosPage() {
                 <span>-{formatCurrency(cart.discountAmt)}</span>
               </div>
             )}
-            <div className="flex justify-between font-bold text-lg pt-1 border-t">
-              <span>ยอดรวม</span>
+            <div className="flex justify-between font-extrabold text-lg pt-1.5 border-t border-white/60 text-slate-900">
+              <span>รวมทั้งสิ้น</span>
               <span className="text-primary">{formatCurrency(cart.total())}</span>
             </div>
           </div>
 
           {/* Payment method */}
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-2 gap-2">
             {(["CASH", "QR_PROMPT_PAY"] as PaymentMethod[]).map((m) => (
               <button
                 key={m}
                 onClick={() => setPaymentMethod(m)}
-                className={`py-2 text-xs rounded-lg border transition-colors ${
-                  paymentMethod === m ? "bg-primary text-white border-primary" : "border-gray-200 hover:bg-gray-50"
-                }`}
+                className={cn(
+                  "py-2.5 text-xs font-semibold rounded-xl transition-colors",
+                  paymentMethod === m
+                    ? "bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/30"
+                    : "bg-white/60 border border-white/80 text-slate-600 hover:bg-white/80"
+                )}
               >
                 {m === "CASH" ? "เงินสด" : "QR พร้อมเพย์"}
               </button>
@@ -372,7 +387,7 @@ export default function PosPage() {
           {cart.items.length > 0 && (
             <button
               onClick={() => cart.clearCart()}
-              className="w-full text-xs text-gray-400 hover:text-red-500 transition-colors"
+              className="w-full text-xs text-slate-400 hover:text-red-500 transition-colors"
             >
               ล้างรายการ
             </button>

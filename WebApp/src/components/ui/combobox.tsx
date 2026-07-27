@@ -20,6 +20,7 @@ interface ComboboxProps {
   searchPlaceholder?: string;
   emptyText?: string;
   className?: string;
+  id?: string;
 }
 
 export function Combobox({
@@ -30,6 +31,7 @@ export function Combobox({
   searchPlaceholder = "พิมพ์เพื่อค้นหา...",
   emptyText = "ไม่พบรายการ",
   className,
+  id,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const selected = options.find((o) => o.value === value);
@@ -38,6 +40,7 @@ export function Combobox({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           variant="outline"
           role="combobox"
           aria-expanded={open}
