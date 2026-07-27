@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  displayName  String
+  role         String   @default("CASHIER")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  orders         Order[]
+  stockMovements StockMovement[]
+}
+
+// ─── Categories ───────────────────────────────────────────────────────────────
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  products Product[]
+}
+
+// ─── Products ─────────────────────────────────────────────────────────────────
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  barcode     String?  @unique
+  name        String
+  description String?
+  costPrice   Decimal
+  sellPrice   Decimal
+  unit        String   @default("ชิ้น")
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  lowStockAt  Int      @default(5)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  stock          Stock?
+  orderItems     OrderItem[]
+  stockMovements StockMovement[]
+}
+
+// ─── Stock ────────────────────────────────────────────────────────────────────
+
+model Stock {
+  id        Int      @id @default(autoincrement())
+  quantity  Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  productId Int     @unique
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model StockMovement {
+  id        Int      @id @default(autoincrement())
+  type      String
+  quantity  Int
+  note      String?
+  createdAt DateTime @default(now())
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  orderId Int?
+  order   Order? @relation(fields: [orderId], references: [id])
+}
+
+// ─── Orders ───────────────────────────────────────────────────────────────────
+
+model Order {
+  id            Int      @id @default(autoincrement())
+  orderNumber   String   @unique
+  subtotal      Decimal
+  discountAmt   Decimal  @default(0)
+  totalAmt      Decimal
+  paymentMethod String
+  amountPaid    Decimal
+  changeAmt     Decimal
+  status        String   @default("COMPLETED")
+  note          String?
+  createdAt     DateTime @default(now())
+
+  cashierId Int
+  cashier   User @relation(fields: [cashierId], references: [id])
+
+  items          OrderItem[]
+  stockMovements StockMovement[]
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  quantity  Int
+  unitPrice Decimal
+  costPrice Decimal
+  subtotal  Decimal
+
+  orderId Int
+  order   Order @relation(fields: [orderId], references: [id])
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+
+model Setting {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String
+}

@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 20% 97%;
+    --foreground: 222 35% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 35% 12%;
+    --border: 220 16% 89%;
+    --input: 220 16% 84%;
+    --primary: 221 76% 36%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 18% 94%;
+    --secondary-foreground: 222 25% 22%;
+    --muted: 220 18% 95%;
+    --muted-foreground: 220 10% 42%;
+    --accent: 220 27% 92%;
+    --accent-foreground: 221 70% 27%;
+    --destructive: 0 72% 48%;
+    --destructive-foreground: 0 0% 100%;
+    --ring: 221 76% 36%;
+    --radius: 0.75rem;
+  }
+
+  * { @apply border-border; }
+  html { -webkit-tap-highlight-color: transparent; }
+  body {
+    @apply min-h-dvh bg-background text-foreground antialiased;
+    font-family: "Sarabun", system-ui, -apple-system, sans-serif;
+  }
+  h1, h2, h3 { @apply text-balance; }
+  p { @apply text-pretty; }
+  button, a, input, select, textarea { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2; }
+}
+
+@layer components {
+  .page-shell { @apply mx-auto w-full max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8; }
+  .page-header { @apply flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between; }
+  .page-title { @apply text-xl font-semibold text-slate-950 md:text-2xl; }
+  .page-description { @apply text-sm text-slate-600; }
+  .surface { @apply rounded-xl bg-white shadow-sm; }
+  .data-table { @apply w-full text-sm tabular-nums; }
+  .data-table thead { @apply bg-slate-50 text-left text-xs font-medium text-slate-600; }
+  .data-table th { @apply px-4 py-3; }
+  .data-table td { @apply px-4 py-3; }
+}
+
+/* Compatibility layer: removes the old glass-heavy visual language across every screen. */
+@layer utilities {
+  .glass, .glass-sm {
+    background: white;
+    border: 0;
+    box-shadow: 0 1px 3px rgb(15 23 42 / 0.08);
+  }
+  .glass-dark {
+    background: #0f1f3d;
+    box-shadow: none;
+  }
+  .glass-header { background: white; }
+  .glass-row-hover:hover { background: #f8fafc !important; }
+  .animate-slide-up, .animate-fade-in { animation: none; }
+  .animate-spin-btn { animation: spin-btn .7s linear infinite; }
+}
+
+@keyframes spin-btn { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
