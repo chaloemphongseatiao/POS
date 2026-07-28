@@ -3,7 +3,7 @@ import "./globals.css";
 import Providers from "@/components/Providers";
 
 export const metadata: Metadata = {
-  title: "POS ระบบขายหน้าร้าน",
+  title: "ระบบขายหน้าร้าน ตั้งมารวย",
   description: "Point of Sale สำหรับร้านค้า SME",
 };
 

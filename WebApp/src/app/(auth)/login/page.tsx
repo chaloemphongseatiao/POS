@@ -46,7 +46,7 @@ export default function LoginPage() {
         <div className="glass rounded-[26px] p-6 sm:p-8">
 
           <div className="mb-6 flex flex-col items-center text-center">
-            <img src="/logo.png" alt="โลโก้ร้าน" className="mb-4 size-20 object-contain" />
+            <img src="/logo.png" alt="โลโก้ร้าน" className="mb-4 size-28 object-contain" />
             <h2 className="text-xl font-bold text-brand-950/80">ร้านตั้งมารวย</h2>
             <p className="text-sm text-brand-500/55 mt-0.5">เข้าสู่ระบบ POS</p>
           </div>

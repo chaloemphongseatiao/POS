@@ -11,7 +11,6 @@ import { formatCurrency } from "@/lib/utils/formatCurrency";
 import { createBarcodeListener, digitFromCode } from "@/lib/utils/barcodeScanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import PaymentModal from "@/components/pos/PaymentModal";
 import ReceiptModal from "@/components/pos/ReceiptModal";
 import { Product, PaymentMethod, Order } from "@/lib/types";
@@ -169,7 +168,7 @@ export default function PosPage() {
       </div>
 
       {/* Left: Product Browser */}
-      <div className="flex min-h-[65dvh] flex-1 flex-col gap-4 overflow-hidden lg:min-h-0">
+      <div className="flex min-h-[65dvh] min-w-0 flex-1 flex-col gap-4 overflow-hidden lg:min-h-0">
         <div>
           <h1 className="text-xl font-bold text-slate-950 md:text-2xl tracking-tight">หน้าขายสินค้า</h1>
           <p className="text-sm text-slate-500 mt-0.5">
@@ -179,7 +178,7 @@ export default function PosPage() {
         </div>
 
         {/* Search */}
-        <div className="glass flex w-full items-center gap-2.5 rounded-2xl px-4 py-2.5 transition-shadow duration-150 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+        <div className="glass mx-auto flex w-[calc(100%-2rem)] items-center gap-2.5 rounded-2xl px-4 py-2.5 transition-shadow duration-150 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
           <Barcode className="w-[18px] h-[18px] text-primary flex-shrink-0" />
           <input
             aria-label="ค้นหาสินค้าหรือสแกน Barcode"
@@ -252,35 +251,25 @@ export default function PosPage() {
         {/* Product Grid */}
         <div className="flex-1 overflow-y-auto pr-1 -mr-1">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5">
-            {filteredProducts.map((product) => {
-              const qty = product.stock?.quantity ?? 0;
-              const isLow = qty > 0 && qty <= product.lowStockAt;
-              const isOut = qty <= 0;
-              return (
-                <button
-                  key={product.id}
-                  type="button"
-                  disabled={isOut}
-                  aria-label={`${product.name} ราคา ${formatCurrency(product.sellPrice)}${isOut ? " สินค้าหมด" : ""}`}
-                  onClick={() => addProductToCart(product)}
-                  className="glass group rounded-[18px] p-3.5 text-left transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-950/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-                >
-                  <div className="aspect-square bg-slate-100/70 rounded-xl mb-2.5 flex items-center justify-center overflow-hidden">
-                    {product.imageUrl ? (
-                      <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <ShoppingCart className="w-8 h-8 text-slate-300" />
-                    )}
-                  </div>
-                  <p className="text-xs font-semibold line-clamp-2 text-slate-800">{product.name}</p>
-                  <p className="text-sm font-extrabold text-primary mt-1">{formatCurrency(product.sellPrice)}</p>
-                  <div className="flex items-center justify-end mt-1.5 gap-1">
-                    {isLow && <Badge variant="warning" className="text-[10px] px-1.5 py-0">น้อย</Badge>}
-                    {isOut && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">หมด</Badge>}
-                  </div>
-                </button>
-              );
-            })}
+            {filteredProducts.map((product) => (
+              <button
+                key={product.id}
+                type="button"
+                aria-label={`${product.name} ราคา ${formatCurrency(product.sellPrice)}`}
+                onClick={() => addProductToCart(product)}
+                className="glass group rounded-[18px] p-3.5 text-left transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-950/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <div className="aspect-square bg-slate-100/70 rounded-xl mb-2.5 flex items-center justify-center overflow-hidden">
+                  {product.imageUrl ? (
+                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <ShoppingCart className="w-8 h-8 text-slate-300" />
+                  )}
+                </div>
+                <p className="text-xs font-semibold line-clamp-2 text-slate-800">{product.name}</p>
+                <p className="text-sm font-extrabold text-primary mt-1">{formatCurrency(product.sellPrice)}</p>
+              </button>
+            ))}
           </div>
         </div>
       </div>
