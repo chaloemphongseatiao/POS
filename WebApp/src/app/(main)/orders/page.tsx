@@ -6,7 +6,7 @@ import { listOrders, getOrder, voidOrder } from "@/lib/api/orders";
 import { Order } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, Eye, XCircle, Printer, Search, CalendarRange, AlertTriangle } from "lucide-react";
@@ -236,24 +236,22 @@ export default function OrdersPage() {
         <div className="flex flex-wrap items-end gap-2">
           <div className="w-full sm:w-auto">
             <p className="text-xs text-gray-500 mb-1">วันที่เริ่มต้น</p>
-            <Input
-              type="date"
+            <DatePicker
               value={fromDate}
               max={toDate}
-              onChange={(e) => handleFromDate(e.target.value)}
-              className="h-9 w-full min-w-0 text-sm sm:w-36"
+              onChange={handleFromDate}
+              ariaLabel="เลือกวันที่เริ่มต้น"
             />
           </div>
           <span className="mb-1.5 hidden text-gray-400 sm:inline">—</span>
           <div className="w-full sm:w-auto">
             <p className="text-xs text-gray-500 mb-1">วันที่สิ้นสุด</p>
-            <Input
-              type="date"
+            <DatePicker
               value={toDate}
               min={fromDate}
               max={today}
-              onChange={(e) => handleToDate(e.target.value)}
-              className="h-9 w-full min-w-0 text-sm sm:w-36"
+              onChange={handleToDate}
+              ariaLabel="เลือกวันที่สิ้นสุด"
             />
           </div>
           <div className="mb-0.5 flex gap-1.5">

@@ -18,6 +18,15 @@ export interface Category {
   createdAt: string;
 }
 
+export interface LineFollower {
+  id: number;
+  lineUserId: string;
+  displayName: string | null;
+  isActive: boolean;
+  followedAt: string;
+  unfollowedAt: string | null;
+}
+
 export interface StockInfo {
   quantity: number;
 }

@@ -130,3 +130,14 @@ model Setting {
   key   String @unique
   value String
 }
+
+// ─── LINE Followers ─────────────────────────────────────────────────────────────
+
+model LineFollower {
+  id           Int       @id @default(autoincrement())
+  lineUserId   String    @unique
+  displayName  String?
+  isActive     Boolean   @default(true)
+  followedAt   DateTime  @default(now())
+  unfollowedAt DateTime?
+}

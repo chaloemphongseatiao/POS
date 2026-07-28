@@ -3,6 +3,11 @@ import "./globals.css";
 import Providers from "@/components/Providers";
 
 export const metadata: Metadata = {
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
   title: "ระบบขายหน้าร้าน ตั้งมารวย",
   description: "Point of Sale สำหรับร้านค้า SME",
 };

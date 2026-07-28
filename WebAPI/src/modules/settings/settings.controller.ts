@@ -8,6 +8,7 @@ const ALLOWED_SETTING_KEYS = new Set([
   "store_address",
   "store_logo",
   "line_channel_token",
+  "line_channel_secret",
   "line_user_id",
 ]);
 

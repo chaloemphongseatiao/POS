@@ -16,6 +16,7 @@ import CategoryPanel from "@/components/products/CategoryPanel";
 import { useCategoryCounts } from "@/lib/hooks/useCategoryCounts";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
 import { Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, Download, Upload } from "lucide-react";
+import { ProductImage } from "@/components/ui/product-image";
 
 const PAGE_SIZE = 20;
 
@@ -239,11 +240,7 @@ export default function ProductsPage() {
                     <tr key={p.id} className="glass-row-hover transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          {p.imageUrl ? (
-                            <img src={p.imageUrl} alt={p.name} className="w-8 h-8 rounded object-cover" />
-                          ) : (
-                            <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center text-gray-300 text-xs">img</div>
-                          )}
+                          <ProductImage src={p.imageUrl} alt={p.name} className="w-8 h-8 rounded flex-shrink-0" />
                           <div>
                             <p className="font-medium">{p.name}</p>
                             <p className="text-xs text-gray-400">{p.unit}</p>

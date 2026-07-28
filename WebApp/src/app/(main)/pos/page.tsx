@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useCart } from "@/lib/hooks/useCart";
 import { useAuth } from "@/lib/hooks/useAuth";
@@ -16,12 +16,14 @@ import ReceiptModal from "@/components/pos/ReceiptModal";
 import { Product, PaymentMethod, Order } from "@/lib/types";
 import { Search, Trash2, Plus, Minus, ShoppingCart, CheckCircle2, XCircle, Barcode } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { ProductImage } from "@/components/ui/product-image";
 
 export default function PosPage() {
   const { user } = useAuth();
   const cart = useCart();
 
   const [search, setSearch] = useState("");
+  const lastDigitKeyTimeRef = useRef(0);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
   const [showPayment, setShowPayment] = useState(false);
@@ -197,12 +199,19 @@ export default function PosPage() {
               }
 
               // Thai (and other non-Latin) keyboard layouts remap the digit
-              // row to language-specific glyphs, so scanner/manual digit
-              // input gets garbled. Force digit keys to real digits
-              // regardless of the active OS layout.
+              // row to language-specific glyphs (e.g. Kedmanee's Digit8 ==
+              // "ค"), so a fast barcode-scanner burst on the digit row would
+              // otherwise garble into Thai text. Only force real digits when
+              // keys are arriving at scanner speed (<40ms apart) — normal
+              // human typing is always slower than that, so Thai product-name
+              // search input passes through untouched.
               if (e.ctrlKey || e.metaKey || e.altKey) return;
               const digit = digitFromCode(e.code);
               if (digit === null) return;
+              const now = Date.now();
+              const isScannerSpeed = now - lastDigitKeyTimeRef.current < 40;
+              lastDigitKeyTimeRef.current = now;
+              if (!isScannerSpeed) return;
               e.preventDefault();
               const input = e.currentTarget;
               const start = input.selectionStart ?? search.length;
@@ -259,12 +268,8 @@ export default function PosPage() {
                 onClick={() => addProductToCart(product)}
                 className="glass group rounded-[18px] p-3.5 text-left transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-950/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
-                <div className="aspect-square bg-slate-100/70 rounded-xl mb-2.5 flex items-center justify-center overflow-hidden">
-                  {product.imageUrl ? (
-                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <ShoppingCart className="w-8 h-8 text-slate-300" />
-                  )}
+                <div className="aspect-square rounded-xl mb-2.5 overflow-hidden">
+                  <ProductImage src={product.imageUrl} alt={product.name} className="w-full h-full" />
                 </div>
                 <p className="text-xs font-semibold line-clamp-2 text-slate-800">{product.name}</p>
                 <p className="text-sm font-extrabold text-primary mt-1">{formatCurrency(product.sellPrice)}</p>
@@ -292,13 +297,7 @@ export default function PosPage() {
           ) : (
             cart.items.map((item) => (
               <div key={item.productId} className="flex items-center gap-2.5 bg-white/50 rounded-2xl p-2.5">
-                {item.imageUrl ? (
-                  <img src={item.imageUrl} alt={item.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
-                ) : (
-                  <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 text-slate-300 text-xs">
-                    img
-                  </div>
-                )}
+                <ProductImage src={item.imageUrl} alt={item.name} className="w-10 h-10 rounded-lg flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate text-slate-800">{item.name}</p>
                   <p className="text-xs text-slate-500">{formatCurrency(item.sellPrice)}</p>

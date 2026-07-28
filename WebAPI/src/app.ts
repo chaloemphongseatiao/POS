@@ -11,6 +11,7 @@ import stockRoutes from "./modules/stock/stock.routes";
 import ordersRoutes from "./modules/orders/orders.routes";
 import reportsRoutes from "./modules/reports/reports.routes";
 import settingsRoutes from "./modules/settings/settings.routes";
+import lineRoutes from "./modules/line/line.routes";
 import { errorHandler } from "./middleware/errorHandler";
 
 const app = express();
@@ -22,6 +23,8 @@ app.use(cors({
     : true, // อนุญาตทุก origin ในโหมด dev (LAN)
 }));
 app.use(morgan("dev"));
+// LINE webhook ต้องใช้ raw body เพื่อตรวจสอบ signature — ต้อง mount ก่อน express.json()
+app.use("/api/line/webhook", express.raw({ type: "application/json" }));
 app.use(express.json({ limit: "4mb" }));
 
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
@@ -34,6 +37,7 @@ app.use("/api/stock", stockRoutes);
 app.use("/api/orders", ordersRoutes);
 app.use("/api/reports", reportsRoutes);
 app.use("/api/settings", settingsRoutes);
+app.use("/api/line", lineRoutes);
 
 app.use(errorHandler);
 

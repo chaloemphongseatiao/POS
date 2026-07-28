@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSettings, upsertSetting } from "@/lib/api/settings";
 import { listUsers, createUser, updateUser, toggleUser } from "@/lib/api/users";
 import { listCategories, createCategory, updateCategory, deleteCategory } from "@/lib/api/categories";
+import { listLineFollowers } from "@/lib/api/line";
 import { User, Category, UserRole } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useCategoryCounts } from "@/lib/hooks/useCategoryCounts";
-import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, CheckCircle2, AlertCircle, AlertTriangle, ImagePlus, X, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, CheckCircle2, AlertCircle, AlertTriangle, ImagePlus, X, Loader2, Copy, Check } from "lucide-react";
 
 function UsersTab() {
   const qc = useQueryClient();
@@ -403,14 +404,26 @@ function StoreTab() {
 function LineTab() {
   const qc = useQueryClient();
   const { data: settings = {}, isLoading: isSettingsLoading } = useQuery({ queryKey: ["settings"], queryFn: getSettings });
+  const { data: followers = [], isLoading: isFollowersLoading } = useQuery({ queryKey: ["line-followers"], queryFn: listLineFollowers });
   const [token, setToken] = useState("");
+  const [secret, setSecret] = useState("");
   const [userId, setUserId] = useState("");
   const [testResult, setTestResult] = useState<"success" | "error" | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const webhookUrl = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/line/webhook`;
+
+  function copyToClipboard(text: string, field: string) {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  }
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      await upsertSetting("line_channel_token", token);
-      await upsertSetting("line_user_id", userId);
+      if (token) await upsertSetting("line_channel_token", token);
+      if (secret) await upsertSetting("line_channel_secret", secret);
+      if (userId) await upsertSetting("line_user_id", userId);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["settings"] }),
   });
@@ -457,17 +470,17 @@ function LineTab() {
       <CardContent className="space-y-5">
         {/* วิธีตั้งค่า */}
         <div className="bg-brand-50 border border-brand-200 rounded-lg p-4 text-sm text-brand-800 space-y-1.5">
-          <p className="font-semibold">วิธีขอ Channel Access Token:</p>
+          <p className="font-semibold">วิธีขอ Channel Access Token / Secret:</p>
           <ol className="list-decimal list-inside space-y-1 text-brand-700">
             <li>ไปที่ <span className="font-mono">developers.line.biz</span> → สร้าง Provider + Channel (Messaging API)</li>
             <li>แท็บ <strong>Messaging API</strong> → เลื่อนลงไปที่ Channel access token → <strong>Issue</strong></li>
-            <li>แท็บ <strong>Basic settings</strong> → เปิด <strong>LINE Official Account Manager</strong> → ตั้งค่า Reply/Push</li>
+            <li>แท็บ <strong>Basic settings</strong> → คัดลอก <strong>Channel secret</strong></li>
           </ol>
-          <p className="font-semibold mt-2">วิธีหา User ID:</p>
+          <p className="font-semibold mt-2">วิธีเก็บ User ID ของลูกค้าอัตโนมัติ:</p>
           <ol className="list-decimal list-inside space-y-1 text-brand-700">
-            <li>เพิ่มบอทเป็นเพื่อน แล้วส่งข้อความใดก็ได้</li>
-            <li>ดู Webhook event → ใช้ <span className="font-mono">source.userId</span></li>
-            <li>หรือใช้ LINE Developers Console → <strong>Basic settings</strong> → Your user ID</li>
+            <li>วาง Channel Secret ด้านล่าง แล้วบันทึก</li>
+            <li>คัดลอก Webhook URL ด้านล่าง ไปวางที่แท็บ <strong>Messaging API</strong> → Webhook URL → เปิด <strong>Use webhook</strong></li>
+            <li>เมื่อมีคน add friend บอท ระบบจะเก็บ User ID ให้อัตโนมัติในรายชื่อด้านล่าง</li>
           </ol>
         </div>
 
@@ -480,6 +493,24 @@ function LineTab() {
               onChange={(e) => setToken(e.target.value)}
               className="mt-1 font-mono text-xs"
             />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Channel Secret</label>
+            <Input
+              type="password"
+              placeholder={settings.line_channel_secret ? "••••••••••••••••" : "วาง channel secret ที่นี่..."}
+              onChange={(e) => setSecret(e.target.value)}
+              className="mt-1 font-mono text-xs"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Webhook URL</label>
+            <div className="mt-1 flex gap-2">
+              <Input readOnly value={webhookUrl} className="font-mono text-xs bg-gray-50" />
+              <Button type="button" variant="outline" size="icon" onClick={() => copyToClipboard(webhookUrl, "webhook")}>
+                {copiedField === "webhook" ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+              </Button>
+            </div>
           </div>
           <div>
             <label className="text-sm font-medium">User ID (ผู้รับแจ้งเตือน)</label>
@@ -495,7 +526,7 @@ function LineTab() {
         <div className="flex gap-2">
           <Button
             onClick={() => saveMutation.mutate()}
-            disabled={saveMutation.isPending || (!token && !userId)}
+            disabled={saveMutation.isPending || (!token && !secret && !userId)}
             className="flex-1"
           >
             {saveMutation.isPending ? "กำลังบันทึก..." : "บันทึก"}
@@ -523,6 +554,42 @@ function LineTab() {
             ส่งไม่สำเร็จ — ตรวจสอบ Token และ User ID อีกครั้ง
           </div>
         )}
+
+        <div className="pt-2 border-t border-white/60">
+          <p className="text-sm font-medium mb-2">รายชื่อผู้ติดตาม (Followers)</p>
+          {isFollowersLoading ? (
+            <div className="flex items-center justify-center gap-2 py-6 text-gray-400">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm">กำลังโหลด...</span>
+            </div>
+          ) : followers.length === 0 ? (
+            <p className="text-sm text-gray-400 py-4 text-center">
+              ยังไม่มีผู้ติดตาม — ตั้งค่า Webhook URL ด้านบนก่อน แล้วให้ลูกค้า add friend บอท
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {followers.map((f) => (
+                <div key={f.id} className="flex items-center gap-2 p-2.5 rounded-xl bg-white/50 border border-white/70">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{f.displayName || "(ไม่มีชื่อ)"}</p>
+                    <p className="text-xs text-gray-400 font-mono truncate">{f.lineUserId}</p>
+                  </div>
+                  <Badge variant={f.isActive ? "success" : "secondary"}>
+                    {f.isActive ? "ติดตามอยู่" : "เลิกติดตาม"}
+                  </Badge>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyToClipboard(f.lineUserId, `follower-${f.id}`)}
+                  >
+                    {copiedField === `follower-${f.id}` ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

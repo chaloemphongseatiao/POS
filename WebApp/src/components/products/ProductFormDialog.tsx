@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useEffect, useRef } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,11 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const imageUrl = useWatch({ control, name: "imageUrl", defaultValue: "" });
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [imageUrl]);
 
   useEffect(() => {
     if (product) {
@@ -88,12 +93,12 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
           {/* Image preview */}
           <div className="flex items-start gap-4">
             <div className="w-24 h-24 rounded-2xl border border-white/70 bg-white/40 backdrop-blur-sm flex items-center justify-center flex-shrink-0 overflow-hidden">
-              {imageUrl ? (
+              {imageUrl && !imgError ? (
                 <img
                   src={imageUrl}
                   alt="preview"
                   className="w-full h-full object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  onError={() => setImgError(true)}
                 />
               ) : (
                 <ImageOff className="w-8 h-8 text-brand-300/60" />
