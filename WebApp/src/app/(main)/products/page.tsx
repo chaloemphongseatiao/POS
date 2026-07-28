@@ -9,7 +9,6 @@ import { exportProductsExcel, readProductsExcel } from "@/lib/productsExcel";
 import { useToast } from "@/lib/hooks/useToast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import ProductFormDialog, { ProductFormData } from "@/components/products/ProductFormDialog";
 import CategoryPanel from "@/components/products/CategoryPanel";
@@ -222,20 +221,16 @@ export default function ProductsPage() {
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Barcode</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">หมวดหมู่</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">ราคาขาย</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">สถานะ</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/40">
               {isLoading ? (
-                <tr><td colSpan={6} className="text-center py-8 text-gray-400">กำลังโหลด...</td></tr>
+                <tr><td colSpan={5} className="text-center py-8 text-gray-400">กำลังโหลด...</td></tr>
               ) : products.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-8 text-gray-400">ไม่พบสินค้า</td></tr>
+                <tr><td colSpan={5} className="text-center py-8 text-gray-400">ไม่พบสินค้า</td></tr>
               ) : (
                 products.map((p) => {
-                  const qty = p.stock?.quantity ?? 0;
-                  const isLow = qty > 0 && qty <= p.lowStockAt;
-                  const isOut = qty <= 0;
                   return (
                     <tr key={p.id} className="glass-row-hover transition-colors">
                       <td className="px-4 py-3">
@@ -250,17 +245,6 @@ export default function ProductsPage() {
                       <td className="px-4 py-3 text-gray-500 font-mono text-xs">{p.barcode || "—"}</td>
                       <td className="px-4 py-3 text-gray-600">{p.category.name}</td>
                       <td className="px-4 py-3 text-right font-medium">{formatCurrency(p.sellPrice)}</td>
-                      <td className="px-4 py-3 text-center">
-                        {!p.isActive ? (
-                          <Badge variant="secondary">ปิดใช้งาน</Badge>
-                        ) : isOut ? (
-                          <Badge variant="destructive">หมด</Badge>
-                        ) : isLow ? (
-                          <Badge variant="warning">ใกล้หมด</Badge>
-                        ) : (
-                          <Badge variant="success">ปกติ</Badge>
-                        )}
-                      </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 justify-end">
                           <Button aria-label={`แก้ไขสินค้า ${p.name}`} size="icon" variant="ghost" onClick={() => { setEditProduct(p); setShowForm(true); }}>

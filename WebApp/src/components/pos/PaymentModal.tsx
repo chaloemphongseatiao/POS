@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Kbd } from "@/components/ui/kbd";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
 import { PaymentMethod } from "@/lib/types";
 
@@ -24,9 +25,32 @@ export default function PaymentModal({ open, total, paymentMethod, onConfirm, on
   const quickAmounts = [total, Math.ceil(total / 100) * 100, Math.ceil(total / 500) * 500, Math.ceil(total / 1000) * 1000];
   const uniqueAmounts = [...new Set(quickAmounts)].filter((a) => a >= total).slice(0, 4);
 
+  const canConfirm = !loading && !(paymentMethod === "CASH" && paid < total);
+
+  // Shortcuts: Enter confirms payment; digit keys 1-4 pick a quick cash amount
+  // (skipped while typing in a text field so manual amount entry still works).
+  // stopPropagation keeps these keys from reaching the page's global barcode
+  // listener on `document` — otherwise a fast-typed amount + Enter could be
+  // misread as a scanned barcode mid-payment.
+  function handleModalKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
+      if (canConfirm) onConfirm(paymentMethod === "CASH" ? paid : total);
+      return;
+    }
+    const target = e.target as HTMLElement;
+    const isTyping = target.tagName === "INPUT" || target.tagName === "TEXTAREA";
+    if (!isTyping && paymentMethod === "CASH" && /^[1-4]$/.test(e.key)) {
+      e.stopPropagation();
+      const amt = uniqueAmounts[Number(e.key) - 1];
+      if (amt !== undefined) setAmountPaid(String(amt));
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm" onKeyDown={handleModalKeyDown}>
         <DialogHeader>
           <DialogTitle>รับชำระเงิน</DialogTitle>
         </DialogHeader>
@@ -56,14 +80,15 @@ export default function PaymentModal({ open, total, paymentMethod, onConfirm, on
               </div>
 
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {uniqueAmounts.map((amt) => (
+                {uniqueAmounts.map((amt, i) => (
                   <button
                     key={amt}
                     type="button"
-                    aria-label={`รับเงิน ${amt.toLocaleString()} บาท`}
+                    aria-label={`รับเงิน ${amt.toLocaleString()} บาท (คีย์ลัด ${i + 1})`}
                     onClick={() => setAmountPaid(String(amt))}
-                    className="rounded-xl bg-white/50 border border-white/80 py-2 text-sm font-medium text-slate-600 transition-all duration-150 hover:bg-primary hover:text-white hover:border-primary hover:shadow-md hover:shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95"
+                    className="relative rounded-xl bg-white/50 border border-white/80 py-2 text-sm font-medium text-slate-600 transition-all duration-150 hover:bg-primary hover:text-white hover:border-primary hover:shadow-md hover:shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95"
                   >
+                    <Kbd className="absolute left-1.5 top-1">{i + 1}</Kbd>
                     {amt.toLocaleString()}
                   </button>
                 ))}
@@ -84,9 +109,11 @@ export default function PaymentModal({ open, total, paymentMethod, onConfirm, on
             className="w-full"
             size="lg"
             onClick={() => onConfirm(paymentMethod === "CASH" ? paid : total)}
-            disabled={loading || (paymentMethod === "CASH" && paid < total)}
+            disabled={!canConfirm}
           >
-            {loading ? "กำลังบันทึก..." : "ยืนยันการชำระเงิน"}
+            {loading ? "กำลังบันทึก..." : (
+              <>ยืนยันการชำระเงิน <Kbd variant="dark">Enter</Kbd></>
+            )}
           </Button>
         </div>
       </DialogContent>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useCart } from "@/lib/hooks/useCart";
 import { useAuth } from "@/lib/hooks/useAuth";
@@ -8,7 +8,7 @@ import { listProducts, getProductByBarcode } from "@/lib/api/products";
 import { listCategories } from "@/lib/api/categories";
 import { createOrder } from "@/lib/api/orders";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
-import { createBarcodeListener, digitFromCode } from "@/lib/utils/barcodeScanner";
+import { createBarcodeListener, useScannerSafeDigitKeyDown } from "@/lib/utils/barcodeScanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import PaymentModal from "@/components/pos/PaymentModal";
@@ -17,13 +17,14 @@ import { Product, PaymentMethod, Order } from "@/lib/types";
 import { Search, Trash2, Plus, Minus, ShoppingCart, CheckCircle2, XCircle, Barcode } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { ProductImage } from "@/components/ui/product-image";
+import { Kbd } from "@/components/ui/kbd";
 
 export default function PosPage() {
   const { user } = useAuth();
   const cart = useCart();
 
   const [search, setSearch] = useState("");
-  const lastDigitKeyTimeRef = useRef(0);
+  const handleDigitKeyDown = useScannerSafeDigitKeyDown(search, setSearch);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
   const [showPayment, setShowPayment] = useState(false);
@@ -112,6 +113,26 @@ export default function PosPage() {
     }
   }, [toast]);
 
+  // Shortcuts: F2 opens payment, F4 clears the cart (with confirm).
+  // Disabled while a modal is already open so they don't stack a confirm
+  // dialog on top of the payment/receipt flow.
+  useEffect(() => {
+    if (showPayment || completedOrder) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "F2") {
+        e.preventDefault();
+        if (cart.items.length > 0) setShowPayment(true);
+      } else if (e.key === "F4") {
+        e.preventDefault();
+        if (cart.items.length > 0 && window.confirm("ล้างรายการสั่งซื้อทั้งหมด?")) {
+          cart.clearCart();
+        }
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [cart.items.length, cart.clearCart, showPayment, completedOrder]);
+
   function handleConfirmPayment(amountPaid: number) {
     if (!user) return;
     orderMutation.mutate({
@@ -171,12 +192,19 @@ export default function PosPage() {
 
       {/* Left: Product Browser */}
       <div className="flex min-h-[65dvh] min-w-0 flex-1 flex-col gap-4 overflow-hidden lg:min-h-0">
-        <div>
-          <h1 className="text-xl font-bold text-slate-950 md:text-2xl tracking-tight">หน้าขายสินค้า</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Point of Sale ·{" "}
-            {new Date().toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" })}
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h1 className="text-xl font-bold text-slate-950 md:text-2xl tracking-tight">หน้าขายสินค้า</h1>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Point of Sale ·{" "}
+              {new Date().toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" })}
+            </p>
+          </div>
+          <div className="hidden md:flex items-center gap-3 text-xs text-slate-400">
+            <span className="flex items-center gap-1"><Kbd>F2</Kbd>ชำระเงิน</span>
+            <span className="flex items-center gap-1"><Kbd>F4</Kbd>ล้างรายการ</span>
+            <span className="flex items-center gap-1"><Kbd>Enter</Kbd>สแกน/ค้นหา</span>
+          </div>
         </div>
 
         {/* Search */}
@@ -197,29 +225,7 @@ export default function PosPage() {
                 }
                 return;
               }
-
-              // Thai (and other non-Latin) keyboard layouts remap the digit
-              // row to language-specific glyphs (e.g. Kedmanee's Digit8 ==
-              // "ค"), so a fast barcode-scanner burst on the digit row would
-              // otherwise garble into Thai text. Only force real digits when
-              // keys are arriving at scanner speed (<40ms apart) — normal
-              // human typing is always slower than that, so Thai product-name
-              // search input passes through untouched.
-              if (e.ctrlKey || e.metaKey || e.altKey) return;
-              const digit = digitFromCode(e.code);
-              if (digit === null) return;
-              const now = Date.now();
-              const isScannerSpeed = now - lastDigitKeyTimeRef.current < 40;
-              lastDigitKeyTimeRef.current = now;
-              if (!isScannerSpeed) return;
-              e.preventDefault();
-              const input = e.currentTarget;
-              const start = input.selectionStart ?? search.length;
-              const end = input.selectionEnd ?? search.length;
-              setSearch(search.slice(0, start) + digit + search.slice(end));
-              requestAnimationFrame(() => {
-                input.setSelectionRange(start + 1, start + 1);
-              });
+              handleDigitKeyDown(e);
             }}
           />
         </div>
@@ -395,16 +401,18 @@ export default function PosPage() {
             disabled={cart.items.length === 0}
             onClick={() => setShowPayment(true)}
           >
-            รับชำระเงิน {cart.items.length > 0 && formatCurrency(cart.total())}
+            รับชำระเงิน <Kbd variant="dark">F2</Kbd> {cart.items.length > 0 && formatCurrency(cart.total())}
           </Button>
 
           {cart.items.length > 0 && (
             <button
               type="button"
-              onClick={() => cart.clearCart()}
-              className="w-full text-xs text-slate-400 hover:text-red-500 transition-colors"
+              onClick={() => {
+                if (window.confirm("ล้างรายการสั่งซื้อทั้งหมด?")) cart.clearCart();
+              }}
+              className="w-full flex items-center justify-center gap-1.5 text-xs text-slate-400 hover:text-red-500 transition-colors"
             >
-              ล้างรายการ
+              ล้างรายการ <Kbd>F4</Kbd>
             </button>
           )}
         </div>

@@ -33,7 +33,7 @@
       radial-gradient(circle at 105% 105%, rgb(224 163 218 / 40%), transparent 40rem),
       radial-gradient(circle at 82% 38%, rgb(151 222 214 / 20%), transparent 25rem);
     background-attachment: fixed;
-    font-family: "IBM Plex Sans Thai", "IBM Plex Sans", "Sarabun", system-ui, sans-serif;
+    font-family: "IBM Plex Sans Thai", "IBM Plex Sans", system-ui, sans-serif;
   }
   h1, h2, h3 { @apply text-balance; }
   p { @apply text-pretty; }

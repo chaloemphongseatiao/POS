@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Product, Category } from "@/lib/types";
 import { Combobox } from "@/components/ui/combobox";
 import { useToast } from "@/lib/hooks/useToast";
+import { useScannerSafeDigitKeyDown } from "@/lib/utils/barcodeScanner";
 import { ImageOff, Upload } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -40,6 +41,10 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const imageUrl = useWatch({ control, name: "imageUrl", defaultValue: "" });
+  const barcodeValue = useWatch({ control, name: "barcode", defaultValue: "" });
+  const handleBarcodeKeyDown = useScannerSafeDigitKeyDown(barcodeValue || "", (v) =>
+    setValue("barcode", v, { shouldDirty: true })
+  );
   const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
@@ -137,7 +142,13 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
           <div className="grid grid-cols-1 gap-x-3 gap-y-3.5 sm:grid-cols-2">
             <div>
               <label htmlFor="pf-barcode" className="text-sm font-medium">Barcode</label>
-              <Input id="pf-barcode" {...register("barcode")} placeholder="8850..." className="mt-1" />
+              <Input
+                id="pf-barcode"
+                {...register("barcode")}
+                onKeyDown={handleBarcodeKeyDown}
+                placeholder="8850..."
+                className="mt-1"
+              />
             </div>
             <div>
               <label htmlFor="pf-categoryId" className="text-sm font-medium">หมวดหมู่ *</label>
