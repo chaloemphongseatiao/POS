@@ -15,6 +15,12 @@ const HEADERS = [
 
 type ExcelRow = Record<string, string | number | boolean | undefined>;
 
+const MAX_CELL_LENGTH = 32767; // Excel cell text limit
+
+function safeCellText(value: string) {
+  return value.length > MAX_CELL_LENGTH ? value.slice(0, MAX_CELL_LENGTH) : value;
+}
+
 export function exportProductsExcel(products: Product[]) {
   const rows: ExcelRow[] = products.map((product) => ({
     Barcode: product.barcode ?? "",
@@ -23,8 +29,11 @@ export function exportProductsExcel(products: Product[]) {
     "ราคาขาย": Number(product.sellPrice),
     "หน่วย": product.unit,
     "สถานะ": product.isActive ? "ใช้งาน" : "ปิดใช้งาน",
-    "คำอธิบาย": product.description ?? "",
-    "URL รูปภาพ": product.imageUrl ?? "",
+    "คำอธิบาย": safeCellText(product.description ?? ""),
+    // base64 data URI ยาวเกิน limit cell ของ Excel และไม่มีประโยชน์ตอนเปิดไฟล์ จึงไม่ export ค่าดิบ
+    "URL รูปภาพ": product.imageUrl?.startsWith("data:")
+      ? "(รูปภาพฝังในระบบ ไม่รองรับการ export)"
+      : safeCellText(product.imageUrl ?? ""),
   }));
   const worksheet = XLSX.utils.json_to_sheet(rows, { header: [...HEADERS] });
   worksheet["!cols"] = [16, 28, 20, 12, 10, 14, 32, 40].map((wch) => ({ wch }));
