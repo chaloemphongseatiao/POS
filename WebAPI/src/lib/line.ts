@@ -54,159 +54,160 @@ export async function sendLineOrderNotification(order: {
   cashierName: string;
   changeAmt?: number | string;
 }) {
-  try {
-    const settings = await getLineSettings();
-    if (!settings) return; // ยังไม่ได้ตั้งค่า LINE — ข้ามไป
+  const settings = await getLineSettings();
+  if (!settings) throw new Error("ยังไม่ได้ตั้งค่า Channel Access Token หรือ User ID");
 
-    const payLabel = order.paymentMethod === "CASH" ? "เงินสด" : "QR พร้อมเพย์";
-    const total = Number(order.totalAmt).toLocaleString("th-TH", { minimumFractionDigits: 2 });
-    const change = Number(order.changeAmt ?? 0);
-    const soldAt = new Intl.DateTimeFormat("th-TH", {
-      dateStyle: "medium",
-      timeStyle: "short",
-      timeZone: "Asia/Bangkok",
-    }).format(new Date());
+  const payLabel = order.paymentMethod === "CASH" ? "เงินสด" : "QR พร้อมเพย์";
+  const total = Number(order.totalAmt).toLocaleString("th-TH", { minimumFractionDigits: 2 });
+  const change = Number(order.changeAmt ?? 0);
+  const soldAt = new Intl.DateTimeFormat("th-TH", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Bangkok",
+  }).format(new Date());
 
-    const detailRow = (label: string, value: string) => ({
+  const detailRow = (label: string, value: string) => ({
+    type: "box",
+    layout: "horizontal",
+    margin: "md",
+    contents: [
+      {
+        type: "text",
+        text: label,
+        size: "sm",
+        color: "#6B7280",
+        flex: 4,
+      },
+      {
+        type: "text",
+        text: value,
+        size: "sm",
+        color: "#1F2937",
+        align: "end",
+        wrap: true,
+        flex: 6,
+      },
+    ],
+  });
+
+  const contents = {
+    type: "bubble",
+    size: "mega",
+    header: {
       type: "box",
-      layout: "horizontal",
-      margin: "md",
+      layout: "vertical",
+      backgroundColor: "#164E63",
+      paddingAll: "20px",
       contents: [
         {
           type: "text",
-          text: label,
+          text: "TANGMARUAY POS",
+          color: "#FFFFFF",
           size: "sm",
-          color: "#6B7280",
-          flex: 4,
+          weight: "bold",
         },
         {
           type: "text",
-          text: value,
+          text: "บันทึกการขายสำเร็จ",
+          color: "#FFFFFF",
+          size: "xl",
+          weight: "bold",
+          margin: "sm",
+        },
+        {
+          type: "text",
+          text: order.orderNumber,
+          color: "#CFFAFE",
           size: "sm",
-          color: "#1F2937",
-          align: "end",
-          wrap: true,
-          flex: 6,
+          margin: "sm",
         },
       ],
-    });
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "20px",
+      contents: [
+        detailRow("แคชเชียร์", order.cashierName),
+        detailRow("จำนวนสินค้า", `${order.itemCount} รายการ`),
+        detailRow("ชำระด้วย", payLabel),
+        ...(order.paymentMethod === "CASH" && change > 0
+          ? [
+              detailRow(
+                "เงินทอน",
+                `${change.toLocaleString("th-TH", { minimumFractionDigits: 2 })} บาท`
+              ),
+            ]
+          : []),
+        {
+          type: "separator",
+          margin: "xl",
+          color: "#E5E7EB",
+        },
+        {
+          type: "box",
+          layout: "horizontal",
+          margin: "xl",
+          alignItems: "center",
+          contents: [
+            {
+              type: "text",
+              text: "ยอดสุทธิ",
+              size: "md",
+              color: "#1F2937",
+              weight: "bold",
+              flex: 4,
+            },
+            {
+              type: "text",
+              text: `${total} บาท`,
+              size: "xl",
+              color: "#164E63",
+              weight: "bold",
+              align: "end",
+              flex: 6,
+            },
+          ],
+        },
+      ],
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      backgroundColor: "#F8FAFC",
+      paddingAll: "16px",
+      contents: [
+        {
+          type: "text",
+          text: soldAt,
+          size: "xs",
+          color: "#6B7280",
+          align: "center",
+        },
+      ],
+    },
+  };
 
-    const contents = {
-      type: "bubble",
-      size: "mega",
-      header: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: "#164E63",
-        paddingAll: "20px",
-        contents: [
-          {
-            type: "text",
-            text: "TANGMARUAY POS",
-            color: "#FFFFFF",
-            size: "sm",
-            weight: "bold",
-          },
-          {
-            type: "text",
-            text: "บันทึกการขายสำเร็จ",
-            color: "#FFFFFF",
-            size: "xl",
-            weight: "bold",
-            margin: "sm",
-          },
-          {
-            type: "text",
-            text: order.orderNumber,
-            color: "#CFFAFE",
-            size: "sm",
-            margin: "sm",
-          },
-        ],
-      },
-      body: {
-        type: "box",
-        layout: "vertical",
-        paddingAll: "20px",
-        contents: [
-          detailRow("แคชเชียร์", order.cashierName),
-          detailRow("จำนวนสินค้า", `${order.itemCount} รายการ`),
-          detailRow("ชำระด้วย", payLabel),
-          ...(order.paymentMethod === "CASH" && change > 0
-            ? [
-                detailRow(
-                  "เงินทอน",
-                  `${change.toLocaleString("th-TH", { minimumFractionDigits: 2 })} บาท`
-                ),
-              ]
-            : []),
-          {
-            type: "separator",
-            margin: "xl",
-            color: "#E5E7EB",
-          },
-          {
-            type: "box",
-            layout: "horizontal",
-            margin: "xl",
-            alignItems: "center",
-            contents: [
-              {
-                type: "text",
-                text: "ยอดสุทธิ",
-                size: "md",
-                color: "#1F2937",
-                weight: "bold",
-                flex: 4,
-              },
-              {
-                type: "text",
-                text: `${total} บาท`,
-                size: "xl",
-                color: "#164E63",
-                weight: "bold",
-                align: "end",
-                flex: 6,
-              },
-            ],
-          },
-        ],
-      },
-      footer: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: "#F8FAFC",
-        paddingAll: "16px",
-        contents: [
-          {
-            type: "text",
-            text: soldAt,
-            size: "xs",
-            color: "#6B7280",
-            align: "center",
-          },
-        ],
-      },
-    };
+  const res = await fetch("https://api.line.me/v2/bot/message/push", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${settings.token}`,
+    },
+    body: JSON.stringify({
+      to: settings.userId,
+      messages: [
+        {
+          type: "flex",
+          altText: `ขายสำเร็จ ${order.orderNumber} ยอดสุทธิ ${total} บาท`,
+          contents,
+        },
+      ],
+    }),
+  });
 
-    await fetch("https://api.line.me/v2/bot/message/push", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${settings.token}`,
-      },
-      body: JSON.stringify({
-        to: settings.userId,
-        messages: [
-          {
-            type: "flex",
-            altText: `ขายสำเร็จ ${order.orderNumber} ยอดสุทธิ ${total} บาท`,
-            contents,
-          },
-        ],
-      }),
-    });
-  } catch {
-    // ไม่ block ออเดอร์ถ้า LINE ล้มเหลว
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`LINE push ล้มเหลว (${res.status}): ${body}`);
   }
 }

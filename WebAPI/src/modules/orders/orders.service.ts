@@ -122,7 +122,7 @@ export async function createOrder(
       itemCount: order.items.length,
       cashierName: order.cashier.displayName,
       changeAmt: Number(order.changeAmt),
-    });
+    }).catch(() => {});
 
     return order;
   });
