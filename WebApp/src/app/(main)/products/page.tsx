@@ -2,7 +2,7 @@
 
 import { ChangeEvent, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listProducts, createProduct, updateProduct, deleteProduct, importProducts } from "@/lib/api/products";
+import { listProducts, createProduct, updateProduct, deleteProduct, importProducts, ProductWritePayload } from "@/lib/api/products";
 import { listCategories } from "@/lib/api/categories";
 import { Product } from "@/lib/types";
 import { exportProductsExcel, readProductsExcel } from "@/lib/productsExcel";
@@ -54,16 +54,16 @@ export default function ProductsPage() {
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["products-all"] });
       closeForm();
-      setSavedInfo({ name: (vars as { name: string }).name, isNew: true });
+      setSavedInfo({ name: vars.name ?? "", isNew: true });
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Product> }) => updateProduct(id, data),
+    mutationFn: ({ id, data }: { id: number; data: ProductWritePayload }) => updateProduct(id, data),
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["products-all"] });
       closeForm();
-      setSavedInfo({ name: (vars.data as { name?: string }).name ?? editProduct?.name ?? "", isNew: false });
+      setSavedInfo({ name: vars.data.name ?? editProduct?.name ?? "", isNew: false });
     },
   });
 
@@ -120,13 +120,9 @@ export default function ProductsPage() {
 
   function handleSave(data: ProductFormData) {
     if (editProduct) {
-      console.log("[updateProduct]", { id: editProduct.id, data });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      updateMutation.mutate({ id: editProduct.id, data: data as any });
+      updateMutation.mutate({ id: editProduct.id, data });
     } else {
-      console.log("[createProduct]", data);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      createMutation.mutate(data as any);
+      createMutation.mutate(data);
     }
   }
 

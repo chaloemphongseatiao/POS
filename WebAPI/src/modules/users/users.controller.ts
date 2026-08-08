@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import * as usersService from "./users.service";
+import { numericParam } from "../../middleware/validate";
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
@@ -16,12 +17,12 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
-    res.json(await usersService.updateUser(Number(req.params.id), req.body));
+    res.json(await usersService.updateUser(numericParam(req, "id"), req.body));
   } catch (err) { next(err); }
 }
 
 export async function toggle(req: Request, res: Response, next: NextFunction) {
   try {
-    res.json(await usersService.toggleUser(Number(req.params.id)));
+    res.json(await usersService.toggleUser(numericParam(req, "id"), req.user!.id));
   } catch (err) { next(err); }
 }

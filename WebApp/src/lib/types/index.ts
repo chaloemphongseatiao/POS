@@ -36,7 +36,8 @@ export interface Product {
   barcode: string | null;
   name: string;
   description: string | null;
-  costPrice: string;
+  /** Owner-only — the API omits it for CASHIER accounts. */
+  costPrice?: string;
   sellPrice: string;
   unit: string;
   imageUrl: string | null;
@@ -99,11 +100,12 @@ export interface Order {
   items: OrderItem[];
 }
 
+// Cost, profit and margin are owner-only — the API omits them for CASHIER accounts.
 export interface ReportSummary {
   revenue: number;
-  cost: number;
-  profit: number;
-  margin: number;
+  cost?: number;
+  profit?: number;
+  margin?: number;
   orderCount: number;
   from: string;
   to: string;
@@ -112,7 +114,7 @@ export interface ReportSummary {
 export interface DailyData {
   date: string;
   revenue: number;
-  cost: number;
+  cost?: number;
   orders: number;
 }
 
@@ -122,7 +124,7 @@ export interface TopProduct {
   unit: string;
   qty: number;
   revenue: number;
-  profit: number;
+  profit?: number;
 }
 
 // Cart types (client-side only)

@@ -1,40 +1,62 @@
 import { Request, Response, NextFunction } from "express";
 import * as svc from "./reports.service";
+import { isAdmin } from "../../lib/permissions";
+import {
+  bangkokCurrentMonth,
+  bangkokToday,
+  bangkokMonthRange,
+  parseBangkok,
+} from "../../lib/datetime";
 
+/**
+ * Defaults to the current Bangkok month. Client-supplied bounds are read as
+ * Bangkok wall-clock time unless they carry an explicit zone.
+ */
 function parseRange(req: Request) {
-  const now = new Date();
-  const from = req.query.from ? new Date(req.query.from as string) : new Date(now.getFullYear(), now.getMonth(), 1);
-  const to = req.query.to ? new Date(req.query.to as string) : now;
-  return { from, to };
+  const monthRange = bangkokMonthRange(bangkokCurrentMonth());
+  return {
+    from: parseBangkok(req.query.from as string | undefined) ?? monthRange.from,
+    to: parseBangkok(req.query.to as string | undefined) ?? new Date(),
+  };
 }
 
 export async function summary(req: Request, res: Response, next: NextFunction) {
   try {
     const { from, to } = parseRange(req);
-    res.json(await svc.getSummary(from, to));
+    const result = await svc.getSummary(from, to);
+    if (isAdmin(req)) {
+      res.json(result);
+      return;
+    }
+    // Cashiers get turnover figures only — never cost, profit or margin.
+    const { cost, profit, margin, ...visible } = result;
+    res.json(visible);
   } catch (err) { next(err); }
 }
 
 export async function daily(req: Request, res: Response, next: NextFunction) {
   try {
-    const month = (req.query.month as string) || new Date().toISOString().slice(0, 7);
-    const from = req.query.from ? new Date(req.query.from as string) : undefined;
-    const to = req.query.to ? new Date(req.query.to as string) : undefined;
-    res.json(await svc.getDailyBreakdown(month, from, to));
+    const month = (req.query.month as string) || bangkokCurrentMonth();
+    const from = parseBangkok(req.query.from as string | undefined);
+    const to = parseBangkok(req.query.to as string | undefined);
+    const result = await svc.getDailyBreakdown(month, from, to);
+    res.json(isAdmin(req) ? result : result.map(({ cost, ...visible }) => visible));
   } catch (err) { next(err); }
 }
 
 export async function topProducts(req: Request, res: Response, next: NextFunction) {
   try {
     const { from, to } = parseRange(req);
-    const limit = req.query.limit ? Number(req.query.limit) : 10;
-    res.json(await svc.getTopProducts(from, to, limit));
+    const requested = Number(req.query.limit);
+    const limit = Number.isFinite(requested) ? Math.min(50, Math.max(1, requested)) : 10;
+    const result = await svc.getTopProducts(from, to, limit);
+    res.json(isAdmin(req) ? result : result.map(({ profit, ...visible }) => visible));
   } catch (err) { next(err); }
 }
 
 export async function hourly(req: Request, res: Response, next: NextFunction) {
   try {
-    const date = (req.query.date as string) || new Date().toISOString().slice(0, 10);
+    const date = (req.query.date as string) || bangkokToday();
     res.json(await svc.getHourly(date));
   } catch (err) { next(err); }
 }

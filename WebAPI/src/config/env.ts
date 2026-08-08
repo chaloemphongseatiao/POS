@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+process.env.DATABASE_URL ||= process.env.POSTGRES_PRISMA_URL;
+
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(8),

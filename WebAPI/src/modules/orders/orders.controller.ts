@@ -1,13 +1,15 @@
 import { Request, Response, NextFunction } from "express";
 import * as svc from "./orders.service";
+import { numericParam } from "../../middleware/validate";
+import { parseBangkok } from "../../lib/datetime";
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const { from, to, page, limit } = req.query;
     res.json(
       await svc.listOrders({
-        from: from ? new Date(from as string) : undefined,
-        to: to ? new Date(to as string) : undefined,
+        from: parseBangkok(from as string | undefined),
+        to: parseBangkok(to as string | undefined),
         page: page ? Number(page) : 1,
         limit: limit ? Number(limit) : 50,
       })
@@ -16,7 +18,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
 }
 
 export async function getOne(req: Request, res: Response, next: NextFunction) {
-  try { res.json(await svc.getOrder(Number(req.params.id))); } catch (err) { next(err); }
+  try { res.json(await svc.getOrder(numericParam(req, "id"))); } catch (err) { next(err); }
 }
 
 export async function create(req: Request, res: Response, next: NextFunction) {
@@ -27,6 +29,6 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 
 export async function voidOrder(req: Request, res: Response, next: NextFunction) {
   try {
-    res.json(await svc.voidOrder(Number(req.params.id), req.user!.id));
+    res.json(await svc.voidOrder(numericParam(req, "id"), req.user!.id));
   } catch (err) { next(err); }
 }

@@ -1,36 +1,83 @@
+import { Prisma } from "@prisma/client";
 import type { MovementType } from "../../types/enums";
 import { prisma } from "../../lib/prisma";
 import { createError } from "../../middleware/errorHandler";
+import { publicProductImageUrl } from "../products/productImage";
+
+type StockStatus = "normal" | "low" | "out" | "low_out";
+
+/**
+ * "low" and "normal" compare `Stock.quantity` against `Product.lowStockAt` —
+ * two different columns, which the Prisma query API can't express. Filtering
+ * and paging in SQL keeps this from loading the whole catalogue into memory
+ * on every request.
+ */
+function stockFilterSql(params: { search?: string; categoryId?: number; status?: StockStatus }): Prisma.Sql {
+  const conditions: Prisma.Sql[] = [Prisma.sql`p."isActive" = true`];
+
+  if (params.categoryId) conditions.push(Prisma.sql`p."categoryId" = ${params.categoryId}`);
+
+  if (params.search) {
+    const like = `%${params.search}%`;
+    conditions.push(Prisma.sql`(p."name" ILIKE ${like} OR p."barcode" ILIKE ${like})`);
+  }
+
+  switch (params.status) {
+    case "out":
+      conditions.push(Prisma.sql`s."quantity" <= 0`);
+      break;
+    case "low":
+      conditions.push(Prisma.sql`s."quantity" > 0 AND s."quantity" <= p."lowStockAt"`);
+      break;
+    case "low_out":
+      conditions.push(Prisma.sql`s."quantity" <= p."lowStockAt"`);
+      break;
+    case "normal":
+      conditions.push(Prisma.sql`s."quantity" > p."lowStockAt"`);
+      break;
+  }
+
+  return Prisma.sql`FROM "Stock" s JOIN "Product" p ON p."id" = s."productId" WHERE ${Prisma.join(
+    conditions,
+    " AND "
+  )}`;
+}
 
 export async function listStock(params: {
   search?: string;
   categoryId?: number;
   lowOnly?: boolean;
-  status?: "normal" | "low" | "out" | "low_out";
+  status?: StockStatus;
   page?: number;
   limit?: number;
 } = {}) {
-  const { search, categoryId, lowOnly, status, page = 1, limit = 20 } = params;
-
+  const { search, categoryId, lowOnly, status } = params;
   const resolvedStatus = status ?? (lowOnly ? "low_out" : undefined);
+  const safePage = Math.max(1, params.page ?? 1);
+  const safeLimit = Math.min(50, Math.max(1, params.limit ?? 20));
 
-  const where: any = {
-    // "out" กรองที่ DB level ได้โดยตรง
-    ...(resolvedStatus === "out" && { quantity: { lte: 0 } }),
-    product: {
-      isActive: true,
-      ...(categoryId && { categoryId }),
-      ...(search && {
-        OR: [
-          { name: { contains: search } },
-          { barcode: { contains: search } },
-        ],
-      }),
-    },
-  };
+  const filter = stockFilterSql({ search, categoryId, status: resolvedStatus });
 
-  const allStocks = await prisma.stock.findMany({
-    where,
+  const [countRows, idRows] = await Promise.all([
+    prisma.$queryRaw<{ count: bigint }[]>(Prisma.sql`SELECT COUNT(*)::bigint AS count ${filter}`),
+    prisma.$queryRaw<{ id: number }[]>(
+      Prisma.sql`SELECT s."id" ${filter} ORDER BY p."name" ASC, s."id" ASC LIMIT ${safeLimit} OFFSET ${
+        (safePage - 1) * safeLimit
+      }`
+    ),
+  ]);
+
+  const total = Number(countRows[0]?.count ?? 0);
+  const stocks = await findStocksByIds(idRows.map((row) => row.id));
+
+  return { stocks, total, page: safePage, limit: safeLimit };
+}
+
+async function findStocksByIds(ids: number[]) {
+  if (ids.length === 0) return [];
+
+  const stocks = await prisma.stock.findMany({
+    where: { id: { in: ids } },
     include: {
       product: {
         select: {
@@ -41,6 +88,7 @@ export async function listStock(params: {
           lowStockAt: true,
           isActive: true,
           imageUrl: true,
+          updatedAt: true,
           category: { select: { id: true, name: true } },
         },
       },
@@ -48,31 +96,24 @@ export async function listStock(params: {
     orderBy: { product: { name: "asc" } },
   });
 
-  // กรอง low/normal/low_out หลัง query เพราะต้องเปรียบเทียบ quantity กับ lowStockAt (column อื่น)
-  const filtered =
-    resolvedStatus === "low"
-      ? allStocks.filter((s) => s.quantity > 0 && s.quantity <= s.product.lowStockAt)
-      : resolvedStatus === "low_out"
-      ? allStocks.filter((s) => s.quantity <= s.product.lowStockAt)
-      : resolvedStatus === "normal"
-      ? allStocks.filter((s) => s.quantity > s.product.lowStockAt)
-      : allStocks; // "out" กรองที่ DB แล้ว / ไม่มี filter
-
-  const total = filtered.length;
-  const paginated = filtered.slice((page - 1) * limit, page * limit);
-
-  return { stocks: paginated, total, page, limit };
+  return stocks.map((stock) => {
+    const { updatedAt, ...product } = stock.product;
+    return {
+      ...stock,
+      product: {
+        ...product,
+        imageUrl: publicProductImageUrl(product.id, product.imageUrl, updatedAt),
+      },
+    };
+  });
 }
 
 export async function getLowStock() {
-  const stocks = await prisma.stock.findMany({
-    include: {
-      product: {
-        select: { id: true, name: true, barcode: true, unit: true, lowStockAt: true },
-      },
-    },
-  });
-  return stocks.filter((s) => s.quantity <= s.product.lowStockAt);
+  const filter = stockFilterSql({ status: "low_out" });
+  const idRows = await prisma.$queryRaw<{ id: number }[]>(
+    Prisma.sql`SELECT s."id" ${filter} ORDER BY p."name" ASC LIMIT 500`
+  );
+  return findStocksByIds(idRows.map((row) => row.id));
 }
 
 export async function getMovements(productId: number) {
@@ -112,8 +153,6 @@ export async function getAllMovements(params: {
 }
 
 export async function stockIn(productId: number, quantity: number, note: string, userId: number) {
-  if (quantity <= 0) throw createError("จำนวนต้องมากกว่า 0", 400);
-
   return prisma.$transaction(async (tx) => {
     const stock = await tx.stock.findUnique({ where: { productId } });
     if (!stock) throw createError("ไม่พบ stock ของสินค้านี้", 404);
@@ -135,8 +174,6 @@ export async function adjustStock(
   note: string,
   userId: number
 ) {
-  if (newQuantity < 0) throw createError("จำนวนต้องไม่ติดลบ", 400);
-
   return prisma.$transaction(async (tx) => {
     const stock = await tx.stock.findUnique({ where: { productId } });
     if (!stock) throw createError("ไม่พบ stock ของสินค้านี้", 404);

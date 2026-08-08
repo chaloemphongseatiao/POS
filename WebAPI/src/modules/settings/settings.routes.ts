@@ -8,7 +8,8 @@ const router = Router();
 router.get("/public", getPublic);
 
 router.use(authenticate);
-router.get("/", get);
+// Returns every stored setting, LINE channel token and secret included — admin only.
+router.get("/", requireRole("ADMIN"), get);
 router.post("/", requireRole("ADMIN"), upsert);
 router.post("/line-test", requireRole("ADMIN"), lineTest);
 router.get("/line-diagnose", requireRole("ADMIN"), lineDiagnose);

@@ -11,6 +11,13 @@ interface Props {
   iconClassName?: string;
 }
 
+export function resolveProductImageUrl(src: string | null | undefined): string | undefined {
+  if (!src) return undefined;
+  if (!src.startsWith("/api/")) return src;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  return `${apiUrl.replace(/\/$/, "")}${src}`;
+}
+
 export function ProductImage({ src, alt, className, iconClassName }: Props) {
   const [error, setError] = useState(false);
 
@@ -28,7 +35,7 @@ export function ProductImage({ src, alt, className, iconClassName }: Props) {
 
   return (
     <img
-      src={src}
+      src={resolveProductImageUrl(src)}
       alt={alt}
       className={cn("object-cover", className)}
       onError={() => setError(true)}

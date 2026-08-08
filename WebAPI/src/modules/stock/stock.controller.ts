@@ -1,15 +1,26 @@
 import { Request, Response, NextFunction } from "express";
 import { MovementType } from "../../types/enums";
 import * as svc from "./stock.service";
+import { numericParam } from "../../middleware/validate";
+import { parseBangkok } from "../../lib/datetime";
+
+const STOCK_STATUSES = ["normal", "low", "out", "low_out"] as const;
+type StockStatus = (typeof STOCK_STATUSES)[number];
+
+function parseStatus(value: unknown): StockStatus | undefined {
+  return STOCK_STATUSES.includes(value as StockStatus) ? (value as StockStatus) : undefined;
+}
+
+const MOVEMENT_TYPES: MovementType[] = ["STOCK_IN", "STOCK_OUT", "SALE", "ADJUST"];
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const { search, categoryId, lowOnly, status, page, limit } = req.query;
     res.json(await svc.listStock({
-      search: search as string,
+      search: typeof search === "string" && search.trim() ? search.trim() : undefined,
       categoryId: categoryId ? Number(categoryId) : undefined,
       lowOnly: lowOnly === "true",
-      status: status as "normal" | "low" | "out" | "low_out" | undefined,
+      status: parseStatus(status),
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 20,
     }));
@@ -21,7 +32,7 @@ export async function lowStock(req: Request, res: Response, next: NextFunction) 
 }
 
 export async function movements(req: Request, res: Response, next: NextFunction) {
-  try { res.json(await svc.getMovements(Number(req.params.productId))); } catch (err) { next(err); }
+  try { res.json(await svc.getMovements(numericParam(req, "productId"))); } catch (err) { next(err); }
 }
 
 export async function allMovements(req: Request, res: Response, next: NextFunction) {
@@ -30,9 +41,9 @@ export async function allMovements(req: Request, res: Response, next: NextFuncti
     res.json(
       await svc.getAllMovements({
         productId: productId ? Number(productId) : undefined,
-        type: type as MovementType | undefined,
-        from: from ? new Date(from as string) : undefined,
-        to: to ? new Date(to as string) : undefined,
+        type: MOVEMENT_TYPES.includes(type as MovementType) ? (type as MovementType) : undefined,
+        from: parseBangkok(from as string | undefined),
+        to: parseBangkok(to as string | undefined),
       })
     );
   } catch (err) { next(err); }
@@ -42,7 +53,7 @@ export async function stockIn(req: Request, res: Response, next: NextFunction) {
   try {
     const { quantity, note } = req.body;
     res.status(201).json(
-      await svc.stockIn(Number(req.params.productId), Number(quantity), note || "", req.user!.id)
+      await svc.stockIn(numericParam(req, "productId"), quantity, note, req.user!.id)
     );
   } catch (err) { next(err); }
 }
@@ -51,7 +62,7 @@ export async function adjust(req: Request, res: Response, next: NextFunction) {
   try {
     const { quantity, note } = req.body;
     res.json(
-      await svc.adjustStock(Number(req.params.productId), Number(quantity), note || "", req.user!.id)
+      await svc.adjustStock(numericParam(req, "productId"), quantity, note, req.user!.id)
     );
   } catch (err) { next(err); }
 }

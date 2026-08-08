@@ -9,10 +9,12 @@ import { Product, Category } from "@/lib/types";
 import { Combobox } from "@/components/ui/combobox";
 import { useToast } from "@/lib/hooks/useToast";
 import { useScannerSafeDigitKeyDown } from "@/lib/utils/barcodeScanner";
-import { ImageOff, Upload } from "lucide-react";
+import { ImageOff, Upload, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { resolveProductImageUrl } from "@/components/ui/product-image";
+import { uploadProductImage } from "@/lib/api/products";
 
-const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB (Vercel serverless request body limit is ~4.5MB)
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB, matches multer limit on the upload-image endpoint
 
 interface FormData {
   barcode: string;
@@ -46,6 +48,7 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
     setValue("barcode", v, { shouldDirty: true })
   );
   const [imgError, setImgError] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     setImgError(false);
@@ -67,7 +70,7 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
     }
   }, [product, reset]);
 
-  function handleFileSelect(event: ChangeEvent<HTMLInputElement>) {
+  async function handleFileSelect(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
@@ -81,10 +84,15 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => setValue("imageUrl", reader.result as string, { shouldDirty: true });
-    reader.onerror = () => addToast("อ่านไฟล์รูปภาพไม่สำเร็จ", "error");
-    reader.readAsDataURL(file);
+    setUploading(true);
+    try {
+      const url = await uploadProductImage(file);
+      setValue("imageUrl", url, { shouldDirty: true });
+    } catch {
+      addToast("อัปโหลดรูปภาพไม่สำเร็จ", "error");
+    } finally {
+      setUploading(false);
+    }
   }
 
   return (
@@ -100,7 +108,7 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
             <div className="w-24 h-24 rounded-2xl border border-white/70 bg-white/40 backdrop-blur-sm flex items-center justify-center flex-shrink-0 overflow-hidden">
               {imageUrl && !imgError ? (
                 <img
-                  src={imageUrl}
+                  src={resolveProductImageUrl(imageUrl)}
                   alt="preview"
                   className="w-full h-full object-cover"
                   onError={() => setImgError(true)}
@@ -121,8 +129,8 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
                     className="hidden"
                     onChange={handleFileSelect}
                   />
-                  <Button type="button" aria-label="อัปโหลดรูปภาพ" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} title="อัปโหลดรูปภาพ">
-                    <Upload className="w-4 h-4" />
+                  <Button type="button" aria-label="อัปโหลดรูปภาพ" variant="outline" size="icon" disabled={uploading} onClick={() => fileInputRef.current?.click()} title="อัปโหลดรูปภาพ">
+                    {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                   </Button>
                 </div>
               </div>
@@ -194,7 +202,7 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
 
           <div className="flex gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose} className="flex-1">ยกเลิก</Button>
-            <Button type="submit" disabled={loading} className="flex-1">
+            <Button type="submit" disabled={loading || uploading} className="flex-1">
               {loading ? "กำลังบันทึก..." : "บันทึก"}
             </Button>
           </div>

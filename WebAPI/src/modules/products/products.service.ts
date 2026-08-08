@@ -1,5 +1,7 @@
 import { prisma } from "../../lib/prisma";
 import { createError } from "../../middleware/errorHandler";
+import { isProductImagePath, publicProductImageUrl } from "./productImage";
+import type { CreateProductInput, UpdateProductInput } from "./products.schema";
 
 const productSelect = {
   id: true,
@@ -13,24 +15,48 @@ const productSelect = {
   isActive: true,
   lowStockAt: true,
   createdAt: true,
+  updatedAt: true,
   category: { select: { id: true, name: true } },
   stock: { select: { quantity: true } },
 };
+
+function withPublicImageUrl<T extends { id: number; imageUrl: string | null; updatedAt: Date }>(product: T) {
+  const { updatedAt, ...publicProduct } = product;
+  return {
+    ...publicProduct,
+    imageUrl: publicProductImageUrl(product.id, product.imageUrl, updatedAt),
+  };
+}
+
+/** Cost price is owner-only; cashiers get the same payload without it. */
+function forViewer<T extends { costPrice?: unknown }>(product: T, includeCost: boolean) {
+  if (includeCost) return product;
+  const { costPrice, ...rest } = product;
+  return rest;
+}
 
 export async function listProducts(params: {
   search?: string;
   categoryId?: number;
   lowStock?: boolean;
   activeOnly?: boolean;
+  includeCost?: boolean;
   page?: number;
   limit?: number;
 }) {
-  const { search, categoryId, lowStock, activeOnly = true, page = 1, limit = 20 } = params;
+  const { search, categoryId, lowStock, activeOnly = true, includeCost = false } = params;
+  const page = Math.max(1, params.page ?? 1);
+  const limit = Math.min(200, Math.max(1, params.limit ?? 20));
   const where = {
     isActive: activeOnly ? true : undefined,
     ...(categoryId && { categoryId }),
     ...(search && {
-      OR: [{ name: { contains: search } }, { barcode: { contains: search } }],
+      OR: [
+        // Postgres `contains` is a case-sensitive LIKE without this — searching
+        // "coke" would miss a product named "Coke".
+        { name: { contains: search, mode: "insensitive" as const } },
+        { barcode: { contains: search, mode: "insensitive" as const } },
+      ],
     }),
   };
 
@@ -45,60 +71,55 @@ export async function listProducts(params: {
     prisma.product.count({ where }),
   ]);
 
-  return { products, total, page, limit };
+  return {
+    products: products.map((p) => forViewer(withPublicImageUrl(p), includeCost)),
+    total,
+    page,
+    limit,
+  };
 }
 
-export async function getProductById(id: number) {
+export async function getProductById(id: number, includeCost = false) {
   const p = await prisma.product.findUnique({ where: { id }, select: productSelect });
   if (!p) throw createError("ไม่พบสินค้า", 404);
-  return p;
+  return forViewer(withPublicImageUrl(p), includeCost);
 }
 
-export async function getProductByBarcode(barcode: string) {
+export async function getProductByBarcode(barcode: string, includeCost = false) {
   const p = await prisma.product.findUnique({
     where: { barcode, isActive: true },
     select: productSelect,
   });
   if (!p) throw createError("ไม่พบสินค้าที่มี barcode นี้", 404);
-  return p;
+  return forViewer(withPublicImageUrl(p), includeCost);
 }
 
-export async function createProduct(data: {
-  barcode?: string;
-  name: string;
-  description?: string;
-  costPrice?: number;
-  sellPrice: number;
-  unit: string;
-  imageUrl?: string;
-  lowStockAt: number;
-  categoryId: number;
-  initialStock?: number;
-}) {
-  const { initialStock = 0, costPrice = 0, ...rest } = data;
+export async function getProductImage(id: number) {
+  const product = await prisma.product.findUnique({
+    where: { id },
+    select: { imageUrl: true },
+  });
+  if (!product?.imageUrl) throw createError("ไม่พบรูปสินค้า", 404);
+  return { imageUrl: product.imageUrl };
+}
+
+export async function createProduct(data: CreateProductInput) {
+  const { initialStock, ...rest } = data;
   return prisma.$transaction(async (tx) => {
-    const product = await tx.product.create({ data: { ...rest, costPrice }, select: productSelect });
+    const product = await tx.product.create({ data: rest, select: productSelect });
     await tx.stock.create({ data: { productId: product.id, quantity: initialStock } });
-    return product;
+    return withPublicImageUrl(product);
   });
 }
 
-export async function updateProduct(
-  id: number,
-  data: Partial<{
-    barcode: string;
-    name: string;
-    description: string;
-    costPrice: number;
-    sellPrice: number;
-    unit: string;
-    imageUrl: string;
-    lowStockAt: number;
-    categoryId: number;
-    isActive: boolean;
-  }>
-) {
-  return prisma.product.update({ where: { id }, data, select: productSelect });
+export async function updateProduct(id: number, data: UpdateProductInput) {
+  const safeData = { ...data };
+  // The client echoes back the served image path (/api/products/:id/image) for
+  // products whose image is stored inline — writing that back would overwrite
+  // the actual image data with its own URL.
+  if (isProductImagePath(id, safeData.imageUrl)) delete safeData.imageUrl;
+  const product = await prisma.product.update({ where: { id }, data: safeData, select: productSelect });
+  return withPublicImageUrl(product);
 }
 
 export interface ProductImportRow {

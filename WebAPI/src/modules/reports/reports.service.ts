@@ -1,4 +1,5 @@
 import { prisma } from "../../lib/prisma";
+import { bangkokDateKey, bangkokDayEnd, bangkokDayStart, bangkokHour, bangkokMonthRange } from "../../lib/datetime";
 
 export async function getSummary(from: Date, to: Date) {
   const orders = await prisma.order.findMany({
@@ -27,27 +28,19 @@ export async function getSummary(from: Date, to: Date) {
 }
 
 export async function getDailyBreakdown(month: string, fromDate?: Date, toDate?: Date) {
-  let from: Date;
-  let to: Date;
-
-  if (fromDate && toDate) {
-    from = fromDate;
-    to = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59);
-  } else {
-    const [year, mon] = month.split("-").map(Number);
-    from = new Date(year, mon - 1, 1);
-    to = new Date(year, mon, 0, 23, 59, 59);
-  }
+  const range =
+    fromDate && toDate ? { from: fromDate, to: toDate } : bangkokMonthRange(month);
 
   const orders = await prisma.order.findMany({
-    where: { status: "COMPLETED", createdAt: { gte: from, lte: to } },
+    where: { status: "COMPLETED", createdAt: { gte: range.from, lte: range.to } },
     include: { items: true },
   });
 
   const map: Record<string, { date: string; revenue: number; cost: number; orders: number }> = {};
 
   for (const order of orders) {
-    const dateStr = order.createdAt.toISOString().slice(0, 10);
+    // Bucketed by Bangkok calendar day, not the server's UTC day.
+    const dateStr = bangkokDateKey(order.createdAt);
     if (!map[dateStr]) {
       map[dateStr] = { date: dateStr, revenue: 0, cost: 0, orders: 0 };
     }
@@ -95,11 +88,11 @@ export async function getTopProducts(from: Date, to: Date, limit = 10) {
 }
 
 export async function getHourly(date: string) {
-  const day = new Date(date);
-  const nextDay = new Date(day.getTime() + 86400000);
-
   const orders = await prisma.order.findMany({
-    where: { status: "COMPLETED", createdAt: { gte: day, lt: nextDay } },
+    where: {
+      status: "COMPLETED",
+      createdAt: { gte: bangkokDayStart(date), lt: bangkokDayEnd(date) },
+    },
   });
 
   const hours: Record<number, { hour: number; revenue: number; orders: number }> = {};
@@ -108,7 +101,7 @@ export async function getHourly(date: string) {
   }
 
   for (const order of orders) {
-    const h = order.createdAt.getHours();
+    const h = bangkokHour(order.createdAt);
     hours[h].revenue += Number(order.totalAmt);
     hours[h].orders += 1;
   }

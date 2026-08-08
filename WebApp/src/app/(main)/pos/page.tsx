@@ -14,10 +14,11 @@ import { Input } from "@/components/ui/input";
 import PaymentModal from "@/components/pos/PaymentModal";
 import ReceiptModal from "@/components/pos/ReceiptModal";
 import { Product, PaymentMethod, Order } from "@/lib/types";
-import { Search, Trash2, Plus, Minus, ShoppingCart, CheckCircle2, XCircle, Barcode } from "lucide-react";
+import { Search, Trash2, Plus, Minus, ShoppingCart, CheckCircle2, XCircle, Barcode, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { ProductImage } from "@/components/ui/product-image";
 import { Kbd } from "@/components/ui/kbd";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 export default function PosPage() {
   const { user } = useAuth();
@@ -30,6 +31,7 @@ export default function PosPage() {
   const [showPayment, setShowPayment] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
@@ -124,8 +126,8 @@ export default function PosPage() {
         if (cart.items.length > 0) setShowPayment(true);
       } else if (e.key === "F4") {
         e.preventDefault();
-        if (cart.items.length > 0 && window.confirm("ล้างรายการสั่งซื้อทั้งหมด?")) {
-          cart.clearCart();
+        if (cart.items.length > 0) {
+          setShowClearConfirm(true);
         }
       }
     }
@@ -407,9 +409,7 @@ export default function PosPage() {
           {cart.items.length > 0 && (
             <button
               type="button"
-              onClick={() => {
-                if (window.confirm("ล้างรายการสั่งซื้อทั้งหมด?")) cart.clearCart();
-              }}
+              onClick={() => setShowClearConfirm(true)}
               className="w-full flex items-center justify-center gap-1.5 text-xs text-slate-400 hover:text-red-500 transition-colors"
             >
               ล้างรายการ <Kbd>F4</Kbd>
@@ -431,6 +431,34 @@ export default function PosPage() {
         order={completedOrder}
         onClose={() => setCompletedOrder(null)}
       />
+
+      <Dialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              ล้างรายการสั่งซื้อทั้งหมด?
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2 text-sm text-gray-600">
+            <p>รายการในตะกร้าทั้งหมดจะถูกล้าง</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowClearConfirm(false)}>
+              ยกเลิก
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                cart.clearCart();
+                setShowClearConfirm(false);
+              }}
+            >
+              ยืนยันล้างรายการ
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

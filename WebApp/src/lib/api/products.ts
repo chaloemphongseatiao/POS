@@ -29,14 +29,41 @@ export async function getProductByBarcode(barcode: string): Promise<Product> {
   return data;
 }
 
-export async function createProduct(body: Partial<Product> & { initialStock?: number }): Promise<Product> {
+/**
+ * What the API accepts when writing a product. Distinct from `Product`, whose
+ * money fields come back as strings while writes send numbers.
+ */
+export interface ProductWritePayload {
+  barcode?: string;
+  name?: string;
+  description?: string;
+  costPrice?: number;
+  sellPrice?: number;
+  unit?: string;
+  imageUrl?: string;
+  lowStockAt?: number;
+  categoryId?: number;
+  isActive?: boolean;
+  initialStock?: number;
+}
+
+export async function createProduct(body: ProductWritePayload): Promise<Product> {
   const { data } = await apiClient.post<Product>("/api/products", body);
   return data;
 }
 
-export async function updateProduct(id: number, body: Partial<Product>): Promise<Product> {
+export async function updateProduct(id: number, body: ProductWritePayload): Promise<Product> {
   const { data } = await apiClient.put<Product>(`/api/products/${id}`, body);
   return data;
+}
+
+export async function uploadProductImage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("image", file);
+  const { data } = await apiClient.post<{ url: string }>("/api/products/upload-image", formData, {
+    headers: { "Content-Type": undefined },
+  });
+  return data.url;
 }
 
 export async function deleteProduct(id: number) {

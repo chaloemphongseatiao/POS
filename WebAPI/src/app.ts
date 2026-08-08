@@ -16,7 +16,11 @@ import { errorHandler } from "./middleware/errorHandler";
 
 const app = express();
 
-app.use(helmet());
+// Behind Vercel/any reverse proxy the socket address is the proxy's — without
+// this every client would share one rate-limit bucket.
+app.set("trust proxy", 1);
+
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(cors({
   origin: process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(",")
@@ -38,6 +42,10 @@ app.use("/api/orders", ordersRoutes);
 app.use("/api/reports", reportsRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/line", lineRoutes);
+
+app.use((_req, res) => {
+  res.status(404).json({ message: "ไม่พบ endpoint ที่เรียก" });
+});
 
 app.use(errorHandler);
 
