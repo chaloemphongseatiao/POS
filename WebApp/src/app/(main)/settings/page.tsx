@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSettings, upsertSetting } from "@/lib/api/settings";
 import { listUsers, createUser, updateUser, toggleUser } from "@/lib/api/users";
 import { listCategories, createCategory, updateCategory, deleteCategory } from "@/lib/api/categories";
-import { listLineFollowers } from "@/lib/api/line";
+import { listLineFollowers, syncLineFollowers } from "@/lib/api/line";
 import { User, Category, UserRole } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -428,6 +428,18 @@ function LineTab() {
   const [diagnostics, setDiagnostics] = useState<LineDiagnostics | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncResult, setSyncResult] = useState<{ total: number; added: number } | null>(null);
+
+  const syncMutation = useMutation({
+    mutationFn: syncLineFollowers,
+    onMutate: () => { setSyncError(null); setSyncResult(null); },
+    onSuccess: (data) => {
+      setSyncResult(data);
+      qc.invalidateQueries({ queryKey: ["line-followers"] });
+    },
+    onError: (err: unknown) => setSyncError(extractApiError(err, "ดึงรายชื่อไม่สำเร็จ")),
+  });
 
   const recipients = (userId ?? settings.line_user_id ?? "")
     .split(/[\s,;]+/)
@@ -692,7 +704,32 @@ function LineTab() {
         )}
 
         <div className="pt-2 border-t border-white/60">
-          <p className="text-sm font-medium mb-2">รายชื่อผู้ติดตาม (Followers)</p>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <p className="text-sm font-medium">รายชื่อผู้ติดตาม (Followers)</p>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => syncMutation.mutate()}
+              disabled={syncMutation.isPending}
+            >
+              {syncMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "ดึงจาก LINE"
+              )}
+            </Button>
+          </div>
+          {syncError && (
+            <p className="mb-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+              {syncError}
+            </p>
+          )}
+          {syncResult && (
+            <p className="mb-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">
+              ดึงมา {syncResult.total} คน — เพิ่มใหม่ {syncResult.added} คน
+            </p>
+          )}
           {isFollowersLoading ? (
             <div className="flex items-center justify-center gap-2 py-6 text-gray-400">
               <Loader2 className="h-4 w-4 animate-spin" />

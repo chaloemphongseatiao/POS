@@ -81,3 +81,11 @@ export async function followers(req: Request, res: Response, next: NextFunction)
     next(err);
   }
 }
+
+export async function syncFollowers(req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json(await svc.syncFollowersFromLine());
+  } catch (err) {
+    next(err);
+  }
+}

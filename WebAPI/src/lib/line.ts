@@ -79,6 +79,41 @@ export interface LineWebhookHit {
   events: string[];
 }
 
+/**
+ * Pulls the follower IDs straight from LINE, bypassing the webhook entirely — the only
+ * way to recover users who added the bot while the webhook was off. LINE gates this
+ * endpoint behind a verified or premium account and answers 403 otherwise.
+ */
+export async function fetchFollowerIds(channelToken: string): Promise<string[]> {
+  const ids: string[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const url = new URL("https://api.line.me/v2/bot/followers/ids");
+    url.searchParams.set("limit", "1000");
+    if (cursor) url.searchParams.set("start", cursor);
+
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${channelToken}` } });
+    const body = (await res.json().catch(() => null)) as
+      | { userIds?: string[]; next?: string; message?: string }
+      | null;
+
+    if (!res.ok) {
+      if (res.status === 403) {
+        throw new Error(
+          "LINE ไม่อนุญาตให้ดึงรายชื่อผู้ติดตามของบัญชีนี้ (HTTP 403) — API นี้ใช้ได้เฉพาะบัญชีรับรอง (Verified) หรือบัญชีพรีเมียม บัญชีทั่วไปต้องรับ User ID ผ่าน webhook เท่านั้น"
+        );
+      }
+      throw new Error(`ดึงรายชื่อผู้ติดตามไม่สำเร็จ (HTTP ${res.status}) ${body?.message ?? ""}`.trim());
+    }
+
+    ids.push(...(body?.userIds ?? []));
+    cursor = body?.next;
+  } while (cursor);
+
+  return ids;
+}
+
 export interface LineDiagnostics {
   bot: { basicId?: string; displayName?: string; chatMode?: string } | null;
   botError?: string;

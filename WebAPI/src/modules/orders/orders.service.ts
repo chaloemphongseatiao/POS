@@ -1,16 +1,32 @@
-import type { PaymentMethod } from "../../types/enums";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
 import { createError } from "../../middleware/errorHandler";
 import { generateOrderNumber } from "../../lib/orderNumber";
 import { sendLineOrderNotification } from "../../lib/line";
+import type { CreateOrderInput } from "./orders.schema";
 
-interface OrderItemInput {
-  productId: number;
-  quantity: number;
+const MAX_ORDER_NUMBER_ATTEMPTS = 5;
+const LINE_NOTIFY_TIMEOUT_MS = 3000;
+
+/** Resolves with the work, or after `ms` — whichever lands first. Never rejects. */
+async function withTimeout(work: Promise<void>, ms: number): Promise<void> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    await Promise.race([
+      work,
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 export async function listOrders(params: { from?: Date; to?: Date; page?: number; limit?: number }) {
-  const { from, to, page = 1, limit = 50 } = params;
+  const { from, to } = params;
+  const page = Math.max(1, params.page ?? 1);
+  const limit = Math.min(100, Math.max(1, params.limit ?? 50));
   const where = {
     ...(from || to
       ? { createdAt: { gte: from, lte: to } }
@@ -50,71 +66,62 @@ export async function getOrder(id: number) {
   return order;
 }
 
-export async function createOrder(
-  cashierId: number,
-  input: {
-    items: OrderItemInput[];
-    paymentMethod: PaymentMethod;
-    amountPaid: number;
-    discountAmt?: number;
-    note?: string;
-  }
-) {
-  const { items, paymentMethod, amountPaid, discountAmt = 0, note } = input;
-
-  if (!items.length) throw createError("ไม่มีรายการสินค้า", 400);
-
-  // Fetch products
-  const products = await Promise.all(
-    items.map(async (item) => {
-      const product = await prisma.product.findUnique({
-        where: { id: item.productId, isActive: true },
-      });
-      if (!product) throw createError(`ไม่พบสินค้า ID ${item.productId}`, 404);
-      return { product, quantity: item.quantity };
-    })
+/** True when the write failed only because another register grabbed the same order number. */
+function isDuplicateOrderNumber(err: unknown): boolean {
+  return (
+    err instanceof Prisma.PrismaClientKnownRequestError &&
+    err.code === "P2002" &&
+    JSON.stringify(err.meta?.target ?? "").includes("orderNumber")
   );
+}
 
-  const subtotal = products.reduce(
+export async function createOrder(cashierId: number, input: CreateOrderInput) {
+  const { items, paymentMethod, amountPaid, discountAmt, note } = input;
+
+  const productIds = [...new Set(items.map((item) => item.productId))];
+  const found = await prisma.product.findMany({
+    where: { id: { in: productIds }, isActive: true },
+  });
+  const productById = new Map(found.map((product) => [product.id, product]));
+
+  const missing = productIds.filter((id) => !productById.has(id));
+  if (missing.length) throw createError(`ไม่พบสินค้า ID ${missing.join(", ")}`, 404);
+
+  const lines = items.map((item) => ({
+    product: productById.get(item.productId)!,
+    quantity: item.quantity,
+  }));
+
+  const subtotal = lines.reduce(
     (sum, { product, quantity }) => sum + Number(product.sellPrice) * quantity,
     0
   );
-  const totalAmt = Math.max(0, subtotal - discountAmt);
+
+  if (discountAmt > subtotal) throw createError("ส่วนลดมากกว่ายอดรวม", 400);
+
+  const totalAmt = subtotal - discountAmt;
   const changeAmt = amountPaid - totalAmt;
 
   if (changeAmt < 0) throw createError("จำนวนเงินที่รับมาไม่พอ", 400);
 
-  const orderNumber = await generateOrderNumber();
+  const order = await createOrderWithRetry({
+    cashierId,
+    lines,
+    subtotal,
+    discountAmt,
+    totalAmt,
+    paymentMethod,
+    amountPaid,
+    changeAmt,
+    note,
+  });
 
-  return prisma.$transaction(async (tx) => {
-    const order = await tx.order.create({
-      data: {
-        orderNumber,
-        subtotal,
-        discountAmt,
-        totalAmt,
-        paymentMethod,
-        amountPaid,
-        changeAmt,
-        note,
-        cashierId,
-        items: {
-          create: products.map(({ product, quantity }) => ({
-            productId: product.id,
-            quantity,
-            unitPrice: product.sellPrice,
-            costPrice: product.costPrice ?? 0,
-            subtotal: Number(product.sellPrice) * quantity,
-          })),
-        },
-      },
-      include: {
-        items: { include: { product: { select: { name: true, unit: true } } } },
-        cashier: { select: { displayName: true } },
-      },
-    });
-
-    // ส่ง LINE แจ้งเตือน (fire-and-forget — ไม่ block ถ้า LINE ล้มเหลว)
+  // Awaited, not fire-and-forget: on a serverless host the invocation is frozen once
+  // the response is flushed, so a detached push is killed before it reaches LINE. The
+  // timeout keeps the original intent — a LINE outage must never stall a completed
+  // sale — while still giving the push a chance to finish. Errors stay non-fatal: the
+  // order is already committed and must be returned either way.
+  await withTimeout(
     sendLineOrderNotification({
       orderNumber: order.orderNumber,
       totalAmt: Number(order.totalAmt),
@@ -130,10 +137,60 @@ export async function createOrder(
       })
       .catch((err) => {
         console.error(`[line] notification failed for ${order.orderNumber}:`, err?.message ?? err);
-      });
+      }),
+    LINE_NOTIFY_TIMEOUT_MS
+  );
 
-    return order;
-  });
+  return order;
+}
+
+async function createOrderWithRetry(data: {
+  cashierId: number;
+  lines: { product: { id: number; sellPrice: Prisma.Decimal; costPrice: Prisma.Decimal }; quantity: number }[];
+  subtotal: number;
+  discountAmt: number;
+  totalAmt: number;
+  paymentMethod: string;
+  amountPaid: number;
+  changeAmt: number;
+  note?: string;
+}) {
+  for (let attempt = 1; ; attempt++) {
+    const orderNumber = await generateOrderNumber();
+    try {
+      return await prisma.order.create({
+        data: {
+          orderNumber,
+          subtotal: data.subtotal,
+          discountAmt: data.discountAmt,
+          totalAmt: data.totalAmt,
+          paymentMethod: data.paymentMethod,
+          amountPaid: data.amountPaid,
+          changeAmt: data.changeAmt,
+          note: data.note,
+          cashierId: data.cashierId,
+          items: {
+            create: data.lines.map(({ product, quantity }) => ({
+              productId: product.id,
+              quantity,
+              unitPrice: product.sellPrice,
+              costPrice: product.costPrice ?? 0,
+              subtotal: Number(product.sellPrice) * quantity,
+            })),
+          },
+        },
+        include: {
+          items: { include: { product: { select: { name: true, unit: true } } } },
+          cashier: { select: { displayName: true } },
+        },
+      });
+    } catch (err) {
+      // Two registers can read the same "latest" order number; retry with the
+      // next one instead of failing the sale with a 409.
+      if (isDuplicateOrderNumber(err) && attempt < MAX_ORDER_NUMBER_ATTEMPTS) continue;
+      throw err;
+    }
+  }
 }
 
 export async function voidOrder(id: number, adminId: number) {
