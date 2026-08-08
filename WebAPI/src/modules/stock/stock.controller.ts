@@ -58,6 +58,10 @@ export async function stockIn(req: Request, res: Response, next: NextFunction) {
   } catch (err) { next(err); }
 }
 
+export async function importMany(req: Request, res: Response, next: NextFunction) {
+  try { res.json(await svc.importStock(req.body?.rows, req.user!.id)); } catch (err) { next(err); }
+}
+
 export async function receive(req: Request, res: Response, next: NextFunction) {
   try {
     const { items, note, reference } = req.body;

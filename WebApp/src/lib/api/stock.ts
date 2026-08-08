@@ -45,6 +45,25 @@ export async function stockIn(productId: number, quantity: number, note?: string
   return data;
 }
 
+export interface StockImportRow {
+  row: number;
+  barcode?: string;
+  name?: string;
+  /** The counted quantity — import replaces the stock level, it doesn't add. */
+  quantity: number;
+}
+
+export interface StockImportResult {
+  total: number;
+  updated: number;
+  unchanged: number;
+}
+
+export async function importStock(rows: StockImportRow[]): Promise<StockImportResult> {
+  const { data } = await apiClient.post<StockImportResult>("/api/stock/import", { rows });
+  return data;
+}
+
 export interface ReceiveStockItem {
   productId: number;
   quantity: number;

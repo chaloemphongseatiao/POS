@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { ChangeEvent, useRef, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listStock, stockIn, adjustStock } from "@/lib/api/stock";
+import { listStock, stockIn, adjustStock, importStock } from "@/lib/api/stock";
+import { exportStockExcel, readStockExcel } from "@/lib/stockExcel";
 import { listCategories } from "@/lib/api/categories";
 import { StockItem } from "@/lib/types";
 import { useToast } from "@/lib/hooks/useToast";
@@ -13,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { ProductImage } from "@/components/ui/product-image";
 import { formatNumber } from "@/lib/utils/formatCurrency";
 import { cn } from "@/lib/utils/cn";
-import { ChevronLeft, ChevronRight, Plus, Search, SlidersHorizontal, Truck } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Plus, Search, SlidersHorizontal, Truck, Upload } from "lucide-react";
 
 const PAGE_SIZE = 20;
 
@@ -41,6 +42,9 @@ export default function StockPage() {
   const [categoryId, setCategoryId] = useState<number | undefined>();
   const [status, setStatus] = useState<StatusFilter>("");
   const [page, setPage] = useState(1);
+
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const [inTarget, setInTarget] = useState<StockItem | null>(null);
   const [adjustTarget, setAdjustTarget] = useState<StockItem | null>(null);
@@ -93,6 +97,54 @@ export default function StockPage() {
     onSuccess: (_, vars) => refreshStock(`ปรับยอดเป็น ${formatNumber(vars.quantity)} สำเร็จ`),
   });
 
+  const importMutation = useMutation({
+    mutationFn: importStock,
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ["stock"] });
+      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["products-all"] });
+      addToast(
+        `Import สำเร็จ ${result.total} รายการ (ปรับยอด ${result.updated}, เท่าเดิม ${result.unchanged})`,
+        "success"
+      );
+    },
+  });
+
+  async function handleExport() {
+    setIsExporting(true);
+    try {
+      // Export what the filters currently show, not just the visible page.
+      const filters = { search: search || undefined, categoryId, status: status || undefined };
+      const EXPORT_CHUNK = 200; // the API's per-page ceiling
+      const result = await listStock({ ...filters, page: 1, limit: EXPORT_CHUNK });
+      const pages = Math.ceil(result.total / EXPORT_CHUNK);
+      const rest = await Promise.all(
+        Array.from({ length: Math.max(0, pages - 1) }, (_, i) =>
+          listStock({ ...filters, page: i + 2, limit: EXPORT_CHUNK })
+        )
+      );
+      const stocks = [result, ...rest].flatMap((chunk) => chunk.stocks);
+      exportStockExcel(stocks);
+      addToast(`Export สำเร็จ ${stocks.length} รายการ`, "success");
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
+  async function handleImportFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    try {
+      const rows = await readStockExcel(file);
+      if (rows.length === 0) throw new Error("ไม่พบข้อมูลสต็อกในไฟล์");
+      importMutation.mutate(rows);
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : "อ่านไฟล์ Excel ไม่สำเร็จ", "error");
+    }
+  }
+
   const target = inTarget ?? adjustTarget;
   const isAdjust = !!adjustTarget;
   const parsedQty = Number(quantity);
@@ -134,12 +186,34 @@ export default function StockPage() {
           <h1 className="page-title">สต็อกสินค้า</h1>
           <p className="page-description">Stock on hand</p>
         </div>
-        <Button asChild className="w-full sm:w-auto">
-          <Link href="/stock/receive">
-            <Truck className="w-4 h-4 mr-2" />
-            รับสต็อกเข้าร้าน
-          </Link>
-        </Button>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          <input
+            ref={importInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={handleImportFile}
+          />
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => importInputRef.current?.click()}
+            disabled={importMutation.isPending}
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            {importMutation.isPending ? "กำลัง Import..." : "นำเข้า Excel"}
+          </Button>
+          <Button variant="outline" className="w-full sm:w-auto" onClick={handleExport} disabled={isExporting}>
+            <Download className="w-4 h-4 mr-2" />
+            {isExporting ? "กำลัง Export..." : "ส่งออก Excel"}
+          </Button>
+          <Button asChild className="col-span-2 w-full sm:w-auto">
+            <Link href="/stock/receive">
+              <Truck className="w-4 h-4 mr-2" />
+              รับสต็อกเข้าร้าน
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}

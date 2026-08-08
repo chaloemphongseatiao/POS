@@ -54,7 +54,9 @@ export async function listStock(params: {
   const { search, categoryId, lowOnly, status } = params;
   const resolvedStatus = status ?? (lowOnly ? "low_out" : undefined);
   const safePage = Math.max(1, params.page ?? 1);
-  const safeLimit = Math.min(50, Math.max(1, params.limit ?? 20));
+  // The ceiling is generous enough for the Excel export to page through a
+  // whole catalogue in a few requests.
+  const safeLimit = Math.min(200, Math.max(1, params.limit ?? 20));
 
   const filter = stockFilterSql({ search, categoryId, status: resolvedStatus });
 
@@ -307,6 +309,124 @@ export async function receiveStock(
     // A 200-line receipt still writes one `Stock` row at a time, which can
     // outrun Prisma's 5s default transaction budget on a remote database.
   }, { timeout: 30_000 });
+}
+
+export interface StockImportRow {
+  row: number;
+  barcode?: string;
+  name?: string;
+  quantity: number;
+}
+
+/**
+ * Stocktake import: each row states what is actually on the shelf, so the
+ * quantity is set rather than added, and the difference is written as an
+ * `ADJUST` movement. Receiving a delivery goes through `receiveStock`.
+ */
+export async function importStock(rows: StockImportRow[], userId: number) {
+  if (!Array.isArray(rows) || rows.length === 0)
+    throw createError("ไม่พบข้อมูลสต็อกสำหรับ import", 400);
+  if (rows.length > 5000) throw createError("Import ได้สูงสุด 5,000 รายการต่อครั้ง", 400);
+
+  const errors: string[] = [];
+  const seen = new Set<string>();
+
+  for (const row of rows) {
+    const key = row.barcode?.trim() || row.name?.trim().toLocaleLowerCase();
+    if (!key) {
+      errors.push(`แถว ${row.row}: ต้องระบุ Barcode หรือชื่อสินค้า`);
+      continue;
+    }
+    if (seen.has(key)) errors.push(`แถว ${row.row}: สินค้าซ้ำในไฟล์`);
+    seen.add(key);
+
+    if (!Number.isInteger(row.quantity) || row.quantity < 0)
+      errors.push(`แถว ${row.row}: จำนวนคงเหลือต้องเป็นจำนวนเต็มตั้งแต่ 0`);
+  }
+
+  if (errors.length > 0) throw createError(errors.slice(0, 20).join("\n"), 400);
+
+  const barcodes = rows.map((row) => row.barcode?.trim()).filter((v): v is string => !!v);
+  const names = rows.map((row) => row.name?.trim()).filter((v): v is string => !!v);
+
+  const products = await prisma.product.findMany({
+    where: { OR: [{ barcode: { in: barcodes } }, { name: { in: names } }] },
+    select: { id: true, name: true, barcode: true, stock: { select: { quantity: true } } },
+  });
+
+  const byBarcode = new Map(products.filter((p) => p.barcode).map((p) => [p.barcode!, p]));
+  // A name can repeat across products, so an ambiguous name has to be rejected
+  // instead of silently adjusting whichever row came back first.
+  const byName = new Map<string, typeof products>();
+  for (const product of products) {
+    const key = product.name.trim().toLocaleLowerCase();
+    byName.set(key, [...(byName.get(key) ?? []), product]);
+  }
+
+  const targets: { productId: number; quantity: number; diff: number }[] = [];
+  const seenProducts = new Set<number>();
+
+  for (const row of rows) {
+    const barcode = row.barcode?.trim();
+    const name = row.name?.trim();
+    let product = barcode ? byBarcode.get(barcode) : undefined;
+
+    // A stated barcode that matches nothing is a typo, not an invitation to
+    // fall back to the name and adjust some other product.
+    if (barcode && !product) {
+      errors.push(`แถว ${row.row}: ไม่พบสินค้า Barcode "${barcode}"`);
+      continue;
+    }
+
+    if (!product && name) {
+      const matches = byName.get(name.toLocaleLowerCase()) ?? [];
+      if (matches.length > 1) {
+        errors.push(`แถว ${row.row}: ชื่อ "${name}" ตรงกับสินค้าหลายรายการ ให้ระบุ Barcode`);
+        continue;
+      }
+      product = matches[0];
+    }
+
+    if (!product) {
+      errors.push(`แถว ${row.row}: ไม่พบสินค้า "${name}"`);
+      continue;
+    }
+
+    // Two rows resolving to the same product would write contradicting
+    // stocktake numbers, and only the last one would survive.
+    if (seenProducts.has(product.id)) {
+      errors.push(`แถว ${row.row}: สินค้า "${product.name}" ซ้ำกับแถวก่อนหน้า`);
+      continue;
+    }
+    seenProducts.add(product.id);
+
+    const diff = row.quantity - (product.stock?.quantity ?? 0);
+    if (diff !== 0) targets.push({ productId: product.id, quantity: row.quantity, diff });
+  }
+
+  if (errors.length > 0) throw createError(errors.slice(0, 20).join("\n"), 400);
+
+  await prisma.$transaction(async (tx) => {
+    for (const target of targets) {
+      await tx.stock.upsert({
+        where: { productId: target.productId },
+        create: { productId: target.productId, quantity: target.quantity },
+        update: { quantity: target.quantity },
+      });
+    }
+
+    await tx.stockMovement.createMany({
+      data: targets.map((target) => ({
+        type: "ADJUST",
+        quantity: target.diff,
+        note: "นำเข้าจาก Excel",
+        productId: target.productId,
+        userId,
+      })),
+    });
+  }, { timeout: 30_000 });
+
+  return { total: rows.length, updated: targets.length, unchanged: rows.length - targets.length };
 }
 
 export async function adjustStock(
