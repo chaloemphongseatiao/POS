@@ -122,7 +122,15 @@ export async function createOrder(
       itemCount: order.items.length,
       cashierName: order.cashier.displayName,
       changeAmt: Number(order.changeAmt),
-    }).catch(() => {});
+    })
+      .then((results) => {
+        for (const r of results.filter((x) => !x.ok)) {
+          console.error(`[line] push failed for ${r.userId} on ${order.orderNumber}: ${r.error}`);
+        }
+      })
+      .catch((err) => {
+        console.error(`[line] notification failed for ${order.orderNumber}:`, err?.message ?? err);
+      });
 
     return order;
   });

@@ -401,15 +401,34 @@ function StoreTab() {
   );
 }
 
+function extractApiError(err: unknown, fallback: string): string {
+  const data = (err as { response?: { data?: { message?: string } } })?.response?.data;
+  if (data?.message) return data.message;
+  if (err instanceof Error && err.message) return err.message;
+  return fallback;
+}
+
 function LineTab() {
   const qc = useQueryClient();
   const { data: settings = {}, isLoading: isSettingsLoading } = useQuery({ queryKey: ["settings"], queryFn: getSettings });
   const { data: followers = [], isLoading: isFollowersLoading } = useQuery({ queryKey: ["line-followers"], queryFn: listLineFollowers });
   const [token, setToken] = useState("");
   const [secret, setSecret] = useState("");
-  const [userId, setUserId] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<"success" | "error" | null>(null);
+  const [testDetail, setTestDetail] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const recipients = (userId ?? settings.line_user_id ?? "")
+    .split(/[\s,;]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  function addRecipient(lineUserId: string) {
+    if (recipients.includes(lineUserId)) return;
+    setUserId([...recipients, lineUserId].join(", "));
+  }
 
   const webhookUrl = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/line/webhook`;
 
@@ -423,9 +442,11 @@ function LineTab() {
     mutationFn: async () => {
       if (token) await upsertSetting("line_channel_token", token);
       if (secret) await upsertSetting("line_channel_secret", secret);
-      if (userId) await upsertSetting("line_user_id", userId);
+      if (userId !== null) await upsertSetting("line_user_id", userId);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["settings"] }),
+    onMutate: () => setSaveError(null),
+    onSuccess: () => { setUserId(null); qc.invalidateQueries({ queryKey: ["settings"] }); },
+    onError: (err: unknown) => setSaveError(extractApiError(err, "บันทึกไม่สำเร็จ")),
   });
 
   const testMutation = useMutation({
@@ -437,10 +458,27 @@ function LineTab() {
           Authorization: `Bearer ${localStorage.getItem("pos_token")}`,
         },
       });
-      if (!res.ok) throw new Error("ส่งไม่สำเร็จ");
+      const body = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(body?.message || body?.error || `ส่งไม่สำเร็จ (HTTP ${res.status})`);
+      return body as { ok: boolean; results: { userId: string; ok: boolean; error?: string }[] };
     },
-    onSuccess: () => { setTestResult("success"); setTimeout(() => setTestResult(null), 4000); },
-    onError: () => { setTestResult("error"); setTimeout(() => setTestResult(null), 4000); },
+    onMutate: () => setTestDetail(null),
+    onSuccess: (data) => {
+      const failed = (data?.results ?? []).filter((r) => !r.ok);
+      if (failed.length > 0) {
+        setTestResult("error");
+        setTestDetail(failed.map((r) => `${r.userId} → ${r.error}`).join("\n"));
+      } else {
+        setTestResult("success");
+        setTestDetail(`ส่งสำเร็จ ${data?.results?.length ?? 0} ปลายทาง`);
+      }
+      setTimeout(() => { setTestResult(null); setTestDetail(null); }, 10000);
+    },
+    onError: (err: unknown) => {
+      setTestResult("error");
+      setTestDetail(err instanceof Error ? err.message : String(err));
+      setTimeout(() => { setTestResult(null); setTestDetail(null); }, 10000);
+    },
   });
 
   const hasConfig = !!(settings.line_channel_token && settings.line_user_id);
@@ -514,19 +552,26 @@ function LineTab() {
           </div>
           <div>
             <label className="text-sm font-medium">User ID (ผู้รับแจ้งเตือน)</label>
-            <Input
-              placeholder={settings.line_user_id || "U1234567890abcdef..."}
-              defaultValue={settings.line_user_id}
+            <textarea
+              placeholder="U1234567890abcdef..., U0987654321fedcba..."
+              value={userId ?? settings.line_user_id ?? ""}
               onChange={(e) => setUserId(e.target.value)}
-              className="mt-1 font-mono text-xs"
+              rows={3}
+              className="mt-1 w-full rounded-xl border border-white/70 bg-white/60 px-3 py-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-400"
             />
+            <p className="mt-1 text-xs text-gray-500">
+              ใส่ได้หลายคน คั่นด้วยเครื่องหมายจุลภาค (,) หรือขึ้นบรรทัดใหม่ — กด “เพิ่ม” ที่รายชื่อผู้ติดตามด้านล่างได้
+            </p>
+            {recipients.length > 0 && (
+              <p className="mt-1 text-xs text-gray-500">ผู้รับปัจจุบัน: {recipients.length} คน</p>
+            )}
           </div>
         </div>
 
         <div className="flex gap-2">
           <Button
             onClick={() => saveMutation.mutate()}
-            disabled={saveMutation.isPending || (!token && !secret && !userId)}
+            disabled={saveMutation.isPending || (!token && !secret && userId === null)}
             className="flex-1"
           >
             {saveMutation.isPending ? "กำลังบันทึก..." : "บันทึก"}
@@ -542,16 +587,31 @@ function LineTab() {
           )}
         </div>
 
+        {saveError && (
+          <div className="flex items-start gap-2 text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span className="break-all">{saveError}</span>
+          </div>
+        )}
+
         {testResult === "success" && (
-          <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-sm">
-            <CheckCircle2 className="w-4 h-4" />
-            ส่งข้อความทดสอบสำเร็จ! ตรวจสอบ LINE ของคุณ
+          <div className="flex items-start gap-2 text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-sm">
+            <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>
+              ส่งข้อความทดสอบสำเร็จ! ตรวจสอบ LINE ของคุณ
+              {testDetail && <span className="block text-xs opacity-80">{testDetail}</span>}
+            </span>
           </div>
         )}
         {testResult === "error" && (
-          <div className="flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm">
-            <AlertCircle className="w-4 h-4" />
-            ส่งไม่สำเร็จ — ตรวจสอบ Token และ User ID อีกครั้ง
+          <div className="flex items-start gap-2 text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>
+              ส่งไม่สำเร็จ — ตรวจสอบ Token และ User ID อีกครั้ง
+              {testDetail && (
+                <span className="block mt-1 whitespace-pre-wrap break-all font-mono text-xs opacity-80">{testDetail}</span>
+              )}
+            </span>
           </div>
         )}
 
@@ -577,6 +637,13 @@ function LineTab() {
                   <Badge variant={f.isActive ? "success" : "secondary"}>
                     {f.isActive ? "ติดตามอยู่" : "เลิกติดตาม"}
                   </Badge>
+                  {recipients.includes(f.lineUserId) ? (
+                    <Badge variant="success">รับแจ้งเตือน</Badge>
+                  ) : (
+                    <Button type="button" size="sm" variant="outline" onClick={() => addRecipient(f.lineUserId)}>
+                      เพิ่ม
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     size="sm"

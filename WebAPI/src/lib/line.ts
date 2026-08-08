@@ -3,7 +3,32 @@ import { prisma } from "./prisma";
 
 interface LineSettings {
   token: string;
+  recipients: string[];
+}
+
+export interface LinePushResult {
   userId: string;
+  ok: boolean;
+  error?: string;
+}
+
+const LINE_USER_ID_RE = /^U[0-9a-f]{32}$/i;
+
+/**
+ * `line_user_id` holds one or more LINE user IDs separated by comma/whitespace/newline.
+ * Invalid fragments are dropped so a stray character can't break the whole push.
+ */
+export function parseLineRecipients(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  const ids = raw
+    .split(/[\s,;]+/)
+    .map((s) => s.trim())
+    .filter((s) => LINE_USER_ID_RE.test(s));
+  return [...new Set(ids)];
+}
+
+export function isValidLineUserId(id: string): boolean {
+  return LINE_USER_ID_RE.test(id);
 }
 
 async function getLineSettings(): Promise<LineSettings | null> {
@@ -11,8 +36,10 @@ async function getLineSettings(): Promise<LineSettings | null> {
     where: { key: { in: ["line_channel_token", "line_user_id"] } },
   });
   const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
-  if (!map.line_channel_token || !map.line_user_id) return null;
-  return { token: map.line_channel_token, userId: map.line_user_id };
+  const token = map.line_channel_token?.trim();
+  const recipients = parseLineRecipients(map.line_user_id);
+  if (!token || recipients.length === 0) return null;
+  return { token, recipients };
 }
 
 export async function getLineChannelSecret(): Promise<string | null> {
@@ -46,6 +73,30 @@ export async function fetchLineProfile(userId: string, channelToken: string): Pr
   }
 }
 
+async function pushToRecipient(
+  token: string,
+  userId: string,
+  message: unknown
+): Promise<LinePushResult> {
+  try {
+    const res = await fetch("https://api.line.me/v2/bot/message/push", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ to: userId, messages: [message] }),
+    });
+
+    if (res.ok) return { userId, ok: true };
+
+    const body = await res.text().catch(() => "");
+    return { userId, ok: false, error: `HTTP ${res.status}: ${body || "(no body)"}` };
+  } catch (err) {
+    return { userId, ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 export async function sendLineOrderNotification(order: {
   orderNumber: string;
   totalAmt: number | string;
@@ -53,7 +104,7 @@ export async function sendLineOrderNotification(order: {
   itemCount: number;
   cashierName: string;
   changeAmt?: number | string;
-}) {
+}): Promise<LinePushResult[]> {
   const settings = await getLineSettings();
   if (!settings) throw new Error("ยังไม่ได้ตั้งค่า Channel Access Token หรือ User ID");
 
@@ -188,26 +239,20 @@ export async function sendLineOrderNotification(order: {
     },
   };
 
-  const res = await fetch("https://api.line.me/v2/bot/message/push", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${settings.token}`,
-    },
-    body: JSON.stringify({
-      to: settings.userId,
-      messages: [
-        {
-          type: "flex",
-          altText: `ขายสำเร็จ ${order.orderNumber} ยอดสุทธิ ${total} บาท`,
-          contents,
-        },
-      ],
-    }),
-  });
+  const message = {
+    type: "flex",
+    altText: `ขายสำเร็จ ${order.orderNumber} ยอดสุทธิ ${total} บาท`,
+    contents,
+  };
 
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`LINE push ล้มเหลว (${res.status}): ${body}`);
+  const results = await Promise.all(
+    settings.recipients.map((userId) => pushToRecipient(settings.token, userId, message))
+  );
+
+  if (results.every((r) => !r.ok)) {
+    const detail = results.map((r) => `${r.userId} → ${r.error}`).join(" | ");
+    throw new Error(`LINE push ล้มเหลวทุกปลายทาง: ${detail}`);
   }
+
+  return results;
 }
