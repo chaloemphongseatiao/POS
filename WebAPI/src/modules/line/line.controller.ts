@@ -32,11 +32,17 @@ export async function webhook(req: Request, res: Response) {
     const userId = event.source?.userId;
     if (!userId || event.source?.type !== "user") continue;
 
-    if (event.type === "follow") {
+    if (event.type === "unfollow") {
+      await svc.markUnfollowed(userId);
+      continue;
+    }
+
+    // Anyone who reaches the bot at all is a usable push target. Registering only on
+    // `follow` misses users who added the bot while the webhook was off (Chat mode
+    // disables it) — they never emit another follow event, so they'd stay invisible.
+    if (event.type === "follow" || (await svc.findFollower(userId)) === null) {
       const profile = token ? await fetchLineProfile(userId, token) : null;
       await svc.upsertFollower(userId, profile?.displayName ?? null);
-    } else if (event.type === "unfollow") {
-      await svc.markUnfollowed(userId);
     }
   }
 }

@@ -8,6 +8,10 @@ export async function upsertFollower(lineUserId: string, displayName: string | n
   });
 }
 
+export async function findFollower(lineUserId: string) {
+  return prisma.lineFollower.findUnique({ where: { lineUserId } });
+}
+
 export async function markUnfollowed(lineUserId: string) {
   return prisma.lineFollower.updateMany({
     where: { lineUserId },
