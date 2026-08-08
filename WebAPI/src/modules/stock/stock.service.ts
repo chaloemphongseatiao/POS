@@ -174,6 +174,37 @@ export interface ReceiveItem {
   costPrice?: number;
 }
 
+/** One product's share of a receipt, after merging repeated lines. */
+interface ReceiptLine {
+  productId: number;
+  quantity: number;
+  /** Quantity received with a stated cost — the only part that moves the average. */
+  pricedQuantity: number;
+  /** Money paid for `pricedQuantity` (quantity × unit cost, summed). */
+  pricedCost: Prisma.Decimal;
+}
+
+/**
+ * Weighted average costing: the product's cost price becomes the average of
+ * what is already on the shelf and what just arrived. Quantity received
+ * without a stated cost is carried in at the current cost, so it dilutes
+ * nothing.
+ */
+export function averageCost(
+  currentQuantity: number,
+  currentCost: Prisma.Decimal,
+  line: ReceiptLine
+): Prisma.Decimal {
+  // Negative stock (oversold) would otherwise credit the average with units
+  // that aren't there.
+  const onHand = Math.max(currentQuantity, 0);
+  const atCurrentCost = onHand + (line.quantity - line.pricedQuantity);
+  const totalQuantity = onHand + line.quantity;
+
+  const totalValue = currentCost.times(atCurrentCost).plus(line.pricedCost);
+  return totalValue.dividedBy(totalQuantity).toDecimalPlaces(4);
+}
+
 /**
  * Goods receipt: one delivery, many products, one transaction. Repeated
  * products in the same receipt are merged so a product can't get two
@@ -185,23 +216,31 @@ export async function receiveStock(
   reference: string,
   userId: number
 ) {
-  const merged = new Map<number, ReceiveItem>();
+  const merged = new Map<number, ReceiptLine>();
   for (const item of items) {
-    const existing = merged.get(item.productId);
-    merged.set(item.productId, {
+    const line = merged.get(item.productId) ?? {
       productId: item.productId,
-      quantity: (existing?.quantity ?? 0) + item.quantity,
-      costPrice: item.costPrice ?? existing?.costPrice,
-    });
+      quantity: 0,
+      pricedQuantity: 0,
+      pricedCost: new Prisma.Decimal(0),
+    };
+    line.quantity += item.quantity;
+    if (item.costPrice !== undefined) {
+      line.pricedQuantity += item.quantity;
+      line.pricedCost = line.pricedCost.plus(new Prisma.Decimal(item.costPrice).times(item.quantity));
+    }
+    merged.set(item.productId, line);
   }
   const lines = [...merged.values()];
 
   const movementNote = [reference && `อ้างอิง ${reference}`, note].filter(Boolean).join(" · ");
 
   return prisma.$transaction(async (tx) => {
+    const productIds = lines.map((line) => line.productId);
+
     const products = await tx.product.findMany({
-      where: { id: { in: lines.map((line) => line.productId) } },
-      select: { id: true, name: true, isActive: true },
+      where: { id: { in: productIds } },
+      select: { id: true, name: true, isActive: true, costPrice: true },
     });
     const byId = new Map(products.map((product) => [product.id, product]));
 
@@ -211,6 +250,16 @@ export async function receiveStock(
       if (!product.isActive) throw createError(`สินค้า "${product.name}" ถูกปิดการขายอยู่`, 400);
     }
 
+    // Read before writing: the average is weighted by the quantity that was
+    // on hand *before* this receipt.
+    const stocksBefore = await tx.stock.findMany({
+      where: { productId: { in: productIds } },
+      select: { productId: true, quantity: true },
+    });
+    const quantityBefore = new Map(stocksBefore.map((stock) => [stock.productId, stock.quantity]));
+
+    const newCosts = new Map<number, Prisma.Decimal>();
+
     for (const line of lines) {
       // Products created before their Stock row exists still receive fine.
       await tx.stock.upsert({
@@ -219,13 +268,18 @@ export async function receiveStock(
         update: { quantity: { increment: line.quantity } },
       });
 
-      if (line.costPrice !== undefined) {
+      if (line.pricedQuantity > 0) {
+        const cost = averageCost(
+          quantityBefore.get(line.productId) ?? 0,
+          byId.get(line.productId)!.costPrice,
+          line
+        );
+        newCosts.set(line.productId, cost);
         await tx.product.update({
           where: { id: line.productId },
-          data: { costPrice: new Prisma.Decimal(line.costPrice) },
+          data: { costPrice: cost },
         });
       }
-
     }
 
     await tx.stockMovement.createMany({
@@ -238,11 +292,6 @@ export async function receiveStock(
       })),
     });
 
-    const stocks = await tx.stock.findMany({
-      where: { productId: { in: lines.map((line) => line.productId) } },
-      select: { productId: true, quantity: true },
-    });
-
     return {
       itemCount: lines.length,
       totalQuantity: lines.reduce((sum, line) => sum + line.quantity, 0),
@@ -250,7 +299,9 @@ export async function receiveStock(
         productId: line.productId,
         name: byId.get(line.productId)!.name,
         quantity: line.quantity,
-        stockAfter: stocks.find((stock) => stock.productId === line.productId)?.quantity ?? 0,
+        stockAfter: (quantityBefore.get(line.productId) ?? 0) + line.quantity,
+        costBefore: byId.get(line.productId)!.costPrice.toFixed(2),
+        costAfter: (newCosts.get(line.productId) ?? byId.get(line.productId)!.costPrice).toFixed(2),
       })),
     };
     // A 200-line receipt still writes one `Stock` row at a time, which can

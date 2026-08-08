@@ -54,7 +54,15 @@ export interface ReceiveStockItem {
 export interface ReceiveStockResult {
   itemCount: number;
   totalQuantity: number;
-  items: { productId: number; name: string; quantity: number; stockAfter: number }[];
+  items: {
+    productId: number;
+    name: string;
+    quantity: number;
+    stockAfter: number;
+    /** Cost prices are weighted averages, recalculated on every receipt. */
+    costBefore: string;
+    costAfter: string;
+  }[];
 }
 
 export async function receiveStock(body: {

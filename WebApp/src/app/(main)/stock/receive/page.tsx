@@ -354,7 +354,7 @@ export default function ReceiveStockPage() {
               {mutation.isPending ? "กำลังบันทึก..." : "บันทึกรับเข้า"}
             </Button>
             <p className="text-center text-[11px] text-gray-400">
-              ใส่ราคาทุนเฉพาะเมื่อต้องการอัปเดตราคาทุนของสินค้า
+              ใส่ราคาทุนของบิลนี้ ระบบจะคิดต้นทุนเฉลี่ยถ่วงน้ำหนักกับของที่มีอยู่ให้
             </p>
           </div>
         </div>
@@ -379,11 +379,18 @@ export default function ReceiveStockPage() {
           </div>
           <div className="max-h-52 space-y-1 overflow-y-auto text-sm">
             {result?.items.map((item) => (
-              <div key={item.productId} className="flex justify-between gap-2 rounded-lg bg-white/50 px-3 py-1.5">
-                <span className="truncate">{item.name}</span>
-                <span className="shrink-0 text-gray-500">
-                  +{formatNumber(item.quantity)} → {formatNumber(item.stockAfter)}
-                </span>
+              <div key={item.productId} className="rounded-lg bg-white/50 px-3 py-1.5">
+                <div className="flex justify-between gap-2">
+                  <span className="truncate">{item.name}</span>
+                  <span className="shrink-0 text-gray-500">
+                    +{formatNumber(item.quantity)} → {formatNumber(item.stockAfter)}
+                  </span>
+                </div>
+                {item.costAfter !== item.costBefore && (
+                  <p className="text-xs text-gray-400">
+                    ต้นทุนเฉลี่ย {formatCurrency(item.costBefore)} → {formatCurrency(item.costAfter)}
+                  </p>
+                )}
               </div>
             ))}
           </div>
