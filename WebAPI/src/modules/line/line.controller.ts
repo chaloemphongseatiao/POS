@@ -1,6 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import * as svc from "./line.service";
-import { getLineChannelSecret, getLineChannelToken, verifyLineSignature, fetchLineProfile } from "../../lib/line";
+import {
+  getLineChannelSecret,
+  getLineChannelToken,
+  verifyLineSignature,
+  fetchLineProfile,
+  recordWebhookHit,
+} from "../../lib/line";
 
 interface LineWebhookEvent {
   type: string;
@@ -12,16 +18,29 @@ export async function webhook(req: Request, res: Response) {
   const rawBody = req.body as Buffer;
 
   const secret = await getLineChannelSecret();
-  if (!secret || typeof signature !== "string" || !Buffer.isBuffer(rawBody) || !verifyLineSignature(rawBody, signature, secret)) {
-    res.status(401).end();
-    return;
+  const signatureOk =
+    !!secret &&
+    typeof signature === "string" &&
+    Buffer.isBuffer(rawBody) &&
+    verifyLineSignature(rawBody, signature, secret);
+
+  let payload: { events?: LineWebhookEvent[] } = {};
+  try {
+    payload = JSON.parse(Buffer.isBuffer(rawBody) ? rawBody.toString("utf-8") : "{}");
+  } catch {
+    // Leave payload empty — the hit is still worth recording below.
   }
 
-  let payload: { events?: LineWebhookEvent[] };
-  try {
-    payload = JSON.parse(rawBody.toString("utf-8"));
-  } catch {
-    res.status(400).end();
+  await recordWebhookHit({
+    at: new Date().toISOString(),
+    signatureOk,
+    events: (payload.events ?? []).map(
+      (e) => `${e.type}${e.source?.userId ? ` ${e.source.userId}` : ""}`
+    ),
+  });
+
+  if (!signatureOk) {
+    res.status(401).end();
     return;
   }
 

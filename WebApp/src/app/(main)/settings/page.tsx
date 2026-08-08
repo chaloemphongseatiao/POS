@@ -405,6 +405,7 @@ interface LineDiagnostics {
   bot: { basicId?: string; displayName?: string; chatMode?: string } | null;
   botError?: string;
   quota?: string;
+  lastWebhook: { at: string; signatureOk: boolean; events: string[] } | null;
   recipients: { userId: string; reachable: boolean; displayName?: string; reason: string }[];
 }
 
@@ -641,6 +642,41 @@ function LineTab() {
               </p>
             ) : null}
             {diagnostics.quota && <p className="text-xs">{diagnostics.quota}</p>}
+            <div className="rounded-md bg-white/60 px-2 py-1.5 text-xs">
+              <p className="font-medium">Webhook ที่ LINE ยิงเข้ามาล่าสุด</p>
+              {!diagnostics.lastWebhook ? (
+                <p className="text-red-700">
+                  ✕ ไม่เคยมีเลย — LINE ยังไม่ได้ยิง webhook มาที่ระบบนี้ ไปเปิดสวิตช์ Webhook ที่
+                  LINE Official Account Manager → ตั้งค่า → การตอบกลับ (คนละที่กับ Use webhook ใน
+                  Developers Console ต้องเปิดทั้งสองที่)
+                </p>
+              ) : (
+                <>
+                  <p>
+                    {new Date(diagnostics.lastWebhook.at).toLocaleString("th-TH", {
+                      dateStyle: "medium",
+                      timeStyle: "medium",
+                    })}
+                  </p>
+                  {diagnostics.lastWebhook.signatureOk ? (
+                    <p className="text-green-700">✓ signature ถูกต้อง</p>
+                  ) : (
+                    <p className="text-red-700">
+                      ✕ signature ไม่ผ่าน — Channel Secret ที่บันทึกไว้ไม่ตรงกับใน Developers Console
+                    </p>
+                  )}
+                  {diagnostics.lastWebhook.events.length > 0 ? (
+                    <ul className="mt-1 font-mono break-all">
+                      {diagnostics.lastWebhook.events.map((e, i) => (
+                        <li key={i}>{e}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-600">ไม่มี event (น่าจะเป็นการกด Verify)</p>
+                  )}
+                </>
+              )}
+            </div>
             <ul className="space-y-1.5">
               {diagnostics.recipients.map((r) => (
                 <li key={r.userId} className="rounded-md bg-white/60 px-2 py-1.5">

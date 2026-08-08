@@ -73,11 +73,49 @@ export async function fetchLineProfile(userId: string, channelToken: string): Pr
   }
 }
 
+export interface LineWebhookHit {
+  at: string;
+  signatureOk: boolean;
+  events: string[];
+}
+
 export interface LineDiagnostics {
   bot: { basicId?: string; displayName?: string; chatMode?: string } | null;
   botError?: string;
   quota?: string;
+  lastWebhook: LineWebhookHit | null;
   recipients: { userId: string; reachable: boolean; displayName?: string; reason: string }[];
+}
+
+const WEBHOOK_HIT_KEY = "line_webhook_last_hit";
+
+/**
+ * Records every inbound webhook call, signature failures included. Without it there is
+ * no way to tell "LINE never called us" (webhook toggle off in the OA Manager) apart
+ * from "LINE called and we rejected it" (channel secret mismatch) — both look identical
+ * from the outside, as an empty follower list.
+ */
+export async function recordWebhookHit(hit: LineWebhookHit): Promise<void> {
+  try {
+    const value = JSON.stringify(hit);
+    await prisma.setting.upsert({
+      where: { key: WEBHOOK_HIT_KEY },
+      update: { value },
+      create: { key: WEBHOOK_HIT_KEY, value },
+    });
+  } catch {
+    // Diagnostics must never break the webhook itself.
+  }
+}
+
+async function getLastWebhookHit(): Promise<LineWebhookHit | null> {
+  const row = await prisma.setting.findUnique({ where: { key: WEBHOOK_HIT_KEY } });
+  if (!row?.value) return null;
+  try {
+    return JSON.parse(row.value) as LineWebhookHit;
+  } catch {
+    return null;
+  }
 }
 
 async function lineGet(path: string, token: string): Promise<{ status: number; body: unknown }> {
@@ -98,7 +136,11 @@ export async function getLineDiagnostics(): Promise<LineDiagnostics> {
   if (!settings) throw new Error("ยังไม่ได้ตั้งค่า Channel Access Token หรือ User ID");
 
   const { token, recipients } = settings;
-  const out: LineDiagnostics = { bot: null, recipients: [] };
+  const out: LineDiagnostics = {
+    bot: null,
+    lastWebhook: await getLastWebhookHit().catch(() => null),
+    recipients: [],
+  };
 
   try {
     const info = await lineGet("/v2/bot/info", token);
