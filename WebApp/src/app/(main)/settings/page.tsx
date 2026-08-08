@@ -401,6 +401,13 @@ function StoreTab() {
   );
 }
 
+interface LineDiagnostics {
+  bot: { basicId?: string; displayName?: string; chatMode?: string } | null;
+  botError?: string;
+  quota?: string;
+  recipients: { userId: string; reachable: boolean; displayName?: string; reason: string }[];
+}
+
 function extractApiError(err: unknown, fallback: string): string {
   const data = (err as { response?: { data?: { message?: string } } })?.response?.data;
   if (data?.message) return data.message;
@@ -417,6 +424,7 @@ function LineTab() {
   const [userId, setUserId] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<"success" | "error" | null>(null);
   const [testDetail, setTestDetail] = useState<string | null>(null);
+  const [diagnostics, setDiagnostics] = useState<LineDiagnostics | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
@@ -459,12 +467,20 @@ function LineTab() {
         },
       });
       const body = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(body?.message || body?.error || `ส่งไม่สำเร็จ (HTTP ${res.status})`);
-      return body as { ok: boolean; results: { userId: string; ok: boolean; error?: string }[] };
+      if (!res.ok) {
+        setDiagnostics(body?.diagnostics ?? null);
+        throw new Error(body?.message || body?.error || `ส่งไม่สำเร็จ (HTTP ${res.status})`);
+      }
+      return body as {
+        ok: boolean;
+        results: { userId: string; ok: boolean; error?: string }[];
+        diagnostics?: LineDiagnostics;
+      };
     },
-    onMutate: () => setTestDetail(null),
+    onMutate: () => { setTestDetail(null); setDiagnostics(null); },
     onSuccess: (data) => {
       const failed = (data?.results ?? []).filter((r) => !r.ok);
+      setDiagnostics(data?.diagnostics ?? null);
       if (failed.length > 0) {
         setTestResult("error");
         setTestDetail(failed.map((r) => `${r.userId} → ${r.error}`).join("\n"));
@@ -472,12 +488,10 @@ function LineTab() {
         setTestResult("success");
         setTestDetail(`ส่งสำเร็จ ${data?.results?.length ?? 0} ปลายทาง`);
       }
-      setTimeout(() => { setTestResult(null); setTestDetail(null); }, 10000);
     },
     onError: (err: unknown) => {
       setTestResult("error");
       setTestDetail(err instanceof Error ? err.message : String(err));
-      setTimeout(() => { setTestResult(null); setTestDetail(null); }, 10000);
     },
   });
 
@@ -612,6 +626,32 @@ function LineTab() {
                 <span className="block mt-1 whitespace-pre-wrap break-all font-mono text-xs opacity-80">{testDetail}</span>
               )}
             </span>
+          </div>
+        )}
+
+        {diagnostics && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 space-y-2">
+            <p className="font-semibold">ผลตรวจสอบการเชื่อมต่อ</p>
+            {diagnostics.botError ? (
+              <p className="break-all">{diagnostics.botError}</p>
+            ) : diagnostics.bot ? (
+              <p>
+                บอท: <strong>{diagnostics.bot.displayName || "-"}</strong>{" "}
+                <span className="font-mono text-xs">{diagnostics.bot.basicId}</span>
+              </p>
+            ) : null}
+            {diagnostics.quota && <p className="text-xs">{diagnostics.quota}</p>}
+            <ul className="space-y-1.5">
+              {diagnostics.recipients.map((r) => (
+                <li key={r.userId} className="rounded-md bg-white/60 px-2 py-1.5">
+                  <p className="font-mono text-xs break-all">{r.userId}</p>
+                  <p className={r.reachable ? "text-xs text-green-700" : "text-xs text-red-700"}>
+                    {r.reachable ? "✓" : "✕"} {r.displayName ? `${r.displayName} — ` : ""}
+                    {r.reason}
+                  </p>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 

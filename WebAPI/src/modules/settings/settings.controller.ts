@@ -1,6 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import * as svc from "./settings.service";
-import { sendLineOrderNotification, parseLineRecipients, isValidLineUserId } from "../../lib/line";
+import {
+  sendLineOrderNotification,
+  parseLineRecipients,
+  isValidLineUserId,
+  getLineDiagnostics,
+} from "../../lib/line";
 import { createError } from "../../middleware/errorHandler";
 
 const ALLOWED_SETTING_KEYS = new Set([
@@ -75,10 +80,22 @@ export async function lineTest(req: Request, res: Response, next: NextFunction) 
       cashierName: (req.user as { id: number; role: string; displayName?: string })?.displayName ?? "ทดสอบ",
       changeAmt: 1,
     });
-    res.json({ ok: results.every((r) => r.ok), results });
+    const ok = results.every((r) => r.ok);
+    // A failed push only ever says "Failed to send messages" — probe for the actual cause.
+    const diagnostics = ok ? undefined : await getLineDiagnostics().catch(() => undefined);
+    res.json({ ok, results, diagnostics });
   } catch (err) {
     // Surface the real LINE/config error — a bare throw becomes a masked 500.
     const message = err instanceof Error ? err.message : "ส่ง LINE ไม่สำเร็จ";
-    next(createError(message, 502));
+    const diagnostics = await getLineDiagnostics().catch(() => undefined);
+    res.status(502).json({ message, diagnostics });
+  }
+}
+
+export async function lineDiagnose(req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json(await getLineDiagnostics());
+  } catch (err) {
+    next(createError(err instanceof Error ? err.message : "ตรวจสอบ LINE ไม่สำเร็จ", 502));
   }
 }
