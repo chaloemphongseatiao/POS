@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { cn } from "@/lib/utils/cn";
 import {
+  Boxes,
   LayoutDashboard,
   LogOut,
   Package,
@@ -16,6 +17,7 @@ import {
 const navItems = [
   { href: "/pos", icon: ShoppingCart, label: "ขาย" },
   { href: "/products", icon: Package, label: "สินค้า", adminOnly: true },
+  { href: "/stock", icon: Boxes, label: "สต็อก", adminOnly: true },
   { href: "/orders", icon: ReceiptText, label: "ประวัติ" },
   { href: "/dashboard", icon: LayoutDashboard, label: "สรุป" },
   { href: "/settings", icon: Settings, label: "ตั้งค่า", adminOnly: true },
@@ -60,7 +62,11 @@ export default function Sidebar() {
         </button>
       </aside>
 
-      <nav className="fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-30 grid grid-cols-5 overflow-hidden rounded-2xl border border-white/75 bg-white/90 shadow-xl shadow-indigo-950/10 backdrop-blur-xl md:hidden">
+      <nav
+        // Column count follows the role: a CASHIER sees fewer items than an ADMIN.
+        style={{ gridTemplateColumns: `repeat(${visibleItems.length}, minmax(0, 1fr))` }}
+        className="fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-30 grid overflow-hidden rounded-2xl border border-white/75 bg-white/90 shadow-xl shadow-indigo-950/10 backdrop-blur-xl md:hidden"
+      >
         {visibleItems.map((item) => {
           const active = pathname.startsWith(item.href);
           return (

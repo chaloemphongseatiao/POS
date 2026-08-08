@@ -45,6 +45,27 @@ export async function stockIn(productId: number, quantity: number, note?: string
   return data;
 }
 
+export interface ReceiveStockItem {
+  productId: number;
+  quantity: number;
+  costPrice?: number;
+}
+
+export interface ReceiveStockResult {
+  itemCount: number;
+  totalQuantity: number;
+  items: { productId: number; name: string; quantity: number; stockAfter: number }[];
+}
+
+export async function receiveStock(body: {
+  items: ReceiveStockItem[];
+  note?: string;
+  reference?: string;
+}): Promise<ReceiveStockResult> {
+  const { data } = await apiClient.post<ReceiveStockResult>("/api/stock/receive", body);
+  return data;
+}
+
 export async function adjustStock(productId: number, quantity: number, note?: string) {
   const { data } = await apiClient.post(`/api/stock/${productId}/adjust`, { quantity, note });
   return data;

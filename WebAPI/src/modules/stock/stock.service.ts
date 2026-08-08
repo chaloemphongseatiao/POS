@@ -168,6 +168,96 @@ export async function stockIn(productId: number, quantity: number, note: string,
   });
 }
 
+export interface ReceiveItem {
+  productId: number;
+  quantity: number;
+  costPrice?: number;
+}
+
+/**
+ * Goods receipt: one delivery, many products, one transaction. Repeated
+ * products in the same receipt are merged so a product can't get two
+ * competing `Stock` writes inside the transaction.
+ */
+export async function receiveStock(
+  items: ReceiveItem[],
+  note: string,
+  reference: string,
+  userId: number
+) {
+  const merged = new Map<number, ReceiveItem>();
+  for (const item of items) {
+    const existing = merged.get(item.productId);
+    merged.set(item.productId, {
+      productId: item.productId,
+      quantity: (existing?.quantity ?? 0) + item.quantity,
+      costPrice: item.costPrice ?? existing?.costPrice,
+    });
+  }
+  const lines = [...merged.values()];
+
+  const movementNote = [reference && `อ้างอิง ${reference}`, note].filter(Boolean).join(" · ");
+
+  return prisma.$transaction(async (tx) => {
+    const products = await tx.product.findMany({
+      where: { id: { in: lines.map((line) => line.productId) } },
+      select: { id: true, name: true, isActive: true },
+    });
+    const byId = new Map(products.map((product) => [product.id, product]));
+
+    for (const line of lines) {
+      const product = byId.get(line.productId);
+      if (!product) throw createError(`ไม่พบสินค้า (id ${line.productId})`, 404);
+      if (!product.isActive) throw createError(`สินค้า "${product.name}" ถูกปิดการขายอยู่`, 400);
+    }
+
+    for (const line of lines) {
+      // Products created before their Stock row exists still receive fine.
+      await tx.stock.upsert({
+        where: { productId: line.productId },
+        create: { productId: line.productId, quantity: line.quantity },
+        update: { quantity: { increment: line.quantity } },
+      });
+
+      if (line.costPrice !== undefined) {
+        await tx.product.update({
+          where: { id: line.productId },
+          data: { costPrice: new Prisma.Decimal(line.costPrice) },
+        });
+      }
+
+    }
+
+    await tx.stockMovement.createMany({
+      data: lines.map((line) => ({
+        type: "STOCK_IN",
+        quantity: line.quantity,
+        note: movementNote,
+        productId: line.productId,
+        userId,
+      })),
+    });
+
+    const stocks = await tx.stock.findMany({
+      where: { productId: { in: lines.map((line) => line.productId) } },
+      select: { productId: true, quantity: true },
+    });
+
+    return {
+      itemCount: lines.length,
+      totalQuantity: lines.reduce((sum, line) => sum + line.quantity, 0),
+      items: lines.map((line) => ({
+        productId: line.productId,
+        name: byId.get(line.productId)!.name,
+        quantity: line.quantity,
+        stockAfter: stocks.find((stock) => stock.productId === line.productId)?.quantity ?? 0,
+      })),
+    };
+    // A 200-line receipt still writes one `Stock` row at a time, which can
+    // outrun Prisma's 5s default transaction budget on a remote database.
+  }, { timeout: 30_000 });
+}
+
 export async function adjustStock(
   productId: number,
   newQuantity: number,

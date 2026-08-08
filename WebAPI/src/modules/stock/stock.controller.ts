@@ -58,6 +58,13 @@ export async function stockIn(req: Request, res: Response, next: NextFunction) {
   } catch (err) { next(err); }
 }
 
+export async function receive(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { items, note, reference } = req.body;
+    res.status(201).json(await svc.receiveStock(items, note, reference, req.user!.id));
+  } catch (err) { next(err); }
+}
+
 export async function adjust(req: Request, res: Response, next: NextFunction) {
   try {
     const { quantity, note } = req.body;
