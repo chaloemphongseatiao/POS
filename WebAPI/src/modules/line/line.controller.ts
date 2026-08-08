@@ -6,7 +6,9 @@ import {
   verifyLineSignature,
   fetchLineProfile,
   recordWebhookHit,
+  fetchBotInfo,
 } from "../../lib/line";
+import { createError } from "../../middleware/errorHandler";
 
 interface LineWebhookEvent {
   type: string;
@@ -87,5 +89,13 @@ export async function syncFollowers(req: Request, res: Response, next: NextFunct
     res.json(await svc.syncFollowersFromLine());
   } catch (err) {
     next(err);
+  }
+}
+
+export async function botInfo(req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json(await fetchBotInfo());
+  } catch (err) {
+    next(createError(err instanceof Error ? err.message : "อ่านข้อมูลบอทไม่สำเร็จ", 502));
   }
 }

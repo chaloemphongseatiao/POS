@@ -5,7 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSettings, upsertSetting } from "@/lib/api/settings";
 import { listUsers, createUser, updateUser, toggleUser } from "@/lib/api/users";
 import { listCategories, createCategory, updateCategory, deleteCategory } from "@/lib/api/categories";
-import { listLineFollowers, syncLineFollowers } from "@/lib/api/line";
+import { listLineFollowers, syncLineFollowers, getLineBotInfo } from "@/lib/api/line";
+import QRCode from "qrcode";
 import { User, Category, UserRole } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -431,6 +432,27 @@ function LineTab() {
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncResult, setSyncResult] = useState<{ total: number; added: number } | null>(null);
 
+  const { data: botInfo } = useQuery({
+    queryKey: ["line-bot-info"],
+    queryFn: getLineBotInfo,
+    // Needs a working Channel Access Token; stay quiet on the settings page until one exists.
+    enabled: Boolean(settings.line_channel_token),
+    retry: false,
+  });
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!botInfo?.addFriendUrl) {
+      setQrDataUrl(null);
+      return;
+    }
+    let cancelled = false;
+    QRCode.toDataURL(botInfo.addFriendUrl, { width: 320, margin: 1 })
+      .then((url) => { if (!cancelled) setQrDataUrl(url); })
+      .catch(() => { if (!cancelled) setQrDataUrl(null); });
+    return () => { cancelled = true; };
+  }, [botInfo?.addFriendUrl]);
+
   const syncMutation = useMutation({
     mutationFn: syncLineFollowers,
     onMutate: () => { setSyncError(null); setSyncResult(null); },
@@ -700,6 +722,60 @@ function LineTab() {
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {botInfo && (
+          <div className="pt-2 border-t border-white/60">
+            <p className="text-sm font-medium mb-2">เพิ่มเพื่อนบอท</p>
+            <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-start rounded-xl bg-white/50 border border-white/70 p-3">
+              {qrDataUrl && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={qrDataUrl}
+                  alt={`QR code เพิ่มเพื่อน ${botInfo.displayName}`}
+                  className="h-36 w-36 shrink-0 rounded-lg bg-white p-1"
+                />
+              )}
+              <div className="flex-1 min-w-0 space-y-2 text-center sm:text-left">
+                <p className="font-medium">
+                  {botInfo.displayName}{" "}
+                  <span className="font-mono text-xs text-gray-400">{botInfo.basicId}</span>
+                </p>
+                <p className="text-xs text-gray-500">
+                  ให้สแกน QR หรือเปิดลิงก์นี้เพื่อ add friend — พอกดเพิ่มเพื่อนแล้ว
+                  ระบบจะเก็บ User ID เข้ารายชื่อด้านล่างให้อัตโนมัติ
+                </p>
+                <p className="font-mono text-xs break-all text-gray-500">{botInfo.addFriendUrl}</p>
+                <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyToClipboard(botInfo.addFriendUrl, "addFriend")}
+                  >
+                    {copiedField === "addFriend" ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                    <span className="ml-1">คัดลอกลิงก์</span>
+                  </Button>
+                  <a href={botInfo.addFriendUrl} target="_blank" rel="noopener noreferrer">
+                    <Button type="button" size="sm" variant="outline">
+                      เปิดหน้าเพิ่มเพื่อน
+                    </Button>
+                  </a>
+                  {qrDataUrl && (
+                    <a href={qrDataUrl} download={`add-friend-${botInfo.basicId}.png`}>
+                      <Button type="button" size="sm" variant="outline">
+                        ดาวน์โหลด QR
+                      </Button>
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

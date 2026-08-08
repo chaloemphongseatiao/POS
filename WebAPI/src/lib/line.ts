@@ -153,6 +153,36 @@ async function getLastWebhookHit(): Promise<LineWebhookHit | null> {
   }
 }
 
+export interface LineBotInfo {
+  basicId: string;
+  displayName: string;
+  chatMode?: string;
+  /** Deep link that opens the add-friend screen for this bot. */
+  addFriendUrl: string;
+}
+
+export async function fetchBotInfo(): Promise<LineBotInfo> {
+  const token = await getLineChannelToken();
+  if (!token) throw new Error("ยังไม่ได้ตั้งค่า Channel Access Token");
+
+  const res = await lineGet("/v2/bot/info", token);
+  if (res.status !== 200) {
+    const msg = (res.body as { message?: string })?.message ?? "";
+    throw new Error(`อ่านข้อมูลบอทไม่สำเร็จ (HTTP ${res.status}) ${msg}`.trim());
+  }
+
+  const b = res.body as { basicId?: string; displayName?: string; chatMode?: string };
+  if (!b.basicId) throw new Error("LINE ไม่ได้ส่ง Basic ID ของบอทกลับมา");
+
+  return {
+    basicId: b.basicId,
+    displayName: b.displayName ?? "",
+    chatMode: b.chatMode,
+    // basicId already carries its leading "@".
+    addFriendUrl: `https://line.me/R/ti/p/${encodeURIComponent(b.basicId)}`,
+  };
+}
+
 async function lineGet(path: string, token: string): Promise<{ status: number; body: unknown }> {
   const res = await fetch(`https://api.line.me${path}`, {
     headers: { Authorization: `Bearer ${token}` },
