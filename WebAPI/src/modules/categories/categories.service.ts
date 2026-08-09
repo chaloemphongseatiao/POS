@@ -1,8 +1,10 @@
 import { prisma } from "../../lib/prisma";
 import { createError } from "../../middleware/errorHandler";
+import { compareByName } from "../../lib/thaiSort";
 
 export async function listCategories() {
-  return prisma.category.findMany({ orderBy: { name: "asc" } });
+  const categories = await prisma.category.findMany();
+  return categories.sort(compareByName);
 }
 
 export async function createCategory(name: string) {

@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
 import { createError } from "../../middleware/errorHandler";
 import { isProductImagePath, publicProductImageUrl } from "./productImage";
+import { compareByName, orderByIds } from "../../lib/thaiSort";
 import type { CreateProductInput, UpdateProductInput } from "./products.schema";
 
 const productSelect = {
@@ -61,20 +62,23 @@ export async function listProducts(params: {
     }),
   };
 
-  const [products, total] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      select: productSelect,
-      orderBy: { name: "asc" },
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    prisma.product.count({ where }),
-  ]);
+  // Ordered in Node rather than with SQL `ORDER BY name` — see `compareByName`.
+  // That needs every match, so the page is picked from an id/name list first
+  // and only those rows are read in full.
+  const keys = await prisma.product.findMany({ where, select: { id: true, name: true } });
+  const pageIds = keys
+    .sort(compareByName)
+    .slice((page - 1) * limit, page * limit)
+    .map((row) => row.id);
+
+  const products = await prisma.product.findMany({
+    where: { id: { in: pageIds } },
+    select: productSelect,
+  });
 
   return {
-    products: products.map((p) => forViewer(withPublicImageUrl(p), includeCost)),
-    total,
+    products: orderByIds(products, pageIds).map((p) => forViewer(withPublicImageUrl(p), includeCost)),
+    total: keys.length,
     page,
     limit,
   };

@@ -4,6 +4,7 @@ import { prisma } from "../../lib/prisma";
 import { createError } from "../../middleware/errorHandler";
 import { publicProductImageUrl } from "../products/productImage";
 import { marginPct, markupPct, round2 } from "../../lib/profit";
+import { compareByName, orderByIds } from "../../lib/thaiSort";
 
 type StockStatus = "normal" | "low" | "out" | "low_out";
 
@@ -61,18 +62,22 @@ export async function listStock(params: {
 
   const filter = stockFilterSql({ search, categoryId, status: resolvedStatus });
 
-  const [countRows, idRows, valuation] = await Promise.all([
-    prisma.$queryRaw<{ count: bigint }[]>(Prisma.sql`SELECT COUNT(*)::bigint AS count ${filter}`),
-    prisma.$queryRaw<{ id: number }[]>(
-      Prisma.sql`SELECT s."id" ${filter} ORDER BY p."name" ASC, s."id" ASC LIMIT ${safeLimit} OFFSET ${
-        (safePage - 1) * safeLimit
-      }`
+  // Names are ordered in Node, not in SQL — see `compareByName`. That needs the
+  // whole filtered set, so only the id/name pair is read here; the page's full
+  // rows are fetched afterwards.
+  const [idRows, valuation] = await Promise.all([
+    prisma.$queryRaw<{ id: number; name: string }[]>(
+      Prisma.sql`SELECT s."id", p."name" ${filter}`
     ),
     stockValuation(filter),
   ]);
 
-  const total = Number(countRows[0]?.count ?? 0);
-  const stocks = await findStocksByIds(idRows.map((row) => row.id));
+  const total = idRows.length;
+  const pageIds = idRows
+    .sort(compareByName)
+    .slice((safePage - 1) * safeLimit, safePage * safeLimit)
+    .map((row) => row.id);
+  const stocks = await findStocksByIds(pageIds);
 
   return { stocks, total, page: safePage, limit: safeLimit, valuation };
 }
@@ -131,12 +136,12 @@ async function findStocksByIds(ids: number[]) {
         },
       },
     },
-    orderBy: { product: { name: "asc" } },
   });
 
   const totals = await movementTotals(stocks.map((stock) => stock.productId));
 
-  return stocks.map((stock) => {
+  // `id IN (...)` comes back in no particular order; the caller already sorted.
+  return orderByIds(stocks, ids).map((stock) => {
     const { updatedAt, ...product } = stock.product;
     const total = totals.get(stock.productId);
     return {
@@ -189,10 +194,12 @@ async function movementTotals(productIds: number[]) {
 
 export async function getLowStock() {
   const filter = stockFilterSql({ status: "low_out" });
-  const idRows = await prisma.$queryRaw<{ id: number }[]>(
-    Prisma.sql`SELECT s."id" ${filter} ORDER BY p."name" ASC LIMIT 500`
+  const idRows = await prisma.$queryRaw<{ id: number; name: string }[]>(
+    // ORDER BY only makes the 500-row cap deterministic; compareByName below
+    // is what puts the list in Thai dictionary order.
+    Prisma.sql`SELECT s."id", p."name" ${filter} ORDER BY p."name" ASC LIMIT 500`
   );
-  return findStocksByIds(idRows.map((row) => row.id));
+  return findStocksByIds(idRows.sort(compareByName).map((row) => row.id));
 }
 
 export async function getMovements(productId: number) {
