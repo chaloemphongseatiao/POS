@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCart } from "@/lib/hooks/useCart";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { listProducts, getProductByBarcode } from "@/lib/api/products";
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import PaymentModal from "@/components/pos/PaymentModal";
 import ReceiptModal from "@/components/pos/ReceiptModal";
+import { ShiftBanner } from "@/components/pos/ShiftBanner";
 import { Product, PaymentMethod, Order } from "@/lib/types";
 import { Search, Trash2, Plus, Minus, ShoppingCart, CheckCircle2, XCircle, Barcode, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
@@ -23,6 +24,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 export default function PosPage() {
   const { user } = useAuth();
   const cart = useCart();
+  const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
   const handleDigitKeyDown = useScannerSafeDigitKeyDown(search, setSearch);
@@ -32,6 +34,14 @@ export default function PosPage() {
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  // Rendered only after mount: the server and the cashier's machine can sit in
+  // different timezones, and a locale-formatted date would hydrate mismatched.
+  const [today, setToday] = useState("");
+  useEffect(() => {
+    setToday(
+      new Date().toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" })
+    );
+  }, []);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
@@ -51,6 +61,11 @@ export default function PosPage() {
       setShowPayment(false);
       setCompletedOrder(order);
       cart.clearCart();
+      // The sale just moved stock — refetch so the grid stops offering units
+      // that are no longer on the shelf.
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      // The drawer moved too — keep the shift totals in step with the sale.
+      queryClient.invalidateQueries({ queryKey: ["shift", "current"] });
       setToast({
         message: `ชำระเงินสำเร็จ ${order.orderNumber}\nยอด ${formatCurrency(order.totalAmt)}`,
         type: "success",
@@ -60,18 +75,31 @@ export default function PosPage() {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "เกิดข้อผิดพลาด";
       setToast({ message: msg, type: "error" });
       setShowPayment(false);
+      // A rejected sale is often a stock rejection; pull fresh quantities.
+      queryClient.invalidateQueries({ queryKey: ["products"] });
     },
   });
 
   const addProductToCart = useCallback(
     (product: Product) => {
-      cart.addItem({
+      const stock = product.stock?.quantity ?? 0;
+      const added = cart.addItem({
         productId: product.id,
         name: product.name,
         sellPrice: parseFloat(product.sellPrice),
         unit: product.unit,
+        stock,
         imageUrl: product.imageUrl,
       });
+      if (!added) {
+        setToast({
+          message:
+            stock <= 0
+              ? `${product.name} หมดสต็อก`
+              : `${product.name} เหลือ ${stock} ${product.unit} เพิ่มไม่ได้แล้ว`,
+          type: "error",
+        });
+      }
     },
     [cart]
   );
@@ -153,7 +181,7 @@ export default function PosPage() {
     <div className="flex min-h-[calc(100dvh-5rem)] flex-col gap-5 p-4 md:h-dvh md:min-h-0 md:p-6 lg:flex-row lg:overflow-hidden">
       {/* Toast notification */}
       <div
-        className={`fixed top-4 right-4 z-50 transition-all duration-300 ${
+        className={`fixed top-4 right-4 z-50 transition-[opacity,transform] duration-300 ${
           toast ? "opacity-100 translate-x-0" : "opacity-0 translate-x-full pointer-events-none"
         }`}
       >
@@ -194,12 +222,12 @@ export default function PosPage() {
 
       {/* Left: Product Browser */}
       <div className="flex min-h-[65dvh] min-w-0 flex-1 flex-col gap-4 overflow-hidden lg:min-h-0">
+        <ShiftBanner />
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <h1 className="text-xl font-bold text-slate-950 md:text-2xl tracking-tight">หน้าขายสินค้า</h1>
             <p className="text-sm text-slate-500 mt-0.5">
-              Point of Sale ·{" "}
-              {new Date().toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" })}
+              Point of Sale{today ? ` · ${today}` : ""}
             </p>
           </div>
           <div className="hidden md:flex items-center gap-3 text-xs text-slate-400">
@@ -214,7 +242,7 @@ export default function PosPage() {
           <Barcode className="w-[18px] h-[18px] text-primary flex-shrink-0" />
           <input
             aria-label="ค้นหาสินค้าหรือสแกน Barcode"
-            placeholder="ค้นหาสินค้า หรือสแกน Barcode แล้วกด Enter..."
+            placeholder="ค้นหาสินค้า หรือสแกน Barcode แล้วกด Enter…"
             className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -239,7 +267,7 @@ export default function PosPage() {
             aria-pressed={selectedCategory === null}
             onClick={() => setSelectedCategory(null)}
             className={cn(
-              "px-5 py-2.5 rounded-2xl text-sm font-semibold whitespace-nowrap flex-shrink-0 transition-all",
+              "px-5 py-2.5 rounded-2xl text-sm font-semibold whitespace-nowrap flex-shrink-0 touch-manipulation transition-[background-color,box-shadow,color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               selectedCategory === null
                 ? "bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/30"
                 : "glass text-slate-600 hover:bg-white/75"
@@ -254,7 +282,7 @@ export default function PosPage() {
               aria-pressed={selectedCategory === cat.id}
               onClick={() => setSelectedCategory(cat.id)}
               className={cn(
-                "px-5 py-2.5 rounded-2xl text-sm font-semibold whitespace-nowrap flex-shrink-0 transition-all",
+                "px-5 py-2.5 rounded-2xl text-sm font-semibold whitespace-nowrap flex-shrink-0 touch-manipulation transition-[background-color,box-shadow,color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 selectedCategory === cat.id
                   ? "bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/30"
                   : "glass text-slate-600 hover:bg-white/75"
@@ -268,21 +296,41 @@ export default function PosPage() {
         {/* Product Grid */}
         <div className="flex-1 overflow-y-auto pr-1 -mr-1">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5">
-            {filteredProducts.map((product) => (
-              <button
-                key={product.id}
-                type="button"
-                aria-label={`${product.name} ราคา ${formatCurrency(product.sellPrice)}`}
-                onClick={() => addProductToCart(product)}
-                className="glass group rounded-[18px] p-3.5 text-left transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-950/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                <div className="aspect-square rounded-xl mb-2.5 overflow-hidden">
-                  <ProductImage src={product.imageUrl} alt={product.name} className="w-full h-full" />
-                </div>
-                <p className="text-xs font-semibold line-clamp-2 text-slate-800">{product.name}</p>
-                <p className="text-sm font-extrabold text-primary mt-1">{formatCurrency(product.sellPrice)}</p>
-              </button>
-            ))}
+            {filteredProducts.map((product) => {
+              // Out-of-stock products stay on the grid — the cashier still
+              // needs to see them and tell the customer — but can't be sold.
+              const outOfStock = (product.stock?.quantity ?? 0) <= 0;
+              return (
+                <button
+                  key={product.id}
+                  type="button"
+                  disabled={outOfStock}
+                  aria-label={`${product.name} ราคา ${formatCurrency(product.sellPrice)}${
+                    outOfStock ? " (หมดสต็อก)" : ""
+                  }`}
+                  onClick={() => addProductToCart(product)}
+                  className={cn(
+                    "glass group rounded-[18px] p-3.5 text-left touch-manipulation transition-[transform,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                    outOfStock
+                      ? "cursor-not-allowed opacity-60"
+                      : "hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-950/10"
+                  )}
+                >
+                  <div className="relative aspect-square rounded-xl mb-2.5 overflow-hidden">
+                    <ProductImage src={product.imageUrl} alt={product.name} className="w-full h-full" />
+                    {outOfStock && (
+                      <span className="absolute inset-x-0 bottom-0 bg-red-500/90 py-1 text-center text-[11px] font-bold text-white">
+                        สินค้าหมด
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs font-semibold line-clamp-2 text-slate-800">{product.name}</p>
+                  <p className={cn("text-sm font-extrabold mt-1", outOfStock ? "text-slate-400" : "text-primary")}>
+                    {formatCurrency(product.sellPrice)}
+                  </p>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -308,36 +356,47 @@ export default function PosPage() {
                 <ProductImage src={item.imageUrl} alt={item.name} className="w-10 h-10 rounded-lg flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate text-slate-800">{item.name}</p>
-                  <p className="text-xs text-slate-500">{formatCurrency(item.sellPrice)}</p>
+                  <p className="text-xs tabular-nums text-slate-500">{formatCurrency(item.sellPrice)}</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     aria-label={`ลดจำนวน ${item.name}`}
                     onClick={() => cart.updateQty(item.productId, item.quantity - 1)}
-                    className="w-6 h-6 rounded-lg bg-slate-900/10 flex items-center justify-center hover:bg-slate-900/15 text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="w-9 h-9 rounded-lg bg-slate-900/10 flex items-center justify-center touch-manipulation hover:bg-slate-900/15 text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <Minus className="w-3 h-3" />
+                    <Minus className="w-3.5 h-3.5" />
                   </button>
-                  <span className="w-6 text-center text-sm font-bold text-slate-800">{item.quantity}</span>
+                  <span className="w-6 text-center text-sm font-bold tabular-nums text-slate-800">{item.quantity}</span>
                   <button
                     type="button"
                     aria-label={`เพิ่มจำนวน ${item.name}`}
-                    onClick={() => cart.updateQty(item.productId, item.quantity + 1)}
-                    className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center hover:bg-indigo-600 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => {
+                      // Stays clickable at the ceiling so the tap explains
+                      // itself instead of silently doing nothing.
+                      if (item.quantity >= item.stock) {
+                        setToast({
+                          message: `${item.name} เหลือ ${item.stock} ${item.unit} เพิ่มไม่ได้แล้ว`,
+                          type: "error",
+                        });
+                        return;
+                      }
+                      cart.updateQty(item.productId, item.quantity + 1);
+                    }}
+                    className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center touch-manipulation hover:bg-indigo-600 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <Plus className="w-3 h-3" />
+                    <Plus className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <div className="text-right w-16 flex-shrink-0">
-                  <p className="text-sm font-bold text-slate-900">{formatCurrency(item.sellPrice * item.quantity)}</p>
+                <div className="flex w-16 flex-shrink-0 flex-col items-end">
+                  <p className="text-sm font-bold tabular-nums text-slate-900">{formatCurrency(item.sellPrice * item.quantity)}</p>
                   <button
                     type="button"
                     aria-label={`ลบ ${item.name} ออกจากรายการ`}
                     onClick={() => cart.removeItem(item.productId)}
-                    className="rounded text-red-400 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="-mr-1.5 flex h-8 w-8 items-center justify-center rounded-lg touch-manipulation text-red-400 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <Trash2 className="w-3.5 h-3.5 ml-auto" />
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -349,10 +408,15 @@ export default function PosPage() {
         <div className="p-4 border-t border-white/50 space-y-3">
           {/* Discount */}
           <div className="flex items-center gap-2">
-            <label className="text-sm text-slate-500 w-16 flex-shrink-0">ส่วนลด</label>
+            <label htmlFor="cart-discount" className="text-sm text-slate-500 w-16 flex-shrink-0">ส่วนลด</label>
             <Input
+              id="cart-discount"
+              name="discount"
               type="number"
-              className="h-8 text-sm"
+              min={0}
+              inputMode="decimal"
+              autoComplete="off"
+              className="h-8 text-sm tabular-nums"
               placeholder="0"
               value={cart.discountAmt || ""}
               onChange={(e) => cart.setDiscount(parseFloat(e.target.value) || 0)}
@@ -360,7 +424,7 @@ export default function PosPage() {
           </div>
 
           {/* Summary */}
-          <div className="space-y-1 text-sm">
+          <div className="space-y-1 text-sm tabular-nums">
             <div className="flex justify-between text-slate-500">
               <span>ยอดรวม</span>
               <span>{formatCurrency(cart.subtotal())}</span>
@@ -386,7 +450,7 @@ export default function PosPage() {
                 aria-pressed={paymentMethod === m}
                 onClick={() => setPaymentMethod(m)}
                 className={cn(
-                  "py-2.5 text-xs font-semibold rounded-xl transition-colors",
+                  "py-2.5 text-xs font-semibold rounded-xl touch-manipulation transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   paymentMethod === m
                     ? "bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/30"
                     : "bg-white/60 border border-white/80 text-slate-600 hover:bg-white/80"
@@ -410,7 +474,7 @@ export default function PosPage() {
             <button
               type="button"
               onClick={() => setShowClearConfirm(true)}
-              className="w-full flex items-center justify-center gap-1.5 text-xs text-slate-400 hover:text-red-500 transition-colors"
+              className="w-full flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs text-slate-400 touch-manipulation transition-colors hover:text-red-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               ล้างรายการ <Kbd>F4</Kbd>
             </button>

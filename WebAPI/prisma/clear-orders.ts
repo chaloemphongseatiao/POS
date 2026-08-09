@@ -2,13 +2,19 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  const [movements, items, orders] = await prisma.$transaction([
-    prisma.stockMovement.deleteMany({ where: { type: "SALE" } }),
+  // Order matters: refunds point at order items, and both `SALE` and `RETURN`
+  // movements point at orders, so the children go first.
+  const [refundItems, refunds, movements, items, orders] = await prisma.$transaction([
+    prisma.refundItem.deleteMany({}),
+    prisma.refund.deleteMany({}),
+    prisma.stockMovement.deleteMany({ where: { type: { in: ["SALE", "RETURN"] } } }),
     prisma.orderItem.deleteMany({}),
     prisma.order.deleteMany({}),
   ]);
 
-  console.log(`ลบ StockMovement (SALE): ${movements.count} รายการ`);
+  console.log(`ลบ RefundItem: ${refundItems.count} รายการ`);
+  console.log(`ลบ Refund: ${refunds.count} รายการ`);
+  console.log(`ลบ StockMovement (SALE/RETURN): ${movements.count} รายการ`);
   console.log(`ลบ OrderItem: ${items.count} รายการ`);
   console.log(`ลบ Order: ${orders.count} รายการ`);
 }

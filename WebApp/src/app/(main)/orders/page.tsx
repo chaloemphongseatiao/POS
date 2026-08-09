@@ -3,13 +3,17 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listOrders, getOrder, voidOrder } from "@/lib/api/orders";
+import { getRefundsForOrder } from "@/lib/api/refunds";
 import { Order } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
+import { orderStatusInfo } from "@/lib/utils/orderStatus";
+import { useAuth } from "@/lib/hooks/useAuth";
+import { RefundDialog } from "@/components/orders/RefundDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, Eye, XCircle, Printer, Search, CalendarRange, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, XCircle, Printer, Search, CalendarRange, AlertTriangle, Undo2 } from "lucide-react";
 
 const PAGE_SIZE = 20;
 
@@ -17,11 +21,19 @@ const PAGE_SIZE = 20;
 
 function OrderDetailModal({ orderId, onClose }: { orderId: number | null; onClose: () => void }) {
   const qc = useQueryClient();
+  const isAdmin = useAuth((s) => s.user?.role === "ADMIN");
   const [showVoidConfirm, setShowVoidConfirm] = useState(false);
+  const [showRefund, setShowRefund] = useState(false);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["order", orderId],
     queryFn: () => getOrder(orderId!),
+    enabled: !!orderId,
+  });
+
+  const { data: refunds } = useQuery({
+    queryKey: ["refunds", orderId],
+    queryFn: () => getRefundsForOrder(orderId!),
     enabled: !!orderId,
   });
 
@@ -35,6 +47,15 @@ function OrderDetailModal({ orderId, onClose }: { orderId: number | null; onClos
   });
 
   const payLabel = order?.paymentMethod === "CASH" ? "เงินสด" : "QR พร้อมเพย์";
+  const status = order ? orderStatusInfo(order.status) : null;
+  const refundTotal = (refunds ?? []).reduce((sum, r) => sum + Number(r.totalAmt), 0);
+  const hasRefundableLine = !!order?.items.some(
+    (item) => item.quantity - (item.refundedQty ?? 0) > 0
+  );
+  const canRefund = isAdmin && !!order && order.status !== "VOIDED" && hasRefundableLine;
+  // Voiding restocks the whole bill, so it is only safe while nothing has come
+  // back through a refund — the API enforces the same rule.
+  const canVoid = isAdmin && order?.status === "COMPLETED";
 
   return (
     <>
@@ -43,11 +64,7 @@ function OrderDetailModal({ orderId, onClose }: { orderId: number | null; onClos
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             รายละเอียดออเดอร์
-            {order && (
-              <Badge variant={order.status === "VOIDED" ? "destructive" : "success"}>
-                {order.status === "VOIDED" ? "ยกเลิกแล้ว" : "สำเร็จ"}
-              </Badge>
-            )}
+            {status && <Badge variant={status.variant}>{status.label}</Badge>}
           </DialogTitle>
         </DialogHeader>
 
@@ -78,6 +95,11 @@ function OrderDetailModal({ orderId, onClose }: { orderId: number | null; onClos
                       <span className="text-gray-400 ml-1 text-xs">
                         x{item.quantity} {item.product.unit}
                       </span>
+                      {(item.refundedQty ?? 0) > 0 && (
+                        <span className="ml-1 text-xs text-amber-600">
+                          (คืน {item.refundedQty})
+                        </span>
+                      )}
                     </div>
                     <span className="font-medium">{formatCurrency(item.subtotal)}</span>
                   </div>
@@ -111,15 +133,64 @@ function OrderDetailModal({ orderId, onClose }: { orderId: number | null; onClos
                   <span>{formatCurrency(order.changeAmt)}</span>
                 </div>
               )}
+              {refundTotal > 0 && (
+                <div className="flex justify-between border-t pt-2 font-semibold text-amber-600">
+                  <span>คืนสินค้าไปแล้ว</span>
+                  <span>-{formatCurrency(refundTotal)}</span>
+                </div>
+              )}
             </div>
 
+            {/* Refund history */}
+            {refunds && refunds.length > 0 && (
+              <div>
+                <p className="mb-2 font-semibold text-gray-700">ประวัติการคืน</p>
+                <div className="space-y-2">
+                  {refunds.map((refund) => (
+                    <div
+                      key={refund.id}
+                      className="rounded-xl border border-amber-100/80 bg-amber-50/50 p-3"
+                    >
+                      <div className="flex justify-between">
+                        <span className="font-mono text-xs font-medium text-amber-700">
+                          {refund.refundNumber}
+                        </span>
+                        <span className="font-semibold text-amber-700">
+                          -{formatCurrency(refund.totalAmt)}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {new Date(refund.createdAt).toLocaleString("th-TH")} ·{" "}
+                        {refund.user.displayName}
+                        {!refund.restock && " · ไม่คืนเข้าสต็อก"}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-600">
+                        {refund.items
+                          .map((item) => `${item.product.name} x${item.quantity}`)
+                          .join(", ")}
+                      </p>
+                      {refund.reason && (
+                        <p className="mt-1 text-xs text-gray-400">เหตุผล: {refund.reason}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Actions */}
-            <div className="flex gap-2 pt-2">
+            <div className="flex flex-wrap gap-2 pt-2">
               <Button variant="outline" className="flex-1" onClick={() => window.print()}>
                 <Printer className="w-4 h-4 mr-2" />
                 พิมพ์ใบเสร็จ
               </Button>
-              {order.status === "COMPLETED" && (
+              {canRefund && (
+                <Button variant="outline" className="flex-1" onClick={() => setShowRefund(true)}>
+                  <Undo2 className="w-4 h-4 mr-2" />
+                  คืนสินค้า
+                </Button>
+              )}
+              {canVoid && (
                 <Button
                   variant="destructive"
                   className="flex-1"
@@ -160,6 +231,10 @@ function OrderDetailModal({ orderId, onClose }: { orderId: number | null; onClos
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {order && (
+      <RefundDialog order={order} open={showRefund} onClose={() => setShowRefund(false)} />
+    )}
     </>
   );
 }
@@ -210,8 +285,9 @@ export default function OrdersPage() {
   const startItem = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const endItem = Math.min(page * PAGE_SIZE, total);
 
-  const completedOrders = orders.filter((o) => o.status === "COMPLETED");
-  const totalRevenue = completedOrders.reduce((s, o) => s + Number(o.totalAmt), 0);
+  // A refunded bill still made a sale; only a voided one never happened.
+  const soldOrders = orders.filter((o) => o.status !== "VOIDED");
+  const totalRevenue = soldOrders.reduce((s, o) => s + Number(o.totalAmt), 0);
 
   function itemsSummary(order: Order): string {
     const names = order.items.map((item) => `${item.product.name} x${item.quantity}`);
@@ -277,8 +353,8 @@ export default function OrdersPage() {
             <p className="text-xl font-bold mt-0.5">{total} รายการ</p>
           </div>
           <div className="glass rounded-2xl px-4 py-3">
-            <p className="text-xs text-violet-500/70">สำเร็จ</p>
-            <p className="text-xl font-bold text-emerald-600 mt-0.5">{completedOrders.length} รายการ</p>
+            <p className="text-xs text-violet-500/70">ไม่ถูกยกเลิก</p>
+            <p className="text-xl font-bold text-emerald-600 mt-0.5">{soldOrders.length} รายการ</p>
           </div>
           <div className="glass rounded-2xl px-4 py-3">
             <p className="text-xs text-violet-500/70">ยอดขายรวม (หน้านี้)</p>
@@ -348,8 +424,8 @@ export default function OrdersPage() {
                       {o.paymentMethod === "CASH" ? "เงินสด" : "QR"}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <Badge variant={o.status === "VOIDED" ? "destructive" : "success"}>
-                        {o.status === "VOIDED" ? "ยกเลิก" : "สำเร็จ"}
+                      <Badge variant={orderStatusInfo(o.status).variant}>
+                        {orderStatusInfo(o.status).short}
                       </Badge>
                     </td>
                     <td className="px-4 py-3">

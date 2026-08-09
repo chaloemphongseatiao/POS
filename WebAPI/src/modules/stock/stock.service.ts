@@ -87,6 +87,8 @@ async function findStocksByIds(ids: number[]) {
           barcode: true,
           name: true,
           unit: true,
+          costPrice: true,
+          sellPrice: true,
           lowStockAt: true,
           isActive: true,
           imageUrl: true,
@@ -98,16 +100,57 @@ async function findStocksByIds(ids: number[]) {
     orderBy: { product: { name: "asc" } },
   });
 
+  const totals = await movementTotals(stocks.map((stock) => stock.productId));
+
   return stocks.map((stock) => {
     const { updatedAt, ...product } = stock.product;
+    const total = totals.get(stock.productId);
     return {
       ...stock,
+      totalIn: total?.in ?? 0,
+      totalOut: total?.out ?? 0,
       product: {
         ...product,
+        costPrice: product.costPrice.toFixed(2),
+        sellPrice: product.sellPrice.toFixed(2),
         imageUrl: publicProductImageUrl(product.id, product.imageUrl, updatedAt),
       },
     };
   });
+}
+
+/**
+ * Lifetime received / issued per product, split by the sign of the movement
+ * rather than by its type: `ADJUST` counts on both sides depending on which
+ * way the stocktake went, and summing it as one group would let a +5 and a
+ * -5 cancel out. Outgoing quantities are stored negative, hence the flip.
+ */
+async function movementTotals(productIds: number[]) {
+  const where = { productId: { in: productIds } };
+  const [incoming, outgoing] = await Promise.all([
+    prisma.stockMovement.groupBy({
+      by: ["productId"],
+      where: { ...where, quantity: { gt: 0 } },
+      _sum: { quantity: true },
+    }),
+    prisma.stockMovement.groupBy({
+      by: ["productId"],
+      where: { ...where, quantity: { lt: 0 } },
+      _sum: { quantity: true },
+    }),
+  ]);
+
+  const totals = new Map<number, { in: number; out: number }>();
+  const entryFor = (productId: number) => {
+    const entry = totals.get(productId) ?? { in: 0, out: 0 };
+    totals.set(productId, entry);
+    return entry;
+  };
+
+  for (const row of incoming) entryFor(row.productId).in += row._sum.quantity ?? 0;
+  for (const row of outgoing) entryFor(row.productId).out += -(row._sum.quantity ?? 0);
+
+  return totals;
 }
 
 export async function getLowStock() {

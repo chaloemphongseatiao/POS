@@ -3,6 +3,7 @@ import { prisma } from "../../lib/prisma";
 import { createError } from "../../middleware/errorHandler";
 import { generateOrderNumber } from "../../lib/orderNumber";
 import { sendLineOrderNotification } from "../../lib/line";
+import { getOpenShiftId } from "../shifts/shifts.service";
 import type { CreateOrderInput } from "./orders.schema";
 
 const MAX_ORDER_NUMBER_ATTEMPTS = 5;
@@ -81,6 +82,7 @@ export async function createOrder(cashierId: number, input: CreateOrderInput) {
   const productIds = [...new Set(items.map((item) => item.productId))];
   const found = await prisma.product.findMany({
     where: { id: { in: productIds }, isActive: true },
+    include: { stock: { select: { quantity: true } } },
   });
   const productById = new Map(found.map((product) => [product.id, product]));
 
@@ -91,6 +93,26 @@ export async function createOrder(cashierId: number, input: CreateOrderInput) {
     product: productById.get(item.productId)!,
     quantity: item.quantity,
   }));
+
+  // The same product can appear on several lines; stock is checked and
+  // deducted against the bill's total for that product, not per line.
+  const demandByProduct = new Map<number, number>();
+  for (const item of items) {
+    demandByProduct.set(item.productId, (demandByProduct.get(item.productId) ?? 0) + item.quantity);
+  }
+
+  for (const [productId, demand] of demandByProduct) {
+    const product = productById.get(productId)!;
+    const onHand = product.stock?.quantity ?? 0;
+    if (onHand < demand) {
+      throw createError(
+        onHand <= 0
+          ? `สินค้า "${product.name}" หมดสต็อก`
+          : `สินค้า "${product.name}" คงเหลือ ${onHand} ${product.unit} ไม่พอขาย ${demand}`,
+        400
+      );
+    }
+  }
 
   const subtotal = lines.reduce(
     (sum, { product, quantity }) => sum + Number(product.sellPrice) * quantity,
@@ -104,9 +126,16 @@ export async function createOrder(cashierId: number, input: CreateOrderInput) {
 
   if (changeAmt < 0) throw createError("จำนวนเงินที่รับมาไม่พอ", 400);
 
+  // Attached so the drawer can be reconciled at close. A sale is never blocked
+  // on an open shift — a register that forgot to open one must still sell.
+  const shiftId = await getOpenShiftId();
+
   const order = await createOrderWithRetry({
     cashierId,
+    shiftId,
     lines,
+    demandByProduct,
+    productNameById: new Map(found.map((product) => [product.id, product.name])),
     subtotal,
     discountAmt,
     totalAmt,
@@ -129,6 +158,12 @@ export async function createOrder(cashierId: number, input: CreateOrderInput) {
       itemCount: order.items.length,
       cashierName: order.cashier.displayName,
       changeAmt: Number(order.changeAmt),
+      items: order.items.map((item) => ({
+        name: item.product.name,
+        quantity: item.quantity,
+        unit: item.product.unit,
+        subtotal: Number(item.subtotal),
+      })),
     })
       .then((results) => {
         for (const r of results.filter((x) => !x.ok)) {
@@ -146,7 +181,11 @@ export async function createOrder(cashierId: number, input: CreateOrderInput) {
 
 async function createOrderWithRetry(data: {
   cashierId: number;
+  shiftId: number | null;
   lines: { product: { id: number; sellPrice: Prisma.Decimal; costPrice: Prisma.Decimal }; quantity: number }[];
+  /** Total quantity sold per product on this bill — what comes off the shelf. */
+  demandByProduct: Map<number, number>;
+  productNameById: Map<number, string>;
   subtotal: number;
   discountAmt: number;
   totalAmt: number;
@@ -158,31 +197,66 @@ async function createOrderWithRetry(data: {
   for (let attempt = 1; ; attempt++) {
     const orderNumber = await generateOrderNumber();
     try {
-      return await prisma.order.create({
-        data: {
-          orderNumber,
-          subtotal: data.subtotal,
-          discountAmt: data.discountAmt,
-          totalAmt: data.totalAmt,
-          paymentMethod: data.paymentMethod,
-          amountPaid: data.amountPaid,
-          changeAmt: data.changeAmt,
-          note: data.note,
-          cashierId: data.cashierId,
-          items: {
-            create: data.lines.map(({ product, quantity }) => ({
-              productId: product.id,
-              quantity,
-              unitPrice: product.sellPrice,
-              costPrice: product.costPrice ?? 0,
-              subtotal: Number(product.sellPrice) * quantity,
-            })),
+      return await prisma.$transaction(async (tx) => {
+        // The availability check in `createOrder` runs before the transaction,
+        // so a second register can sell the last unit in between. The `gte`
+        // guard makes the deduction itself the check: it matches no row when
+        // the shelf has run short, and the sale is rejected instead of
+        // driving stock negative.
+        for (const [productId, quantity] of data.demandByProduct) {
+          const { count } = await tx.stock.updateMany({
+            where: { productId, quantity: { gte: quantity } },
+            data: { quantity: { decrement: quantity } },
+          });
+          if (count === 0) {
+            throw createError(
+              `สินค้า "${data.productNameById.get(productId) ?? productId}" คงเหลือไม่พอขาย`,
+              400
+            );
+          }
+        }
+
+        const order = await tx.order.create({
+          data: {
+            orderNumber,
+            subtotal: data.subtotal,
+            discountAmt: data.discountAmt,
+            totalAmt: data.totalAmt,
+            paymentMethod: data.paymentMethod,
+            amountPaid: data.amountPaid,
+            changeAmt: data.changeAmt,
+            note: data.note,
+            cashierId: data.cashierId,
+            shiftId: data.shiftId,
+            items: {
+              create: data.lines.map(({ product, quantity }) => ({
+                productId: product.id,
+                quantity,
+                unitPrice: product.sellPrice,
+                costPrice: product.costPrice ?? 0,
+                subtotal: Number(product.sellPrice) * quantity,
+              })),
+            },
           },
-        },
-        include: {
-          items: { include: { product: { select: { name: true, unit: true } } } },
-          cashier: { select: { displayName: true } },
-        },
+          include: {
+            items: { include: { product: { select: { name: true, unit: true } } } },
+            cashier: { select: { displayName: true } },
+          },
+        });
+
+        // Outgoing stock is written as a negative quantity, the same sign
+        // convention `ADJUST` movements use.
+        await tx.stockMovement.createMany({
+          data: [...data.demandByProduct].map(([productId, quantity]) => ({
+            type: "SALE",
+            quantity: -quantity,
+            productId,
+            userId: data.cashierId,
+            orderId: order.id,
+          })),
+        });
+
+        return order;
       });
     } catch (err) {
       // Two registers can read the same "latest" order number; retry with the
@@ -194,11 +268,49 @@ async function createOrderWithRetry(data: {
 }
 
 export async function voidOrder(id: number, adminId: number) {
-  const order = await prisma.order.findUnique({ where: { id } });
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: { items: { select: { productId: true, quantity: true } } },
+  });
   if (!order) throw createError("ไม่พบคำสั่งซื้อ", 404);
   if (order.status === "VOIDED") throw createError("คำสั่งซื้อนี้ถูกยกเลิกไปแล้ว", 400);
+  // Part of this bill has already come back through a refund. Voiding it now
+  // would restock those units a second time, so the refund path owns it.
+  if (order.status !== "COMPLETED") {
+    throw createError("บิลนี้มีการคืนสินค้าแล้ว ยกเลิกทั้งบิลไม่ได้", 400);
+  }
 
-  await prisma.order.update({ where: { id }, data: { status: "VOIDED" } });
+  // The sale took the goods off the shelf, so voiding it must put them back.
+  const returnedByProduct = new Map<number, number>();
+  for (const item of order.items) {
+    returnedByProduct.set(
+      item.productId,
+      (returnedByProduct.get(item.productId) ?? 0) + item.quantity
+    );
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.order.update({ where: { id }, data: { status: "VOIDED" } });
+
+    for (const [productId, quantity] of returnedByProduct) {
+      await tx.stock.upsert({
+        where: { productId },
+        create: { productId, quantity },
+        update: { quantity: { increment: quantity } },
+      });
+    }
+
+    await tx.stockMovement.createMany({
+      data: [...returnedByProduct].map(([productId, quantity]) => ({
+        type: "ADJUST",
+        quantity,
+        note: `ยกเลิกบิล ${order.orderNumber}`,
+        productId,
+        userId: adminId,
+        orderId: order.id,
+      })),
+    });
+  });
 
   return { id, orderNumber: order.orderNumber, status: "VOIDED" };
 }

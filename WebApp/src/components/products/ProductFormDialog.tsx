@@ -16,6 +16,19 @@ import { uploadProductImage } from "@/lib/api/products";
 
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB, matches multer limit on the upload-image endpoint
 
+// The unit picker is a closed list so products don't drift into one-off
+// spellings. Kept in sync with the units actually used across the catalogue.
+const UNITS = [
+  "ชิ้น", "ขวด", "กระป๋อง", "กล่อง", "ถุง", "ห่อ", "ซอง", "แพ็ค", "ลัง",
+  "ถาด", "แผง", "แท่ง", "ก้อน", "หลอด", "ด้าม", "อัน", "ฟอง", "ถัง",
+];
+
+/** Keeps an older product's unit selectable even if it predates the list. */
+function unitOptions(current?: string) {
+  const units = current && !UNITS.includes(current) ? [current, ...UNITS] : UNITS;
+  return units.map((unit) => ({ value: unit, label: unit }));
+}
+
 interface FormData {
   barcode: string;
   name: string;
@@ -192,7 +205,21 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
             </div>
             <div>
               <label htmlFor="pf-unit" className="text-sm font-medium">หน่วย</label>
-              <Input id="pf-unit" {...register("unit")} placeholder="ชิ้น, กล่อง, ขวด..." className="mt-1" />
+              <Controller
+                name="unit"
+                control={control}
+                render={({ field }) => (
+                  <Combobox
+                    id="pf-unit"
+                    options={unitOptions(field.value)}
+                    value={field.value || ""}
+                    onChange={(v) => field.onChange(v || "ชิ้น")}
+                    placeholder="-- เลือกหน่วย --"
+                    searchPlaceholder="ค้นหาหน่วย..."
+                    className="mt-1 w-full"
+                  />
+                )}
+              />
             </div>
             <div className="col-span-2">
               <label htmlFor="pf-description" className="text-sm font-medium">คำอธิบาย</label>

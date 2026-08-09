@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { cn } from "@/lib/utils/cn";
 import {
+  BarChart3,
   Boxes,
   LayoutDashboard,
   LogOut,
@@ -12,6 +13,7 @@ import {
   ReceiptText,
   Settings,
   ShoppingCart,
+  Wallet,
 } from "lucide-react";
 
 const navItems = [
@@ -19,7 +21,9 @@ const navItems = [
   { href: "/products", icon: Package, label: "สินค้า", adminOnly: true },
   { href: "/stock", icon: Boxes, label: "สต็อก", adminOnly: true },
   { href: "/orders", icon: ReceiptText, label: "ประวัติ" },
+  { href: "/shift", icon: Wallet, label: "รอบกะ" },
   { href: "/dashboard", icon: LayoutDashboard, label: "สรุป" },
+  { href: "/reports", icon: BarChart3, label: "รายงาน", adminOnly: true },
   { href: "/settings", icon: Settings, label: "ตั้งค่า", adminOnly: true },
 ];
 

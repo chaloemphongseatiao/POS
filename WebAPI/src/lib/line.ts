@@ -293,6 +293,16 @@ async function pushToRecipient(
   }
 }
 
+export interface LineOrderItem {
+  name: string;
+  quantity: number;
+  unit?: string | null;
+  subtotal: number | string;
+}
+
+/** A Flex bubble is capped at 10 KB; a long basket is truncated rather than dropped. */
+const MAX_LISTED_ITEMS = 15;
+
 export async function sendLineOrderNotification(order: {
   orderNumber: string;
   totalAmt: number | string;
@@ -300,6 +310,7 @@ export async function sendLineOrderNotification(order: {
   itemCount: number;
   cashierName: string;
   changeAmt?: number | string;
+  items?: LineOrderItem[];
 }): Promise<LinePushResult[]> {
   const settings = await getLineSettings();
   if (!settings) throw new Error("ยังไม่ได้ตั้งค่า Channel Access Token หรือ User ID");
@@ -336,6 +347,75 @@ export async function sendLineOrderNotification(order: {
       },
     ],
   });
+
+  const money = (v: number | string) =>
+    Number(v).toLocaleString("th-TH", { minimumFractionDigits: 2 });
+
+  const items = order.items ?? [];
+  const listed = items.slice(0, MAX_LISTED_ITEMS);
+  const hidden = items.length - listed.length;
+
+  const itemRow = (item: LineOrderItem) => ({
+    type: "box",
+    layout: "horizontal",
+    margin: "md",
+    contents: [
+      {
+        type: "text",
+        text: item.name,
+        size: "sm",
+        color: "#1F2937",
+        wrap: true,
+        flex: 6,
+      },
+      {
+        type: "text",
+        text: `x${item.quantity}${item.unit ? ` ${item.unit}` : ""}`,
+        size: "sm",
+        color: "#6B7280",
+        align: "end",
+        flex: 2,
+      },
+      {
+        type: "text",
+        text: money(item.subtotal),
+        size: "sm",
+        color: "#1F2937",
+        align: "end",
+        flex: 3,
+      },
+    ],
+  });
+
+  const itemSection = listed.length
+    ? [
+        {
+          type: "separator",
+          margin: "xl",
+          color: "#E5E7EB",
+        },
+        {
+          type: "text",
+          text: "รายการสินค้า",
+          size: "sm",
+          weight: "bold",
+          color: "#1F2937",
+          margin: "xl",
+        },
+        ...listed.map(itemRow),
+        ...(hidden > 0
+          ? [
+              {
+                type: "text",
+                text: `และอีก ${hidden} รายการ`,
+                size: "xs",
+                color: "#6B7280",
+                margin: "md",
+              },
+            ]
+          : []),
+      ]
+    : [];
 
   const contents = {
     type: "bubble",
@@ -379,13 +459,9 @@ export async function sendLineOrderNotification(order: {
         detailRow("จำนวนสินค้า", `${order.itemCount} รายการ`),
         detailRow("ชำระด้วย", payLabel),
         ...(order.paymentMethod === "CASH" && change > 0
-          ? [
-              detailRow(
-                "เงินทอน",
-                `${change.toLocaleString("th-TH", { minimumFractionDigits: 2 })} บาท`
-              ),
-            ]
+          ? [detailRow("เงินทอน", `${money(change)} บาท`)]
           : []),
+        ...itemSection,
         {
           type: "separator",
           margin: "xl",

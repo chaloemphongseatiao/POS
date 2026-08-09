@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,13 @@ interface Props {
 
 export default function PaymentModal({ open, total, paymentMethod, onConfirm, onClose, loading }: Props) {
   const [amountPaid, setAmountPaid] = useState<string>("");
+
+  // This component stays mounted between sales, so clear the previous sale's
+  // amount whenever the modal reopens.
+  useEffect(() => {
+    if (open) setAmountPaid("");
+  }, [open]);
+
   const paid = parseFloat(amountPaid) || 0;
   const change = paid - total;
 
@@ -70,11 +77,17 @@ export default function PaymentModal({ open, total, paymentMethod, onConfirm, on
                 <label htmlFor="pm-amountPaid" className="block text-sm font-medium mb-1">รับเงินมา</label>
                 <Input
                   id="pm-amountPaid"
+                  name="amountPaid"
                   type="number"
+                  min={0}
+                  step="0.01"
+                  inputMode="decimal"
+                  autoComplete="off"
+                  spellCheck={false}
                   placeholder="0.00"
                   value={amountPaid}
                   onChange={(e) => setAmountPaid(e.target.value)}
-                  className="text-xl h-14 text-center font-bold"
+                  className="text-xl h-14 text-center font-bold tabular-nums"
                   autoFocus
                 />
               </div>
@@ -86,7 +99,7 @@ export default function PaymentModal({ open, total, paymentMethod, onConfirm, on
                     type="button"
                     aria-label={`รับเงิน ${amt.toLocaleString()} บาท (คีย์ลัด ${i + 1})`}
                     onClick={() => setAmountPaid(String(amt))}
-                    className="relative rounded-xl bg-white/50 border border-white/80 py-2 text-sm font-medium text-slate-600 transition-all duration-150 hover:bg-primary hover:text-white hover:border-primary hover:shadow-md hover:shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95"
+                    className="relative rounded-xl bg-white/50 border border-white/80 py-2 text-sm font-medium tabular-nums text-slate-600 touch-manipulation transition-[background-color,border-color,box-shadow,color,transform] duration-150 hover:bg-primary hover:text-white hover:border-primary hover:shadow-md hover:shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95"
                   >
                     <Kbd className="absolute left-1.5 top-1">{i + 1}</Kbd>
                     {amt.toLocaleString()}
@@ -111,7 +124,7 @@ export default function PaymentModal({ open, total, paymentMethod, onConfirm, on
             onClick={() => onConfirm(paymentMethod === "CASH" ? paid : total)}
             disabled={!canConfirm}
           >
-            {loading ? "กำลังบันทึก..." : (
+            {loading ? "กำลังบันทึก…" : (
               <>ยืนยันการชำระเงิน <Kbd variant="dark">Enter</Kbd></>
             )}
           </Button>

@@ -23,6 +23,9 @@ model User {
 
   orders         Order[]
   stockMovements StockMovement[]
+  shiftsOpened   Shift[]         @relation("ShiftOpenedBy")
+  shiftsClosed   Shift[]         @relation("ShiftClosedBy")
+  refunds        Refund[]
 }
 
 // ─── Categories ───────────────────────────────────────────────────────────────
@@ -57,6 +60,7 @@ model Product {
   stock          Stock?
   orderItems     OrderItem[]
   stockMovements StockMovement[]
+  refundItems    RefundItem[]
 }
 
 // ─── Stock ────────────────────────────────────────────────────────────────────
@@ -105,8 +109,14 @@ model Order {
   cashierId Int
   cashier   User @relation(fields: [cashierId], references: [id])
 
+  shiftId Int?
+  shift   Shift? @relation(fields: [shiftId], references: [id])
+
   items          OrderItem[]
   stockMovements StockMovement[]
+  refunds        Refund[]
+
+  @@index([shiftId])
 }
 
 model OrderItem {
@@ -115,12 +125,89 @@ model OrderItem {
   unitPrice Decimal
   costPrice Decimal
   subtotal  Decimal
+  /// How many of `quantity` have been given back to the customer.
+  refundedQty Int   @default(0)
 
   orderId Int
   order   Order @relation(fields: [orderId], references: [id])
 
   productId Int
   product   Product @relation(fields: [productId], references: [id])
+
+  refundItems RefundItem[]
+}
+
+// ─── Refunds ──────────────────────────────────────────────────────────────────
+
+model Refund {
+  id           Int      @id @default(autoincrement())
+  refundNumber String   @unique
+  totalAmt     Decimal
+  /// Cost of the returned goods, snapshotted so reports can undo the profit.
+  totalCost    Decimal  @default(0)
+  reason       String?
+  /// Returned goods put back on the shelf; false when they are damaged.
+  restock      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  orderId Int
+  order   Order @relation(fields: [orderId], references: [id])
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  shiftId Int?
+  shift   Shift? @relation(fields: [shiftId], references: [id])
+
+  items RefundItem[]
+
+  @@index([orderId])
+  @@index([createdAt])
+}
+
+model RefundItem {
+  id        Int     @id @default(autoincrement())
+  quantity  Int
+  unitPrice Decimal
+  costPrice Decimal
+  subtotal  Decimal
+
+  refundId Int
+  refund   Refund @relation(fields: [refundId], references: [id])
+
+  orderItemId Int
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+// ─── Shifts ───────────────────────────────────────────────────────────────────
+
+model Shift {
+  id          Int       @id @default(autoincrement())
+  /// Cash in the drawer when the shift was opened.
+  openingCash Decimal
+  /// Cash counted at close; null while the shift is still open.
+  closingCash Decimal?
+  /// Opening cash + cash sales - cash refunds, frozen at close.
+  expectedCash Decimal?
+  /// closingCash - expectedCash: negative means the drawer is short.
+  diffCash    Decimal?
+  note        String?
+  openedAt    DateTime  @default(now())
+  closedAt    DateTime?
+
+  openedById Int
+  openedBy   User @relation("ShiftOpenedBy", fields: [openedById], references: [id])
+
+  closedById Int?
+  closedBy   User? @relation("ShiftClosedBy", fields: [closedById], references: [id])
+
+  orders  Order[]
+  refunds Refund[]
+
+  @@index([openedAt])
 }
 
 // ─── Settings ─────────────────────────────────────────────────────────────────

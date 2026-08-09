@@ -12,9 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ProductImage } from "@/components/ui/product-image";
-import { formatNumber } from "@/lib/utils/formatCurrency";
+import { MovementsDialog } from "@/components/stock/MovementsDialog";
+import { formatCurrency, formatNumber } from "@/lib/utils/formatCurrency";
 import { cn } from "@/lib/utils/cn";
-import { ChevronLeft, ChevronRight, Download, Plus, Search, SlidersHorizontal, Truck, Upload } from "lucide-react";
+import { ArrowLeftRight, ChevronLeft, ChevronRight, Download, Plus, Search, SlidersHorizontal, Truck, Upload } from "lucide-react";
 
 const PAGE_SIZE = 20;
 
@@ -46,6 +47,7 @@ export default function StockPage() {
   const importInputRef = useRef<HTMLInputElement>(null);
   const [isExporting, setIsExporting] = useState(false);
 
+  const [movementTarget, setMovementTarget] = useState<StockItem | null>(null);
   const [inTarget, setInTarget] = useState<StockItem | null>(null);
   const [adjustTarget, setAdjustTarget] = useState<StockItem | null>(null);
   const [quantity, setQuantity] = useState("");
@@ -71,6 +73,7 @@ export default function StockPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   function closeDialogs() {
+    setMovementTarget(null);
     setInTarget(null);
     setAdjustTarget(null);
     setQuantity("");
@@ -81,6 +84,7 @@ export default function StockPage() {
     qc.invalidateQueries({ queryKey: ["stock"] });
     qc.invalidateQueries({ queryKey: ["products"] });
     qc.invalidateQueries({ queryKey: ["products-all"] });
+    qc.invalidateQueries({ queryKey: ["stock-movements"] });
     addToast(message, "success");
     closeDialogs();
   }
@@ -103,6 +107,7 @@ export default function StockPage() {
       qc.invalidateQueries({ queryKey: ["stock"] });
       qc.invalidateQueries({ queryKey: ["products"] });
       qc.invalidateQueries({ queryKey: ["products-all"] });
+    qc.invalidateQueries({ queryKey: ["stock-movements"] });
       addToast(
         `Import สำเร็จ ${result.total} รายการ (ปรับยอด ${result.updated}, เท่าเดิม ${result.unchanged})`,
         "success"
@@ -257,21 +262,24 @@ export default function StockPage() {
       {/* Table */}
       <div className="glass rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-sm">
+          <table className="w-full min-w-[1120px] text-sm">
             <thead className="glass-header border-b border-white/40">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">สินค้า</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">หมวดหมู่</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-600">ราคา</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-600">ต้นทุน</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-600">รับเข้า</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-600">จ่ายออก</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">คงเหลือ</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600">จุดเตือน</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/40">
               {isLoading ? (
-                <tr><td colSpan={5} className="text-center py-8 text-gray-400">กำลังโหลด...</td></tr>
+                <tr><td colSpan={8} className="text-center py-8 text-gray-400">กำลังโหลด...</td></tr>
               ) : stocks.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-8 text-gray-400">ไม่พบสินค้า</td></tr>
+                <tr><td colSpan={8} className="text-center py-8 text-gray-400">ไม่พบสินค้า</td></tr>
               ) : (
                 stocks.map((item) => {
                   const tone = stockTone(item);
@@ -291,6 +299,10 @@ export default function StockPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-gray-600">{item.product.category.name}</td>
+                      <td className="px-4 py-3 text-right text-gray-700">{formatCurrency(item.product.sellPrice)}</td>
+                      <td className="px-4 py-3 text-right text-gray-500">{formatCurrency(item.product.costPrice)}</td>
+                      <td className="px-4 py-3 text-right text-emerald-600">{formatNumber(item.totalIn)}</td>
+                      <td className="px-4 py-3 text-right text-rose-600">{formatNumber(item.totalOut)}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <span className="font-semibold">
@@ -301,9 +313,17 @@ export default function StockPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-right text-gray-500">{item.product.lowStockAt}</td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            aria-label={`ดูการเคลื่อนไหวของ ${item.product.name}`}
+                            onClick={() => { closeDialogs(); setMovementTarget(item); }}
+                          >
+                            <ArrowLeftRight className="w-4 h-4 mr-1" />
+                            การเคลื่อนไหว
+                          </Button>
                           <Button
                             size="sm"
                             onClick={() => { closeDialogs(); setInTarget(item); }}
@@ -356,6 +376,11 @@ export default function StockPage() {
           </div>
         )}
       </div>
+
+      <MovementsDialog
+        item={movementTarget}
+        onOpenChange={(open) => { if (!open) setMovementTarget(null); }}
+      />
 
       {/* Stock in / adjust dialog */}
       <Dialog open={!!target} onOpenChange={(open) => { if (!open) closeDialogs(); }}>

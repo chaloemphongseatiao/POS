@@ -6,7 +6,8 @@ import { CartItem } from "@/lib/types";
 interface CartStore {
   items: CartItem[];
   discountAmt: number;
-  addItem: (item: Omit<CartItem, "quantity">) => void;
+  /** False when the shelf has nothing left to add — the caller warns the cashier. */
+  addItem: (item: Omit<CartItem, "quantity">) => boolean;
   removeItem: (productId: number) => void;
   updateQty: (productId: number, quantity: number) => void;
   setDiscount: (amount: number) => void;
@@ -20,17 +21,22 @@ export const useCart = create<CartStore>((set, get) => ({
   discountAmt: 0,
 
   addItem: (newItem) => {
-    set((state) => {
-      const existing = state.items.find((i) => i.productId === newItem.productId);
-      if (existing) {
-        return {
-          items: state.items.map((i) =>
-            i.productId === newItem.productId ? { ...i, quantity: i.quantity + 1 } : i
-          ),
-        };
-      }
-      return { items: [...state.items, { ...newItem, quantity: 1 }] };
-    });
+    const existing = get().items.find((i) => i.productId === newItem.productId);
+    // The stock figure comes from the latest product read, so a refill made
+    // after the item landed in the cart still counts.
+    const available = newItem.stock;
+    if ((existing?.quantity ?? 0) + 1 > available) return false;
+
+    set((state) => ({
+      items: existing
+        ? state.items.map((i) =>
+            i.productId === newItem.productId
+              ? { ...i, quantity: i.quantity + 1, stock: available }
+              : i
+          )
+        : [...state.items, { ...newItem, quantity: 1 }],
+    }));
+    return true;
   },
 
   removeItem: (productId) => {
@@ -43,7 +49,9 @@ export const useCart = create<CartStore>((set, get) => ({
       return;
     }
     set((state) => ({
-      items: state.items.map((i) => (i.productId === productId ? { ...i, quantity } : i)),
+      items: state.items.map((i) =>
+        i.productId === productId ? { ...i, quantity: Math.min(quantity, i.stock) } : i
+      ),
     }));
   },
 

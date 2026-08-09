@@ -76,9 +76,13 @@ export async function lineTest(req: Request, res: Response, next: NextFunction) 
       orderNumber: "TEST-0000",
       totalAmt: 99,
       paymentMethod: "CASH",
-      itemCount: 1,
+      itemCount: 2,
       cashierName: (req.user as { id: number; role: string; displayName?: string })?.displayName ?? "ทดสอบ",
       changeAmt: 1,
+      items: [
+        { name: "น้ำดื่ม 600 มล.", quantity: 2, unit: "ขวด", subtotal: 14 },
+        { name: "ขนมปังไส้สังขยา", quantity: 1, unit: "ชิ้น", subtotal: 85 },
+      ],
     });
     const ok = results.every((r) => r.ok);
     // A failed push only ever says "Failed to send messages" — probe for the actual cause.
