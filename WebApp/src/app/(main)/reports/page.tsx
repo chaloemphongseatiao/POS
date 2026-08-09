@@ -8,6 +8,7 @@ import MovementsReport from "@/components/reports/MovementsReport";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { cn } from "@/lib/utils/cn";
+import { bangkokDaysAgo, bangkokToday } from "@/lib/utils/date";
 
 const QUICK_RANGES = [
   { label: "วันนี้", days: 1 },
@@ -25,16 +26,15 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "adjust", label: "ปรับปรุงสต็อก" },
 ];
 
-function daysAgo(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - (days - 1));
-  return d.toISOString().slice(0, 10);
+/** The first day of a quick range that ends today — a 1-day range is today alone. */
+function rangeStart(days: number): string {
+  return bangkokDaysAgo(days - 1);
 }
 
 export default function ReportsPage() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = bangkokToday();
   const [tab, setTab] = useState<TabId>("stock");
-  const [fromDate, setFromDate] = useState(daysAgo(7));
+  const [fromDate, setFromDate] = useState(rangeStart(7));
   const [toDate, setToDate] = useState(today);
 
   // Stock on hand is a snapshot of right now — a date range would not change it.
@@ -42,7 +42,7 @@ export default function ReportsPage() {
   const to = `${toDate}T23:59:59`;
 
   function setQuickRange(days: number) {
-    setFromDate(daysAgo(days));
+    setFromDate(rangeStart(days));
     setToDate(today);
   }
 

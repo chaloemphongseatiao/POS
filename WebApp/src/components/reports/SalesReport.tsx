@@ -184,8 +184,11 @@ export default function SalesReport({ fromDate, toDate }: { fromDate: string; to
                 contentStyle={TOOLTIP_STYLE}
                 formatter={(value, name) => [money(value), name === "revenue" ? "ยอดขาย" : "ยอดคืน"]}
               />
-              <Bar dataKey="revenue" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
-              <Bar dataKey="refunds" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+              {/* Without a ceiling a one- or two-day range paints bars hundreds
+                  of pixels wide, which reads as a broken chart rather than a
+                  short range. */}
+              <Bar dataKey="revenue" fill="#8b5cf6" radius={[6, 6, 0, 0]} maxBarSize={40} />
+              <Bar dataKey="refunds" fill="#f59e0b" radius={[6, 6, 0, 0]} maxBarSize={40} />
             </BarChart>
           </ResponsiveContainer>
         )}

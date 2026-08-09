@@ -8,6 +8,7 @@ import { exportStockOnHandExcel } from "@/lib/reportSheets";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils/cn";
+import { bangkokToday } from "@/lib/utils/date";
 import { formatCurrency, formatNumber } from "@/lib/utils/formatCurrency";
 
 type StockStatus = "" | "normal" | "low" | "out";
@@ -38,6 +39,10 @@ export default function StockOnHandReport() {
 
   const stocks = data?.stocks ?? [];
   const total = data?.total ?? 0;
+  // An API deployed before the valuation totals existed still answers this
+  // endpoint, just without them. Reading straight through would throw and take
+  // the whole reports page down with it, so treat the block as optional.
+  const valuation = data?.valuation;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   function changeFilters(next: () => void) {
@@ -57,7 +62,7 @@ export default function StockOnHandReport() {
         )
       );
       const all = [first, ...rest].flatMap((chunk) => chunk.stocks);
-      exportStockOnHandExcel(all, `stock-on-hand-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      exportStockOnHandExcel(all, `stock-on-hand-${bangkokToday()}.xlsx`);
     } finally {
       setIsExporting(false);
     }
@@ -67,8 +72,8 @@ export default function StockOnHandReport() {
     <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-3">
         <SummaryCard label="จำนวนสินค้า" value={`${formatNumber(total)} รายการ`} />
-        <SummaryCard label="จำนวนคงเหลือรวม" value={formatNumber(data?.valuation.quantity ?? 0)} />
-        <SummaryCard label="มูลค่าต้นทุนคงเหลือ" value={formatCurrency(data?.valuation.cost ?? 0)} />
+        <SummaryCard label="จำนวนคงเหลือรวม" value={formatNumber(valuation?.quantity ?? 0)} />
+        <SummaryCard label="มูลค่าต้นทุนคงเหลือ" value={formatCurrency(valuation?.cost ?? 0)} />
       </div>
 
       <div className="glass flex flex-wrap items-center gap-2 rounded-2xl p-3">
