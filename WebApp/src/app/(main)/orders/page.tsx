@@ -8,7 +8,8 @@ import { Order } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
-import { formatCurrency } from "@/lib/utils/formatCurrency";
+import { formatCurrency, formatPercent } from "@/lib/utils/formatCurrency";
+import { markupOf } from "@/lib/utils/profit";
 import { orderStatusInfo } from "@/lib/utils/orderStatus";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { RefundDialog } from "@/components/orders/RefundDialog";
@@ -88,22 +89,35 @@ function OrderDetailModal({ orderId, onClose }: { orderId: number | null; onClos
             <div>
               <p className="font-semibold text-gray-700 mb-2">รายการสินค้า</p>
               <div className="space-y-1.5">
-                {order.items.map((item) => (
-                  <div key={item.id} className="flex justify-between">
-                    <div>
-                      <span>{item.product.name}</span>
-                      <span className="text-gray-400 ml-1 text-xs">
-                        x{item.quantity} {item.product.unit}
-                      </span>
-                      {(item.refundedQty ?? 0) > 0 && (
-                        <span className="ml-1 text-xs text-amber-600">
-                          (คืน {item.refundedQty})
+                {order.items.map((item) => {
+                  const unitProfit =
+                    item.costPrice === undefined
+                      ? null
+                      : Number(item.unitPrice) - Number(item.costPrice);
+                  return (
+                    <div key={item.id} className="flex justify-between">
+                      <div>
+                        <span>{item.product.name}</span>
+                        <span className="text-gray-400 ml-1 text-xs">
+                          x{item.quantity} {item.product.unit}
                         </span>
-                      )}
+                        {(item.refundedQty ?? 0) > 0 && (
+                          <span className="ml-1 text-xs text-amber-600">
+                            (คืน {item.refundedQty})
+                          </span>
+                        )}
+                        {unitProfit !== null && (
+                          <p className="text-xs text-slate-400">
+                            ทุน {formatCurrency(item.costPrice!)} · กำไร/ชิ้น{" "}
+                            {formatCurrency(unitProfit)} (
+                            {formatPercent(markupOf(Number(item.costPrice), unitProfit))} ของทุน)
+                          </p>
+                        )}
+                      </div>
+                      <span className="font-medium">{formatCurrency(item.subtotal)}</span>
                     </div>
-                    <span className="font-medium">{formatCurrency(item.subtotal)}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -140,6 +154,33 @@ function OrderDetailModal({ orderId, onClose }: { orderId: number | null; onClos
                 </div>
               )}
             </div>
+
+            {/* Cost and profit — owner-only, and already net of anything refunded. */}
+            {isAdmin && order.cost && (
+              <div className="space-y-1 rounded-xl border border-emerald-100/80 bg-emerald-50/40 p-3">
+                <p className="mb-1 font-semibold text-slate-700">ต้นทุน &amp; กำไร</p>
+                <div className="flex justify-between text-slate-500">
+                  <span>ยอดขายสุทธิ</span>
+                  <span>{formatCurrency(order.cost.netRevenue)}</span>
+                </div>
+                <div className="flex justify-between text-slate-500">
+                  <span>ต้นทุนสินค้า</span>
+                  <span>{formatCurrency(order.cost.cost)}</span>
+                </div>
+                <div className="flex justify-between font-bold text-emerald-700">
+                  <span>กำไร</span>
+                  <span>{formatCurrency(order.cost.profit)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-slate-500">
+                  <span>กำไรต่อยอดขาย</span>
+                  <span>{formatPercent(order.cost.margin)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-slate-500">
+                  <span>กำไรต่อต้นทุน</span>
+                  <span>{formatPercent(order.cost.markup)}</span>
+                </div>
+              </div>
+            )}
 
             {/* Refund history */}
             {refunds && refunds.length > 0 && (
@@ -242,6 +283,7 @@ function OrderDetailModal({ orderId, onClose }: { orderId: number | null; onClos
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function OrdersPage() {
+  const isAdmin = useAuth((s) => s.user?.role === "ADMIN");
   const today = new Date().toISOString().slice(0, 10);
 
   const [fromDate, setFromDate] = useState(today);
@@ -288,6 +330,9 @@ export default function OrdersPage() {
   // A refunded bill still made a sale; only a voided one never happened.
   const soldOrders = orders.filter((o) => o.status !== "VOIDED");
   const totalRevenue = soldOrders.reduce((s, o) => s + Number(o.totalAmt), 0);
+  // Only what this page shows — the same scope as the revenue figure beside it.
+  const pageCost = soldOrders.reduce((s, o) => s + (o.cost?.cost ?? 0), 0);
+  const pageProfit = soldOrders.reduce((s, o) => s + (o.cost?.profit ?? 0), 0);
 
   function itemsSummary(order: Order): string {
     const names = order.items.map((item) => `${item.product.name} x${item.quantity}`);
@@ -360,6 +405,23 @@ export default function OrdersPage() {
             <p className="text-xs text-violet-500/70">ยอดขายรวม (หน้านี้)</p>
             <p className="text-xl font-bold text-primary mt-0.5">{formatCurrency(totalRevenue)}</p>
           </div>
+          {isAdmin && (
+            <>
+              <div className="glass rounded-2xl px-4 py-3">
+                <p className="text-xs text-violet-500/70">ต้นทุนรวม (หน้านี้)</p>
+                <p className="mt-0.5 text-xl font-bold text-slate-600">{formatCurrency(pageCost)}</p>
+              </div>
+              <div className="glass rounded-2xl px-4 py-3">
+                <p className="text-xs text-violet-500/70">กำไรรวม (หน้านี้)</p>
+                <p className="mt-0.5 text-xl font-bold text-emerald-600">
+                  {formatCurrency(pageProfit)}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {formatPercent(markupOf(pageCost, pageProfit))} ของทุน
+                </p>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -374,6 +436,9 @@ export default function OrdersPage() {
                 <th className="text-left px-4 py-3 font-medium text-gray-600">แคชเชียร์</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">รายการ</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">ยอดรวม</th>
+                {isAdmin && (
+                  <th className="text-right px-4 py-3 font-medium text-gray-600">กำไร</th>
+                )}
                 <th className="text-left px-4 py-3 font-medium text-gray-600">ชำระ</th>
                 <th className="text-center px-4 py-3 font-medium text-gray-600">สถานะ</th>
                 <th className="px-4 py-3"></th>
@@ -381,10 +446,10 @@ export default function OrdersPage() {
             </thead>
             <tbody className="divide-y divide-white/40">
               {isLoading ? (
-                <tr><td colSpan={8} className="text-center py-10 text-gray-400">กำลังโหลด...</td></tr>
+                <tr><td colSpan={isAdmin ? 9 : 8} className="text-center py-10 text-gray-400">กำลังโหลด...</td></tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-10">
+                  <td colSpan={isAdmin ? 9 : 8} className="text-center py-10">
                     <Search className="w-8 h-8 text-gray-200 mx-auto mb-2" />
                     <p className="text-gray-400">ไม่พบรายการขายในช่วงวันที่นี้</p>
                   </td>
@@ -420,6 +485,22 @@ export default function OrdersPage() {
                         : formatCurrency(o.totalAmt)
                       }
                     </td>
+                    {isAdmin && (
+                      <td className="whitespace-nowrap px-4 py-3 text-right">
+                        {o.cost ? (
+                          <>
+                            <span className="font-semibold text-emerald-600">
+                              {formatCurrency(o.cost.profit)}
+                            </span>
+                            <span className="ml-1 text-xs text-slate-400">
+                              {formatPercent(o.cost.markup)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
+                      </td>
+                    )}
                     <td className="px-4 py-3 text-gray-500">
                       {o.paymentMethod === "CASH" ? "เงินสด" : "QR"}
                     </td>

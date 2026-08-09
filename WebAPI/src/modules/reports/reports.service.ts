@@ -1,5 +1,6 @@
 import { prisma } from "../../lib/prisma";
 import { bangkokDateKey, bangkokDayEnd, bangkokDayStart, bangkokHour, bangkokMonthRange } from "../../lib/datetime";
+import { marginPct, markupPct } from "../../lib/profit";
 
 /**
  * Bills that count towards sales. A partially or fully refunded bill still
@@ -38,11 +39,15 @@ export async function getSummary(from: Date, to: Date) {
   }
   revenue -= refundTotal;
 
+  const profit = revenue - cost;
+
   return {
     revenue,
     cost,
-    profit: revenue - cost,
-    margin: revenue > 0 ? ((revenue - cost) / revenue) * 100 : 0,
+    profit,
+    margin: marginPct(revenue, profit),
+    /** Profit measured against what the goods cost, not against the sale price. */
+    markup: markupPct(cost, profit),
     orderCount: orders.length,
     refundTotal,
     refundCount: refunds.length,
@@ -111,7 +116,15 @@ export async function getTopProducts(from: Date, to: Date, limit = 10) {
 
   const map: Record<
     number,
-    { productId: number; name: string; unit: string; qty: number; revenue: number; profit: number }
+    {
+      productId: number;
+      name: string;
+      unit: string;
+      qty: number;
+      revenue: number;
+      cost: number;
+      profit: number;
+    }
   > = {};
 
   const bucket = (product: { id: number; name: string; unit: string }) => {
@@ -122,6 +135,7 @@ export async function getTopProducts(from: Date, to: Date, limit = 10) {
         unit: product.unit,
         qty: 0,
         revenue: 0,
+        cost: 0,
         profit: 0,
       };
     }
@@ -132,6 +146,7 @@ export async function getTopProducts(from: Date, to: Date, limit = 10) {
     const row = bucket(item.product);
     row.qty += item.quantity;
     row.revenue += Number(item.subtotal);
+    row.cost += Number(item.costPrice ?? 0) * item.quantity;
     row.profit += (Number(item.unitPrice) - Number(item.costPrice ?? 0)) * item.quantity;
   }
 
@@ -140,6 +155,7 @@ export async function getTopProducts(from: Date, to: Date, limit = 10) {
     const row = bucket(item.product);
     row.qty -= item.quantity;
     row.revenue -= Number(item.subtotal);
+    row.cost -= Number(item.costPrice ?? 0) * item.quantity;
     row.profit -= (Number(item.unitPrice) - Number(item.costPrice ?? 0)) * item.quantity;
   }
 

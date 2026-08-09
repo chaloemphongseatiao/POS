@@ -3,6 +3,7 @@ import type { MovementType } from "../../types/enums";
 import { prisma } from "../../lib/prisma";
 import { createError } from "../../middleware/errorHandler";
 import { publicProductImageUrl } from "../products/productImage";
+import { marginPct, markupPct, round2 } from "../../lib/profit";
 
 type StockStatus = "normal" | "low" | "out" | "low_out";
 
@@ -60,19 +61,52 @@ export async function listStock(params: {
 
   const filter = stockFilterSql({ search, categoryId, status: resolvedStatus });
 
-  const [countRows, idRows] = await Promise.all([
+  const [countRows, idRows, valuation] = await Promise.all([
     prisma.$queryRaw<{ count: bigint }[]>(Prisma.sql`SELECT COUNT(*)::bigint AS count ${filter}`),
     prisma.$queryRaw<{ id: number }[]>(
       Prisma.sql`SELECT s."id" ${filter} ORDER BY p."name" ASC, s."id" ASC LIMIT ${safeLimit} OFFSET ${
         (safePage - 1) * safeLimit
       }`
     ),
+    stockValuation(filter),
   ]);
 
   const total = Number(countRows[0]?.count ?? 0);
   const stocks = await findStocksByIds(idRows.map((row) => row.id));
 
-  return { stocks, total, page: safePage, limit: safeLimit };
+  return { stocks, total, page: safePage, limit: safeLimit, valuation };
+}
+
+/**
+ * What the shelves are worth right now, over the whole filtered set rather
+ * than the current page — a page-sized total would change every time the user
+ * clicks "next". Empty shelves are skipped instead of clamped: a negative
+ * quantity is a data fault, and silently valuing it at zero would hide it.
+ */
+async function stockValuation(filter: Prisma.Sql) {
+  const [row] = await prisma.$queryRaw<
+    { cost: string | null; retail: string | null; quantity: bigint | null }[]
+  >(Prisma.sql`
+    SELECT
+      SUM(s."quantity" * p."costPrice") AS cost,
+      SUM(s."quantity" * p."sellPrice") AS retail,
+      SUM(s."quantity")::bigint AS quantity
+    ${filter}
+  `);
+
+  const cost = round2(Number(row?.cost ?? 0));
+  const retail = round2(Number(row?.retail ?? 0));
+  const profit = round2(retail - cost);
+
+  return {
+    quantity: Number(row?.quantity ?? 0),
+    cost,
+    retail,
+    /** Profit the shelves would make if every unit sold at today's price. */
+    profit,
+    margin: marginPct(retail, profit),
+    markup: markupPct(cost, profit),
+  };
 }
 
 async function findStocksByIds(ids: number[]) {

@@ -2,14 +2,10 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
 import { createError } from "../../middleware/errorHandler";
 import { generateRefundNumber } from "../../lib/orderNumber";
-import { getOpenShiftId } from "../shifts/shifts.service";
+import { round2 } from "../../lib/profit";
 import type { CreateRefundInput } from "./refunds.schema";
 
 const MAX_REFUND_NUMBER_ATTEMPTS = 5;
-
-function round2(value: number): number {
-  return Math.round(value * 100) / 100;
-}
 
 function isDuplicateRefundNumber(err: unknown): boolean {
   return (
@@ -106,8 +102,6 @@ export async function createRefund(userId: number, input: CreateRefundInput) {
   const totalAmt = round2(lines.reduce((sum, line) => sum + line.subtotal, 0));
   const totalCost = round2(lines.reduce((sum, line) => sum + line.cost, 0));
 
-  const shiftId = await getOpenShiftId();
-
   for (let attempt = 1; ; attempt++) {
     const refundNumber = await generateRefundNumber();
     try {
@@ -136,7 +130,6 @@ export async function createRefund(userId: number, input: CreateRefundInput) {
             restock: input.restock,
             orderId: order.id,
             userId,
-            shiftId,
             items: {
               create: lines.map((line) => ({
                 orderItemId: line.orderItemId,

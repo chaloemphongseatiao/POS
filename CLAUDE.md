@@ -39,7 +39,7 @@ Each domain under `src/modules/<name>/` has three files:
 - `<name>.controller.ts` — parses/validates req, calls service, shapes res
 - `<name>.service.ts` — business logic, all Prisma calls
 
-Modules: `auth`, `users`, `categories`, `products`, `stock`, `orders`, `refunds`, `shifts`, `reports`, `settings`, `line`. All routes are mounted under `/api/<module>` in [WebAPI/src/app.ts](WebAPI/src/app.ts). Auth is JWT bearer token (`src/lib/jwt.ts`, `src/middleware/auth.ts` sets `req.user = { id, role }`); role gate is `src/middleware/requireRole.ts` with two roles: `ADMIN`, `CASHIER`.
+Modules: `auth`, `users`, `categories`, `products`, `stock`, `orders`, `refunds`, `reports`, `settings`, `line`. All routes are mounted under `/api/<module>` in [WebAPI/src/app.ts](WebAPI/src/app.ts). Auth is JWT bearer token (`src/lib/jwt.ts`, `src/middleware/auth.ts` sets `req.user = { id, role }`); role gate is `src/middleware/requireRole.ts` with two roles: `ADMIN`, `CASHIER`.
 
 Errors: throw `createError(message, statusCode)` from `src/middleware/errorHandler.ts` inside services; the global error handler also maps Prisma `P2002` (unique constraint) → 409 and `P2025` (not found) → 404. User-facing error messages are in Thai.
 
@@ -53,13 +53,15 @@ Core chain: `Category` → `Product` → `Stock` (1:1 current qty) + `StockMovem
 
 `Refund` → `RefundItem` returns part or all of a bill: it increments `OrderItem.refundedQty` (guarded inside the transaction so two registers can't over-refund the same line), optionally restocks, and moves the order to `PARTIAL_REFUND` / `REFUNDED`. Refund amounts are scaled by the bill's discount ratio, so a discounted sale never pays back more than the customer paid.
 
-`Shift` is the cash-drawer session. At most one is open at a time — enforced by a partial unique index (`Shift_single_open_idx`), not a read-then-write check. Orders and refunds attach to the open shift via `shiftId`, but a missing shift never blocks a sale (`getOpenShiftId` returns null). `Setting` is a generic key-value store (used for LINE integration token/userId). Money fields are Prisma `Decimal`; the API/frontend pass them around as strings.
+**Costing:** every profit figure in the system comes from `src/lib/profit.ts` — `orderCost()` for a single bill, `marginPct()` (profit ÷ selling price) and `markupPct()` (profit ÷ cost, "กำไรต่อทุน") for the two ratios the UI shows side by side. Refunded lines are stripped from both revenue and cost, and a `VOIDED` bill is worth nothing, so a bill's own figures always reconcile with the reports over the same range. Cost, profit and `OrderItem.costPrice` are owner-only: services always compute them and the controllers strip them for `CASHIER` (`isAdmin` from `src/lib/permissions.ts`), the same pattern products already used.
+
+`Shift` (cash-drawer session) still exists in the schema, along with the nullable `shiftId` on `Order`/`Refund`, but the feature was removed — no API module, no UI, and nothing writes `shiftId` anymore. The tables were kept rather than dropped so the data is still there if the feature comes back. `Setting` is a generic key-value store (used for LINE integration token/userId). Money fields are Prisma `Decimal`; the API/frontend pass them around as strings.
 
 **Database:** Postgres everywhere (the migrations and `migration_lock.toml` are Postgres-only; the leftover `prisma/dev.db` is from the old sqlite setup and is dead). Two URLs are required — `DATABASE_URL` (pooled, what the app uses) and `DIRECT_URL` (unpooled, what migrations use); `prisma.config.ts` also accepts Vercel's `POSTGRES_PRISMA_URL` / `POSTGRES_URL_NON_POOLING`. Missing `DIRECT_URL` makes every Prisma CLI command fail with `P1012`. Against a local Postgres both URLs are the same string; see `WebAPI/.env.example`.
 
 ### WebApp: App Router + Zustand stores + axios client
 
-Route groups: `(auth)/login` (public) and `(main)/*` (dashboard, pos, products, stock, orders, shift, reports, settings) wrapped by [WebApp/src/app/(main)/layout.tsx](WebApp/src/app/(main)/layout.tsx), which redirects to `/login` if unauthenticated once the auth store is `initialized`.
+Route groups: `(auth)/login` (public) and `(main)/*` (dashboard, pos, products, stock, orders, reports, settings) wrapped by [WebApp/src/app/(main)/layout.tsx](WebApp/src/app/(main)/layout.tsx), which redirects to `/login` if unauthenticated once the auth store is `initialized`.
 
 State is Zustand, not React context:
 - `useAuth` (`src/lib/hooks/useAuth.ts`) — token/user, persisted to `localStorage` (remember-me) or `sessionStorage`; `initAuth()` must run once on client startup to hydrate from storage

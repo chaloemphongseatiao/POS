@@ -14,6 +14,8 @@ interface CartStore {
   clearCart: () => void;
   subtotal: () => number;
   total: () => number;
+  /** Zero for cashiers, whose products arrive without a cost price. */
+  costTotal: () => number;
 }
 
 export const useCart = create<CartStore>((set, get) => ({
@@ -63,4 +65,7 @@ export const useCart = create<CartStore>((set, get) => ({
     get().items.reduce((sum, item) => sum + item.sellPrice * item.quantity, 0),
 
   total: () => Math.max(0, get().subtotal() - get().discountAmt),
+
+  costTotal: () =>
+    get().items.reduce((sum, item) => sum + (item.costPrice ?? 0) * item.quantity, 0),
 }));

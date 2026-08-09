@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import { DailyData, ReportSummary, TopProduct } from "@/lib/types";
+import { markupOf } from "@/lib/utils/profit";
 
 type ExcelRow = Record<string, string | number>;
 
@@ -27,7 +28,10 @@ export function exportReportExcel(params: {
     ...(summary.cost !== undefined ? [{ "รายการ": "ต้นทุน", "ค่า": summary.cost }] : []),
     ...(summary.profit !== undefined ? [{ "รายการ": "กำไร", "ค่า": summary.profit }] : []),
     ...(summary.margin !== undefined
-      ? [{ "รายการ": "อัตรากำไร (%)", "ค่า": Number(summary.margin.toFixed(2)) }]
+      ? [{ "รายการ": "อัตรากำไร (% ของยอดขาย)", "ค่า": Number(summary.margin.toFixed(2)) }]
+      : []),
+    ...(summary.markup !== undefined
+      ? [{ "รายการ": "กำไรต่อทุน (% ของต้นทุน)", "ค่า": Number(summary.markup.toFixed(2)) }]
       : []),
   ];
 
@@ -45,12 +49,18 @@ export function exportReportExcel(params: {
     "จำนวนขาย": product.qty,
     "หน่วย": product.unit,
     "ยอดขาย": product.revenue,
-    ...(product.profit !== undefined ? { "กำไร": product.profit } : {}),
+    ...(product.profit !== undefined
+      ? {
+          "ต้นทุน": product.cost ?? 0,
+          "กำไร": product.profit,
+          "กำไรต่อทุน (%)": Number(markupOf(product.cost ?? 0, product.profit).toFixed(2)),
+        }
+      : {}),
   }));
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, sheet(summaryRows, [24, 22]), "สรุป");
+  XLSX.utils.book_append_sheet(workbook, sheet(summaryRows, [30, 22]), "สรุป");
   XLSX.utils.book_append_sheet(workbook, sheet(dailyRows, [14, 14, 14, 12, 14, 14]), "รายวัน");
-  XLSX.utils.book_append_sheet(workbook, sheet(productRows, [8, 30, 12, 10, 14, 14]), "สินค้าขายดี");
+  XLSX.utils.book_append_sheet(workbook, sheet(productRows, [8, 30, 12, 10, 14, 14, 14, 16]), "สินค้าขายดี");
   XLSX.writeFile(workbook, `report-${from}_${to}.xlsx`);
 }

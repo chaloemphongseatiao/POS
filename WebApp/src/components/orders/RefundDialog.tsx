@@ -58,7 +58,6 @@ export function RefundDialog({
       qc.invalidateQueries({ queryKey: ["orders"] });
       qc.invalidateQueries({ queryKey: ["order", order.id] });
       qc.invalidateQueries({ queryKey: ["refunds", order.id] });
-      qc.invalidateQueries({ queryKey: ["shift", "current"] });
       handleClose();
     },
   });

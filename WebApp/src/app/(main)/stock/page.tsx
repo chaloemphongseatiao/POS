@@ -13,7 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ProductImage } from "@/components/ui/product-image";
 import { MovementsDialog } from "@/components/stock/MovementsDialog";
-import { formatCurrency, formatNumber } from "@/lib/utils/formatCurrency";
+import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils/formatCurrency";
+import { markupOf } from "@/lib/utils/profit";
 import { cn } from "@/lib/utils/cn";
 import { ArrowLeftRight, ChevronLeft, ChevronRight, Download, Plus, Search, SlidersHorizontal, Truck, Upload } from "lucide-react";
 
@@ -69,6 +70,7 @@ export default function StockPage() {
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: listCategories });
 
   const stocks = data?.stocks ?? [];
+  const valuation = data?.valuation;
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -259,16 +261,42 @@ export default function StockPage() {
         </div>
       </div>
 
+      {/* Valuation — the whole filtered set, not just this page */}
+      {valuation && (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="glass rounded-2xl px-4 py-3">
+            <p className="text-xs text-slate-500">มูลค่าต้นทุนคงคลัง</p>
+            <p className="mt-0.5 text-xl font-bold text-slate-800">{formatCurrency(valuation.cost)}</p>
+            <p className="text-xs text-slate-400">{formatNumber(valuation.quantity)} ชิ้น</p>
+          </div>
+          <div className="glass rounded-2xl px-4 py-3">
+            <p className="text-xs text-slate-500">มูลค่าตามราคาขาย</p>
+            <p className="mt-0.5 text-xl font-bold text-slate-800">{formatCurrency(valuation.retail)}</p>
+          </div>
+          <div className="glass rounded-2xl px-4 py-3">
+            <p className="text-xs text-slate-500">กำไรถ้าขายหมด</p>
+            <p className="mt-0.5 text-xl font-bold text-emerald-600">{formatCurrency(valuation.profit)}</p>
+          </div>
+          <div className="glass rounded-2xl px-4 py-3">
+            <p className="text-xs text-slate-500">กำไรต่อทุน</p>
+            <p className="mt-0.5 text-xl font-bold text-emerald-600">{formatPercent(valuation.markup)}</p>
+            <p className="text-xs text-slate-400">{formatPercent(valuation.margin)} ของราคาขาย</p>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="glass rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1120px] text-sm">
+          <table className="w-full min-w-[1220px] text-sm">
             <thead className="glass-header border-b border-white/40">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">สินค้า</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">หมวดหมู่</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">ราคา</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">ต้นทุน</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-600">กำไร/ชิ้น</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-600">มูลค่าคงเหลือ</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">รับเข้า</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">จ่ายออก</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">คงเหลือ</th>
@@ -277,12 +305,14 @@ export default function StockPage() {
             </thead>
             <tbody className="divide-y divide-white/40">
               {isLoading ? (
-                <tr><td colSpan={8} className="text-center py-8 text-gray-400">กำลังโหลด...</td></tr>
+                <tr><td colSpan={10} className="text-center py-8 text-gray-400">กำลังโหลด...</td></tr>
               ) : stocks.length === 0 ? (
-                <tr><td colSpan={8} className="text-center py-8 text-gray-400">ไม่พบสินค้า</td></tr>
+                <tr><td colSpan={10} className="text-center py-8 text-gray-400">ไม่พบสินค้า</td></tr>
               ) : (
                 stocks.map((item) => {
                   const tone = stockTone(item);
+                  const cost = Number(item.product.costPrice);
+                  const unitProfit = Number(item.product.sellPrice) - cost;
                   return (
                     <tr key={item.id} className="glass-row-hover transition-colors">
                       <td className="px-4 py-3">
@@ -301,6 +331,17 @@ export default function StockPage() {
                       <td className="px-4 py-3 text-gray-600">{item.product.category.name}</td>
                       <td className="px-4 py-3 text-right text-gray-700">{formatCurrency(item.product.sellPrice)}</td>
                       <td className="px-4 py-3 text-right text-gray-500">{formatCurrency(item.product.costPrice)}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right">
+                        <span className={cn("font-medium", unitProfit < 0 ? "text-rose-600" : "text-emerald-600")}>
+                          {formatCurrency(unitProfit)}
+                        </span>
+                        <span className="ml-1 text-xs text-slate-400">
+                          {formatPercent(markupOf(cost, unitProfit))}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right text-gray-700">
+                        {formatCurrency(cost * item.quantity)}
+                      </td>
                       <td className="px-4 py-3 text-right text-emerald-600">{formatNumber(item.totalIn)}</td>
                       <td className="px-4 py-3 text-right text-rose-600">{formatNumber(item.totalOut)}</td>
                       <td className="px-4 py-3 text-right">

@@ -6,6 +6,19 @@ export interface StockListResponse {
   total: number;
   page: number;
   limit: number;
+  /** Value of every row matching the current filter, not just this page. */
+  valuation: StockValuation;
+}
+
+export interface StockValuation {
+  quantity: number;
+  cost: number;
+  retail: number;
+  profit: number;
+  /** Profit as a percentage of the selling price. */
+  margin: number;
+  /** Profit as a percentage of what the goods cost. */
+  markup: number;
 }
 
 export async function listStock(params?: {

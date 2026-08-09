@@ -7,13 +7,13 @@ import { useAuth } from "@/lib/hooks/useAuth";
 import { listProducts, getProductByBarcode } from "@/lib/api/products";
 import { listCategories } from "@/lib/api/categories";
 import { createOrder } from "@/lib/api/orders";
-import { formatCurrency } from "@/lib/utils/formatCurrency";
+import { formatCurrency, formatPercent } from "@/lib/utils/formatCurrency";
+import { markupOf } from "@/lib/utils/profit";
 import { createBarcodeListener, useScannerSafeDigitKeyDown } from "@/lib/utils/barcodeScanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import PaymentModal from "@/components/pos/PaymentModal";
 import ReceiptModal from "@/components/pos/ReceiptModal";
-import { ShiftBanner } from "@/components/pos/ShiftBanner";
 import { Product, PaymentMethod, Order } from "@/lib/types";
 import { Search, Trash2, Plus, Minus, ShoppingCart, CheckCircle2, XCircle, Barcode, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
@@ -22,9 +22,12 @@ import { Kbd } from "@/components/ui/kbd";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 export default function PosPage() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const cart = useCart();
   const queryClient = useQueryClient();
+  const showCost = isAdmin();
+  const cartCost = cart.costTotal();
+  const cartProfit = cart.total() - cartCost;
 
   const [search, setSearch] = useState("");
   const handleDigitKeyDown = useScannerSafeDigitKeyDown(search, setSearch);
@@ -64,8 +67,6 @@ export default function PosPage() {
       // The sale just moved stock — refetch so the grid stops offering units
       // that are no longer on the shelf.
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      // The drawer moved too — keep the shift totals in step with the sale.
-      queryClient.invalidateQueries({ queryKey: ["shift", "current"] });
       setToast({
         message: `ชำระเงินสำเร็จ ${order.orderNumber}\nยอด ${formatCurrency(order.totalAmt)}`,
         type: "success",
@@ -87,6 +88,7 @@ export default function PosPage() {
         productId: product.id,
         name: product.name,
         sellPrice: parseFloat(product.sellPrice),
+        costPrice: product.costPrice === undefined ? undefined : parseFloat(product.costPrice),
         unit: product.unit,
         stock,
         imageUrl: product.imageUrl,
@@ -222,7 +224,6 @@ export default function PosPage() {
 
       {/* Left: Product Browser */}
       <div className="flex min-h-[65dvh] min-w-0 flex-1 flex-col gap-4 overflow-hidden lg:min-h-0">
-        <ShiftBanner />
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <h1 className="text-xl font-bold text-slate-950 md:text-2xl tracking-tight">หน้าขายสินค้า</h1>
@@ -439,6 +440,24 @@ export default function PosPage() {
               <span>รวมทั้งสิ้น</span>
               <span className="text-primary">{formatCurrency(cart.total())}</span>
             </div>
+            {/* Owner-only: the discount comes off the profit, never off the cost. */}
+            {showCost && cart.items.length > 0 && (
+              <div className="mt-1.5 space-y-1 border-t border-white/60 pt-1.5">
+                <div className="flex justify-between text-slate-500">
+                  <span>ต้นทุน</span>
+                  <span>{formatCurrency(cartCost)}</span>
+                </div>
+                <div className="flex justify-between font-bold text-emerald-600">
+                  <span>กำไร</span>
+                  <span>
+                    {formatCurrency(cartProfit)}
+                    <span className="ml-1 text-xs font-medium text-slate-400">
+                      {formatPercent(markupOf(cartCost, cartProfit))} ของทุน
+                    </span>
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Payment method */}

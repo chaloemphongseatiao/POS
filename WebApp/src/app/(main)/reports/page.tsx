@@ -17,7 +17,8 @@ import { getSummary, getDailyBreakdown, getTopProducts, getHourly } from "@/lib/
 import { exportReportExcel } from "@/lib/reportsExcel";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
-import { formatCurrency, formatNumber } from "@/lib/utils/formatCurrency";
+import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils/formatCurrency";
+import { markupOf } from "@/lib/utils/profit";
 import { CalendarRange, Download, TrendingUp, Undo2, Receipt, Percent } from "lucide-react";
 
 const QUICK_RANGES = [
@@ -204,7 +205,7 @@ export default function ReportsPage() {
           </div>
 
           {showProfit && (
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <MetricCard label="ต้นทุน" value={formatCurrency(summary?.cost ?? 0)} icon={Receipt} />
               <MetricCard
                 label="กำไร"
@@ -213,8 +214,14 @@ export default function ReportsPage() {
                 tone="text-emerald-600"
               />
               <MetricCard
-                label="อัตรากำไร"
+                label="อัตรากำไร (ของยอดขาย)"
                 value={`${(summary?.margin ?? 0).toFixed(1)}%`}
+                icon={Percent}
+                tone="text-emerald-600"
+              />
+              <MetricCard
+                label="กำไรต่อทุน (ของต้นทุน)"
+                value={`${(summary?.markup ?? 0).toFixed(1)}%`}
                 icon={Percent}
                 tone="text-emerald-600"
               />
@@ -303,8 +310,11 @@ export default function ReportsPage() {
                           {formatCurrency(product.revenue)}
                         </td>
                         {showProfit && (
-                          <td className="px-4 py-3 text-right text-emerald-600">
+                          <td className="whitespace-nowrap px-4 py-3 text-right text-emerald-600">
                             {formatCurrency(product.profit ?? 0)}
+                            <span className="ml-1 text-xs text-slate-400">
+                              {formatPercent(markupOf(product.cost ?? 0, product.profit ?? 0))}
+                            </span>
                           </td>
                         )}
                       </tr>

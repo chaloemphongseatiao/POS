@@ -29,7 +29,7 @@ export async function summary(req: Request, res: Response, next: NextFunction) {
       return;
     }
     // Cashiers get turnover figures only — never cost, profit or margin.
-    const { cost, profit, margin, ...visible } = result;
+    const { cost, profit, margin, markup, ...visible } = result;
     res.json(visible);
   } catch (err) { next(err); }
 }
@@ -50,7 +50,7 @@ export async function topProducts(req: Request, res: Response, next: NextFunctio
     const requested = Number(req.query.limit);
     const limit = Number.isFinite(requested) ? Math.min(50, Math.max(1, requested)) : 10;
     const result = await svc.getTopProducts(from, to, limit);
-    res.json(isAdmin(req) ? result : result.map(({ profit, ...visible }) => visible));
+    res.json(isAdmin(req) ? result : result.map(({ profit, cost, ...visible }) => visible));
   } catch (err) { next(err); }
 }
 

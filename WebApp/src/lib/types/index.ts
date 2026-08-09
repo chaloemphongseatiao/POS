@@ -85,7 +85,8 @@ export interface OrderItem {
   id: number;
   quantity: number;
   unitPrice: string;
-  costPrice: string;
+  /** Owner-only — the API omits it for CASHIER accounts. */
+  costPrice?: string;
   subtotal: string;
   /** How many of `quantity` have already been given back. */
   refundedQty: number;
@@ -106,6 +107,19 @@ export interface Order {
   createdAt: string;
   cashier: { displayName: string };
   items: OrderItem[];
+  /** Owner-only — the API omits it for CASHIER accounts. */
+  cost?: OrderCost;
+}
+
+/** Cost and profit for one bill, with refunded lines already taken back out. */
+export interface OrderCost {
+  netRevenue: number;
+  cost: number;
+  profit: number;
+  /** Profit as a percentage of the selling price. */
+  margin: number;
+  /** Profit as a percentage of what the goods cost. */
+  markup: number;
 }
 
 export interface RefundItem {
@@ -131,39 +145,15 @@ export interface Refund {
   items: RefundItem[];
 }
 
-export interface ShiftTotals {
-  orderCount: number;
-  salesTotal: number;
-  cashSales: number;
-  qrSales: number;
-  refundTotal: number;
-  cashRefunds: number;
-  qrRefunds: number;
-  voidedCount: number;
-  expectedCash: number;
-}
-
-export interface Shift {
-  id: number;
-  openingCash: string;
-  closingCash: string | null;
-  expectedCash: string | null;
-  /** closingCash - expectedCash: negative means the drawer came up short. */
-  diffCash: string | null;
-  note: string | null;
-  openedAt: string;
-  closedAt: string | null;
-  openedBy: { id: number; displayName: string };
-  closedBy: { id: number; displayName: string } | null;
-  totals: ShiftTotals;
-}
-
-// Cost, profit and margin are owner-only — the API omits them for CASHIER accounts.
+// Cost, profit, margin and markup are owner-only — the API omits them for CASHIER accounts.
 export interface ReportSummary {
   revenue: number;
   cost?: number;
   profit?: number;
+  /** Profit as a percentage of the selling price. */
   margin?: number;
+  /** Profit as a percentage of what the goods cost. */
+  markup?: number;
   orderCount: number;
   refundTotal?: number;
   refundCount?: number;
@@ -185,6 +175,7 @@ export interface TopProduct {
   unit: string;
   qty: number;
   revenue: number;
+  cost?: number;
   profit?: number;
 }
 
@@ -193,6 +184,8 @@ export interface CartItem {
   productId: number;
   name: string;
   sellPrice: number;
+  /** Only present for owners — the API withholds cost prices from cashiers. */
+  costPrice?: number;
   unit: string;
   quantity: number;
   /** Quantity on hand when the item was added — the cart can't go past it. */

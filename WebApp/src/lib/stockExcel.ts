@@ -1,25 +1,52 @@
 import * as XLSX from "xlsx";
 import { StockItem } from "@/lib/types";
 import { StockImportRow } from "@/lib/api/stock";
+import { markupOf } from "@/lib/utils/profit";
+
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
 
 // "คงเหลือ" is the round-trip column: export it, edit it, import it back as a
-// stocktake. The rest are there to identify the row while editing.
-const HEADERS = ["Barcode", "ชื่อสินค้า", "หมวดหมู่", "หน่วย", "คงเหลือ", "จุดแจ้งเตือน"] as const;
+// stocktake. The rest are there to identify the row while editing — the import
+// ignores them, so the costing columns can ride along without breaking it.
+const HEADERS = [
+  "Barcode",
+  "ชื่อสินค้า",
+  "หมวดหมู่",
+  "หน่วย",
+  "คงเหลือ",
+  "จุดแจ้งเตือน",
+  "ต้นทุน/ชิ้น",
+  "ราคาขาย",
+  "กำไร/ชิ้น",
+  "กำไรต่อทุน (%)",
+  "มูลค่าต้นทุนคงเหลือ",
+] as const;
 
 type ExcelRow = Record<string, string | number | undefined>;
 
 export function exportStockExcel(stocks: StockItem[]) {
-  const rows: ExcelRow[] = stocks.map((stock) => ({
-    Barcode: stock.product.barcode ?? "",
-    "ชื่อสินค้า": stock.product.name,
-    "หมวดหมู่": stock.product.category.name,
-    "หน่วย": stock.product.unit,
-    "คงเหลือ": stock.quantity,
-    "จุดแจ้งเตือน": stock.product.lowStockAt,
-  }));
+  const rows: ExcelRow[] = stocks.map((stock) => {
+    const cost = Number(stock.product.costPrice);
+    const unitProfit = Number(stock.product.sellPrice) - cost;
+    return {
+      Barcode: stock.product.barcode ?? "",
+      "ชื่อสินค้า": stock.product.name,
+      "หมวดหมู่": stock.product.category.name,
+      "หน่วย": stock.product.unit,
+      "คงเหลือ": stock.quantity,
+      "จุดแจ้งเตือน": stock.product.lowStockAt,
+      "ต้นทุน/ชิ้น": cost,
+      "ราคาขาย": Number(stock.product.sellPrice),
+      "กำไร/ชิ้น": round2(unitProfit),
+      "กำไรต่อทุน (%)": round2(markupOf(cost, unitProfit)),
+      "มูลค่าต้นทุนคงเหลือ": round2(cost * stock.quantity),
+    };
+  });
 
   const worksheet = XLSX.utils.json_to_sheet(rows, { header: [...HEADERS] });
-  worksheet["!cols"] = [16, 28, 20, 10, 12, 14].map((wch) => ({ wch }));
+  worksheet["!cols"] = [16, 28, 20, 10, 12, 14, 12, 12, 12, 16, 20].map((wch) => ({ wch }));
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "สต็อก");
   XLSX.writeFile(workbook, `stock-${new Date().toISOString().slice(0, 10)}.xlsx`);

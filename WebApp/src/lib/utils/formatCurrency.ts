@@ -7,6 +7,10 @@ export function formatCurrency(amount: number | string): string {
   }).format(num);
 }
 
+export function formatPercent(value: number): string {
+  return `${new Intl.NumberFormat("th-TH", { maximumFractionDigits: 1 }).format(value)}%`;
+}
+
 export function formatNumber(num: number): string {
   return new Intl.NumberFormat("th-TH").format(num);
 }

@@ -3,7 +3,7 @@ import { prisma } from "../../lib/prisma";
 import { createError } from "../../middleware/errorHandler";
 import { generateOrderNumber } from "../../lib/orderNumber";
 import { sendLineOrderNotification } from "../../lib/line";
-import { getOpenShiftId } from "../shifts/shifts.service";
+import { orderCost } from "../../lib/profit";
 import type { CreateOrderInput } from "./orders.schema";
 
 const MAX_ORDER_NUMBER_ATTEMPTS = 5;
@@ -50,7 +50,12 @@ export async function listOrders(params: { from?: Date; to?: Date; page?: number
     prisma.order.count({ where }),
   ]);
 
-  return { orders, total, page, limit };
+  return { orders: orders.map(withCost), total, page, limit };
+}
+
+/** Every bill leaves the service costed; the controller strips it for cashiers. */
+function withCost<T extends Parameters<typeof orderCost>[0]>(order: T) {
+  return { ...order, cost: orderCost(order) };
 }
 
 export async function getOrder(id: number) {
@@ -64,7 +69,7 @@ export async function getOrder(id: number) {
     },
   });
   if (!order) throw createError("ไม่พบคำสั่งซื้อ", 404);
-  return order;
+  return withCost(order);
 }
 
 /** True when the write failed only because another register grabbed the same order number. */
@@ -126,13 +131,8 @@ export async function createOrder(cashierId: number, input: CreateOrderInput) {
 
   if (changeAmt < 0) throw createError("จำนวนเงินที่รับมาไม่พอ", 400);
 
-  // Attached so the drawer can be reconciled at close. A sale is never blocked
-  // on an open shift — a register that forgot to open one must still sell.
-  const shiftId = await getOpenShiftId();
-
   const order = await createOrderWithRetry({
     cashierId,
-    shiftId,
     lines,
     demandByProduct,
     productNameById: new Map(found.map((product) => [product.id, product.name])),
@@ -176,12 +176,11 @@ export async function createOrder(cashierId: number, input: CreateOrderInput) {
     LINE_NOTIFY_TIMEOUT_MS
   );
 
-  return order;
+  return withCost(order);
 }
 
 async function createOrderWithRetry(data: {
   cashierId: number;
-  shiftId: number | null;
   lines: { product: { id: number; sellPrice: Prisma.Decimal; costPrice: Prisma.Decimal }; quantity: number }[];
   /** Total quantity sold per product on this bill — what comes off the shelf. */
   demandByProduct: Map<number, number>;
@@ -227,7 +226,6 @@ async function createOrderWithRetry(data: {
             changeAmt: data.changeAmt,
             note: data.note,
             cashierId: data.cashierId,
-            shiftId: data.shiftId,
             items: {
               create: data.lines.map(({ product, quantity }) => ({
                 productId: product.id,

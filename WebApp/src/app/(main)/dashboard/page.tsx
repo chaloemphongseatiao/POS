@@ -3,7 +3,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { getSummary, getTopProducts } from "@/lib/api/reports";
 import { listOrders } from "@/lib/api/orders";
-import { formatCurrency } from "@/lib/utils/formatCurrency";
+import { useAuth } from "@/lib/hooks/useAuth";
+import { formatCurrency, formatPercent } from "@/lib/utils/formatCurrency";
 import { Loader2 } from "lucide-react";
 
 function todayStr() {
@@ -11,6 +12,8 @@ function todayStr() {
 }
 
 export default function DashboardPage() {
+  const { isAdmin } = useAuth();
+  const showCost = isAdmin();
   const today = todayStr();
   const endOfDay = `${today}T23:59:59`;
 
@@ -61,6 +64,22 @@ export default function DashboardPage() {
         <MetricCard label="ค่าเฉลี่ยต่อบิล" value={formatCurrency(averageTicket)} />
       </section>
 
+      {showCost && (
+        <section className="grid gap-4 md:grid-cols-3">
+          <MetricCard label="ต้นทุนขายวันนี้" value={formatCurrency(summary?.cost ?? 0)} />
+          <MetricCard
+            label="กำไรวันนี้"
+            value={formatCurrency(summary?.profit ?? 0)}
+            hint={`กำไร ${formatPercent(summary?.margin ?? 0)} ของยอดขาย`}
+          />
+          <MetricCard
+            label="กำไรต่อทุน"
+            value={formatPercent(summary?.markup ?? 0)}
+            hint="กำไรคิดเป็น % ของต้นทุน"
+          />
+        </section>
+      )}
+
       <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="glass rounded-[20px] p-5 md:p-6">
           <h2 className="mb-5 text-[15px] font-extrabold text-slate-900">สินค้าขายดี</h2>
@@ -73,6 +92,9 @@ export default function DashboardPage() {
                   <div className="mb-1.5 flex justify-between gap-4 text-sm">
                     <span className="truncate font-bold text-slate-800">{product.name}</span>
                     <span className="shrink-0 text-slate-500">
+                      {showCost && product.profit !== undefined
+                        ? `กำไร ${formatCurrency(product.profit)} · `
+                        : ""}
                       {product.qty} {product.unit}
                     </span>
                   </div>
@@ -123,11 +145,12 @@ export default function DashboardPage() {
   );
 }
 
-function MetricCard({ label, value }: { label: string; value: string }) {
+function MetricCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="glass rounded-[18px] p-5">
       <p className="text-xs font-bold uppercase text-slate-500">{label}</p>
       <p className="mt-2 text-2xl font-extrabold tabular-nums text-slate-900 md:text-3xl">{value}</p>
+      {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
     </div>
   );
 }
