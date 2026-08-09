@@ -89,35 +89,22 @@ function OrderDetailModal({ orderId, onClose }: { orderId: number | null; onClos
             <div>
               <p className="font-semibold text-gray-700 mb-2">รายการสินค้า</p>
               <div className="space-y-1.5">
-                {order.items.map((item) => {
-                  const unitProfit =
-                    item.costPrice === undefined
-                      ? null
-                      : Number(item.unitPrice) - Number(item.costPrice);
-                  return (
-                    <div key={item.id} className="flex justify-between">
-                      <div>
-                        <span>{item.product.name}</span>
-                        <span className="text-gray-400 ml-1 text-xs">
-                          x{item.quantity} {item.product.unit}
+                {order.items.map((item) => (
+                  <div key={item.id} className="flex justify-between">
+                    <div>
+                      <span>{item.product.name}</span>
+                      <span className="text-gray-400 ml-1 text-xs">
+                        x{item.quantity} {item.product.unit}
+                      </span>
+                      {(item.refundedQty ?? 0) > 0 && (
+                        <span className="ml-1 text-xs text-amber-600">
+                          (คืน {item.refundedQty})
                         </span>
-                        {(item.refundedQty ?? 0) > 0 && (
-                          <span className="ml-1 text-xs text-amber-600">
-                            (คืน {item.refundedQty})
-                          </span>
-                        )}
-                        {unitProfit !== null && (
-                          <p className="text-xs text-slate-400">
-                            ทุน {formatCurrency(item.costPrice!)} · กำไร/ชิ้น{" "}
-                            {formatCurrency(unitProfit)} (
-                            {formatPercent(markupOf(Number(item.costPrice), unitProfit))} ของทุน)
-                          </p>
-                        )}
-                      </div>
-                      <span className="font-medium">{formatCurrency(item.subtotal)}</span>
+                      )}
                     </div>
-                  );
-                })}
+                    <span className="font-medium">{formatCurrency(item.subtotal)}</span>
+                  </div>
+                ))}
               </div>
             </div>
 

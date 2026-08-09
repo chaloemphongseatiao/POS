@@ -14,7 +14,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { ProductImage } from "@/components/ui/product-image";
 import { MovementsDialog } from "@/components/stock/MovementsDialog";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils/formatCurrency";
-import { markupOf } from "@/lib/utils/profit";
 import { cn } from "@/lib/utils/cn";
 import { ArrowLeftRight, ChevronLeft, ChevronRight, Download, Plus, Search, SlidersHorizontal, Truck, Upload } from "lucide-react";
 
@@ -288,15 +287,13 @@ export default function StockPage() {
       {/* Table */}
       <div className="glass rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1220px] text-sm">
+          <table className="w-full min-w-[1000px] text-sm">
             <thead className="glass-header border-b border-white/40">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">สินค้า</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">หมวดหมู่</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">ราคา</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">ต้นทุน</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600">กำไร/ชิ้น</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600">มูลค่าคงเหลือ</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">รับเข้า</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">จ่ายออก</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">คงเหลือ</th>
@@ -305,14 +302,12 @@ export default function StockPage() {
             </thead>
             <tbody className="divide-y divide-white/40">
               {isLoading ? (
-                <tr><td colSpan={10} className="text-center py-8 text-gray-400">กำลังโหลด...</td></tr>
+                <tr><td colSpan={8} className="text-center py-8 text-gray-400">กำลังโหลด...</td></tr>
               ) : stocks.length === 0 ? (
-                <tr><td colSpan={10} className="text-center py-8 text-gray-400">ไม่พบสินค้า</td></tr>
+                <tr><td colSpan={8} className="text-center py-8 text-gray-400">ไม่พบสินค้า</td></tr>
               ) : (
                 stocks.map((item) => {
                   const tone = stockTone(item);
-                  const cost = Number(item.product.costPrice);
-                  const unitProfit = Number(item.product.sellPrice) - cost;
                   return (
                     <tr key={item.id} className="glass-row-hover transition-colors">
                       <td className="px-4 py-3">
@@ -331,17 +326,6 @@ export default function StockPage() {
                       <td className="px-4 py-3 text-gray-600">{item.product.category.name}</td>
                       <td className="px-4 py-3 text-right text-gray-700">{formatCurrency(item.product.sellPrice)}</td>
                       <td className="px-4 py-3 text-right text-gray-500">{formatCurrency(item.product.costPrice)}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right">
-                        <span className={cn("font-medium", unitProfit < 0 ? "text-rose-600" : "text-emerald-600")}>
-                          {formatCurrency(unitProfit)}
-                        </span>
-                        <span className="ml-1 text-xs text-slate-400">
-                          {formatPercent(markupOf(cost, unitProfit))}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right text-gray-700">
-                        {formatCurrency(cost * item.quantity)}
-                      </td>
                       <td className="px-4 py-3 text-right text-emerald-600">{formatNumber(item.totalIn)}</td>
                       <td className="px-4 py-3 text-right text-rose-600">{formatNumber(item.totalOut)}</td>
                       <td className="px-4 py-3 text-right">

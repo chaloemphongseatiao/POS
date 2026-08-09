@@ -74,7 +74,7 @@ export async function uploadImage(req: Request, res: Response, next: NextFunctio
 }
 
 export async function create(req: Request, res: Response, next: NextFunction) {
-  try { res.status(201).json(await svc.createProduct(req.body)); } catch (err) { next(err); }
+  try { res.status(201).json(await svc.createProduct(req.body, req.user!.id)); } catch (err) { next(err); }
 }
 
 export async function update(req: Request, res: Response, next: NextFunction) {
@@ -82,7 +82,7 @@ export async function update(req: Request, res: Response, next: NextFunction) {
 }
 
 export async function importMany(req: Request, res: Response, next: NextFunction) {
-  try { res.json(await svc.importProducts(req.body?.rows)); } catch (err) { next(err); }
+  try { res.json(await svc.importProducts(req.body?.rows, req.user!.id)); } catch (err) { next(err); }
 }
 
 export async function hardDelete(req: Request, res: Response, next: NextFunction) {

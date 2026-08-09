@@ -33,6 +33,7 @@ interface FormData {
   barcode: string;
   name: string;
   description: string;
+  costPrice: number;
   sellPrice: number;
   unit: string;
   imageUrl: string;
@@ -73,13 +74,14 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
         barcode: product.barcode || "",
         name: product.name,
         description: product.description || "",
+        costPrice: parseFloat(product.costPrice ?? "0"),
         sellPrice: parseFloat(product.sellPrice),
         unit: product.unit,
         imageUrl: product.imageUrl || "",
         categoryId: product.category.id,
       });
     } else {
-      reset({ unit: "ชิ้น", imageUrl: "" });
+      reset({ unit: "ชิ้น", imageUrl: "", costPrice: 0 });
     }
   }, [product, reset]);
 
@@ -190,6 +192,19 @@ export default function ProductFormDialog({ open, product, categories, onSave, o
                 )}
               />
               {errors.categoryId && <p className="mt-1 text-xs text-red-500">กรุณาเลือกหมวดหมู่</p>}
+            </div>
+            <div>
+              <label htmlFor="pf-costPrice" className="text-sm font-medium">ต้นทุน (บาท)</label>
+              <Input
+                id="pf-costPrice"
+                type="number"
+                step="0.01"
+                min="0"
+                {...register("costPrice", { valueAsNumber: true, min: 0 })}
+                aria-invalid={!!errors.costPrice}
+                className={cn("mt-1", errors.costPrice && "border-red-400 focus-visible:ring-red-400/40")}
+              />
+              {errors.costPrice && <p className="mt-1 text-xs text-red-500">ต้นทุนต้องไม่ติดลบ</p>}
             </div>
             <div>
               <label htmlFor="pf-sellPrice" className="text-sm font-medium">ราคาขาย (บาท) *</label>

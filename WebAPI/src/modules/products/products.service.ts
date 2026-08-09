@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
 import { createError } from "../../middleware/errorHandler";
 import { isProductImagePath, publicProductImageUrl } from "./productImage";
@@ -103,11 +104,28 @@ export async function getProductImage(id: number) {
   return { imageUrl: product.imageUrl };
 }
 
-export async function createProduct(data: CreateProductInput) {
+/**
+ * Opening stock has to be logged as a movement, not just written to `Stock`.
+ * The stock screen derives "รับเข้า"/"จ่ายออก" from the movement log, so a
+ * quantity that appears without one leaves the two out of balance — a later
+ * stocktake down to zero then reports the whole opening balance as issued.
+ */
+export async function createProduct(data: CreateProductInput, userId: number) {
   const { initialStock, ...rest } = data;
   return prisma.$transaction(async (tx) => {
     const product = await tx.product.create({ data: rest, select: productSelect });
     await tx.stock.create({ data: { productId: product.id, quantity: initialStock } });
+    if (initialStock > 0) {
+      await tx.stockMovement.create({
+        data: {
+          type: "STOCK_IN",
+          quantity: initialStock,
+          note: "ยอดตั้งต้นตอนสร้างสินค้า",
+          productId: product.id,
+          userId,
+        },
+      });
+    }
     return withPublicImageUrl(product);
   });
 }
@@ -137,7 +155,7 @@ export interface ProductImportRow {
   isActive: boolean;
 }
 
-export async function importProducts(rows: ProductImportRow[]) {
+export async function importProducts(rows: ProductImportRow[], userId: number) {
   if (!Array.isArray(rows) || rows.length === 0)
     throw createError("ไม่พบข้อมูลสินค้าสำหรับ import", 400);
   if (rows.length > 5000)
@@ -174,6 +192,7 @@ export async function importProducts(rows: ProductImportRow[]) {
   return prisma.$transaction(async (tx) => {
     let created = 0;
     let updated = 0;
+    const movements: Prisma.StockMovementCreateManyInput[] = [];
 
     for (const item of rows) {
       const barcode = item.barcode?.trim() || null;
@@ -195,18 +214,45 @@ export async function importProducts(rows: ProductImportRow[]) {
 
       if (existing) {
         await tx.product.update({ where: { id: existing.id }, data });
+        const current = await tx.stock.findUnique({
+          where: { productId: existing.id },
+          select: { quantity: true },
+        });
         await tx.stock.upsert({
           where: { productId: existing.id },
           create: { productId: existing.id, quantity: item.stock },
           update: { quantity: item.stock },
         });
+        // The sheet states what is on the shelf, so the difference is a
+        // stocktake correction — logged like `importStock` does.
+        const diff = item.stock - (current?.quantity ?? 0);
+        if (diff !== 0) {
+          movements.push({
+            type: "ADJUST",
+            quantity: diff,
+            note: "นำเข้าสินค้าจาก Excel",
+            productId: existing.id,
+            userId,
+          });
+        }
         updated++;
       } else {
         const product = await tx.product.create({ data, select: { id: true } });
         await tx.stock.create({ data: { productId: product.id, quantity: item.stock } });
+        if (item.stock > 0) {
+          movements.push({
+            type: "STOCK_IN",
+            quantity: item.stock,
+            note: "นำเข้าสินค้าจาก Excel",
+            productId: product.id,
+            userId,
+          });
+        }
         created++;
       }
     }
+
+    if (movements.length > 0) await tx.stockMovement.createMany({ data: movements });
 
     return { total: rows.length, created, updated };
   });
