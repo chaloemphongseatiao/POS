@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getProductMovements } from "@/lib/api/stock";
-import { MovementType, StockItem } from "@/lib/types";
+import { StockItem } from "@/lib/types";
+import { movementTypeLabel } from "@/lib/utils/movements";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils/cn";
@@ -17,14 +18,6 @@ const DIRECTION_TABS: { value: DirectionFilter; label: string }[] = [
   { value: "in", label: "รับเข้า" },
   { value: "out", label: "จ่ายออก" },
 ];
-
-const TYPE_LABELS: Record<MovementType, string> = {
-  STOCK_IN: "รับเข้า",
-  STOCK_OUT: "จ่ายออก",
-  SALE: "ขาย",
-  ADJUST: "ปรับยอด",
-  RETURN: "คืนสินค้า",
-};
 
 export function MovementsDialog({
   item,
@@ -98,7 +91,7 @@ export function MovementsDialog({
                               : "border-red-100 bg-red-50 text-red-600"
                           )}
                         >
-                          {TYPE_LABELS[movement.type]}
+                          {movementTypeLabel(movement.type)}
                         </span>
                         <span className="text-xs text-gray-500">
                           {new Date(movement.createdAt).toLocaleString("th-TH")}

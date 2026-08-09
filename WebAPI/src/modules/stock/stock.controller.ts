@@ -11,7 +11,7 @@ function parseStatus(value: unknown): StockStatus | undefined {
   return STOCK_STATUSES.includes(value as StockStatus) ? (value as StockStatus) : undefined;
 }
 
-const MOVEMENT_TYPES: MovementType[] = ["STOCK_IN", "STOCK_OUT", "SALE", "ADJUST"];
+const MOVEMENT_TYPES: MovementType[] = ["STOCK_IN", "STOCK_OUT", "SALE", "ADJUST", "RETURN"];
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
@@ -37,13 +37,14 @@ export async function movements(req: Request, res: Response, next: NextFunction)
 
 export async function allMovements(req: Request, res: Response, next: NextFunction) {
   try {
-    const { productId, type, from, to } = req.query;
+    const { productId, type, from, to, limit } = req.query;
     res.json(
       await svc.getAllMovements({
         productId: productId ? Number(productId) : undefined,
         type: MOVEMENT_TYPES.includes(type as MovementType) ? (type as MovementType) : undefined,
         from: parseBangkok(from as string | undefined),
         to: parseBangkok(to as string | undefined),
+        limit: limit ? Number(limit) : undefined,
       })
     );
   } catch (err) { next(err); }

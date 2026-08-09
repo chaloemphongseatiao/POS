@@ -76,7 +76,7 @@ export interface StockMovement {
   note: string | null;
   createdAt: string;
   /** Omitted by the per-product movements endpoint, which already knows it. */
-  product?: { id: number; name: string; barcode: string | null };
+  product?: { id: number; name: string; barcode: string | null; unit: string };
   user: { displayName: string };
   order: { orderNumber: string } | null;
 }

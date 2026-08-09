@@ -7,8 +7,7 @@ import { useAuth } from "@/lib/hooks/useAuth";
 import { listProducts, getProductByBarcode } from "@/lib/api/products";
 import { listCategories } from "@/lib/api/categories";
 import { createOrder } from "@/lib/api/orders";
-import { formatCurrency, formatPercent } from "@/lib/utils/formatCurrency";
-import { markupOf } from "@/lib/utils/profit";
+import { formatCurrency } from "@/lib/utils/formatCurrency";
 import { createBarcodeListener, useScannerSafeDigitKeyDown } from "@/lib/utils/barcodeScanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,12 +21,9 @@ import { Kbd } from "@/components/ui/kbd";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 export default function PosPage() {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const cart = useCart();
   const queryClient = useQueryClient();
-  const showCost = isAdmin();
-  const cartCost = cart.costTotal();
-  const cartProfit = cart.total() - cartCost;
 
   const [search, setSearch] = useState("");
   const handleDigitKeyDown = useScannerSafeDigitKeyDown(search, setSearch);
@@ -440,24 +436,6 @@ export default function PosPage() {
               <span>รวมทั้งสิ้น</span>
               <span className="text-primary">{formatCurrency(cart.total())}</span>
             </div>
-            {/* Owner-only: the discount comes off the profit, never off the cost. */}
-            {showCost && cart.items.length > 0 && (
-              <div className="mt-1.5 space-y-1 border-t border-white/60 pt-1.5">
-                <div className="flex justify-between text-slate-500">
-                  <span>ต้นทุน</span>
-                  <span>{formatCurrency(cartCost)}</span>
-                </div>
-                <div className="flex justify-between font-bold text-emerald-600">
-                  <span>กำไร</span>
-                  <span>
-                    {formatCurrency(cartProfit)}
-                    <span className="ml-1 text-xs font-medium text-slate-400">
-                      {formatPercent(markupOf(cartCost, cartProfit))} ของทุน
-                    </span>
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Payment method */}

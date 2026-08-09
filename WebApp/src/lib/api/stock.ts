@@ -43,6 +43,8 @@ export async function getAllMovements(params?: {
   type?: string;
   from?: string;
   to?: string;
+  /** Server caps this at 2000; the default is 200. */
+  limit?: number;
 }): Promise<StockMovement[]> {
   const { data } = await apiClient.get<StockMovement[]>("/api/stock/movements", { params });
   return data;

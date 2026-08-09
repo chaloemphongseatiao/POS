@@ -212,7 +212,12 @@ export async function getAllMovements(params: {
   type?: MovementType;
   from?: Date;
   to?: Date;
+  limit?: number;
 }) {
+  // The reports screen pulls a whole period at once, so the ceiling is higher
+  // than a screenful — but still bounded, since this is an unpaged read.
+  const take = Math.min(2000, Math.max(1, params.limit ?? 200));
+
   return prisma.stockMovement.findMany({
     where: {
       ...(params.productId && { productId: params.productId }),
@@ -222,12 +227,12 @@ export async function getAllMovements(params: {
         : {}),
     },
     include: {
-      product: { select: { id: true, name: true, barcode: true } },
+      product: { select: { id: true, name: true, barcode: true, unit: true } },
       user: { select: { displayName: true } },
       order: { select: { orderNumber: true } },
     },
     orderBy: { createdAt: "desc" },
-    take: 200,
+    take,
   });
 }
 
