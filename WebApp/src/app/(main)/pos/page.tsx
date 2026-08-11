@@ -6,8 +6,10 @@ import { useCart } from "@/lib/hooks/useCart";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { listProducts, getProductByBarcode } from "@/lib/api/products";
 import { listCategories } from "@/lib/api/categories";
+import { listPromotions } from "@/lib/api/promotions";
 import { createOrder } from "@/lib/api/orders";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
+import { computePromotionDiscount } from "@/lib/utils/promotion";
 import { createBarcodeListener, useScannerSafeDigitKeyDown } from "@/lib/utils/barcodeScanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +55,18 @@ export default function PosPage() {
     placeholderData: (prev) => prev,
   });
   const products = productData?.products ?? [];
+
+  const { data: promotions = [] } = useQuery({
+    queryKey: ["promotions"],
+    queryFn: listPromotions,
+    staleTime: 60_000,
+  });
+
+  // Applied the same way `createOrder` applies it server-side, so the total
+  // quoted to the customer (and the exact QR PromptPay amount) matches what
+  // the order actually charges once the promotion is factored in.
+  const promoDiscount = computePromotionDiscount(cart.items, promotions);
+  const grandTotal = Math.max(0, cart.subtotal() - cart.discountAmt - promoDiscount);
 
   const orderMutation = useMutation({
     mutationFn: createOrder,
@@ -432,9 +446,15 @@ export default function PosPage() {
                 <span>-{formatCurrency(cart.discountAmt)}</span>
               </div>
             )}
+            {promoDiscount > 0 && (
+              <div className="flex justify-between text-red-500">
+                <span>โปรโมชัน</span>
+                <span>-{formatCurrency(promoDiscount)}</span>
+              </div>
+            )}
             <div className="flex justify-between font-extrabold text-lg pt-1.5 border-t border-white/60 text-slate-900">
               <span>รวมทั้งสิ้น</span>
-              <span className="text-primary">{formatCurrency(cart.total())}</span>
+              <span className="text-primary">{formatCurrency(grandTotal)}</span>
             </div>
           </div>
 
@@ -464,7 +484,7 @@ export default function PosPage() {
             disabled={cart.items.length === 0}
             onClick={() => setShowPayment(true)}
           >
-            รับชำระเงิน <Kbd variant="dark">F2</Kbd> {cart.items.length > 0 && formatCurrency(cart.total())}
+            รับชำระเงิน <Kbd variant="dark">F2</Kbd> {cart.items.length > 0 && formatCurrency(grandTotal)}
           </Button>
 
           {cart.items.length > 0 && (
@@ -481,7 +501,7 @@ export default function PosPage() {
 
       <PaymentModal
         open={showPayment}
-        total={cart.total()}
+        total={grandTotal}
         paymentMethod={paymentMethod}
         onConfirm={handleConfirmPayment}
         onClose={() => setShowPayment(false)}

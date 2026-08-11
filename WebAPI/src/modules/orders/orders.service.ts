@@ -124,9 +124,12 @@ export async function createOrder(cashierId: number, input: CreateOrderInput) {
     0
   );
 
-  if (discountAmt > subtotal) throw createError("ส่วนลดมากกว่ายอดรวม", 400);
+  const promoDiscount = await promotionDiscount(productIds, demandByProduct, productById);
+  const totalDiscount = discountAmt + promoDiscount;
 
-  const totalAmt = subtotal - discountAmt;
+  if (totalDiscount > subtotal) throw createError("ส่วนลดมากกว่ายอดรวม", 400);
+
+  const totalAmt = subtotal - totalDiscount;
   const changeAmt = amountPaid - totalAmt;
 
   if (changeAmt < 0) throw createError("จำนวนเงินที่รับมาไม่พอ", 400);
@@ -137,7 +140,7 @@ export async function createOrder(cashierId: number, input: CreateOrderInput) {
     demandByProduct,
     productNameById: new Map(found.map((product) => [product.id, product.name])),
     subtotal,
-    discountAmt,
+    discountAmt: totalDiscount,
     totalAmt,
     paymentMethod,
     amountPaid,
@@ -177,6 +180,54 @@ export async function createOrder(cashierId: number, input: CreateOrderInput) {
   );
 
   return withCost(order);
+}
+
+async function promotionDiscount(
+  productIds: number[],
+  demandByProduct: Map<number, number>,
+  productById: Map<number, { id: number; sellPrice: Prisma.Decimal }>
+) {
+  const now = new Date();
+  const links = await prisma.productPromotion.findMany({
+    where: {
+      productId: { in: productIds },
+      promotion: {
+        isActive: true,
+        OR: [{ startsAt: null }, { startsAt: { lte: now } }],
+        AND: [{ OR: [{ endsAt: null }, { endsAt: { gte: now } }] }],
+      },
+    },
+    include: { promotion: true },
+  });
+
+  // A product can carry more than one active promotion at once, so discounts
+  // are summed per product first and only then capped against that product's
+  // subtotal — capping each promotion separately would let two overlapping
+  // promotions discount the same line by more than 100% of its value.
+  const rawDiscountByProduct = new Map<number, number>();
+  for (const link of links) {
+    const qty = demandByProduct.get(link.productId) ?? 0;
+    if (qty < link.promotion.minQty) continue;
+    const product = productById.get(link.productId);
+    if (!product) continue;
+    const lineSubtotal = Number(product.sellPrice) * qty;
+    const value = Number(link.promotion.value);
+    const lineDiscount =
+      link.promotion.type === "PERCENT_OFF"
+        ? lineSubtotal * Math.min(value, 100) / 100
+        : value * Math.floor(qty / link.promotion.minQty);
+    rawDiscountByProduct.set(link.productId, (rawDiscountByProduct.get(link.productId) ?? 0) + lineDiscount);
+  }
+
+  let discount = 0;
+  for (const [productId, rawDiscount] of rawDiscountByProduct) {
+    const qty = demandByProduct.get(productId) ?? 0;
+    const product = productById.get(productId);
+    if (!product) continue;
+    const lineSubtotal = Number(product.sellPrice) * qty;
+    discount += Math.min(lineSubtotal, rawDiscount);
+  }
+  return Math.round(discount * 100) / 100;
 }
 
 async function createOrderWithRetry(data: {

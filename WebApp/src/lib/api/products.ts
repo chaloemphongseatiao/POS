@@ -12,6 +12,7 @@ export async function listProducts(params?: {
   search?: string;
   categoryId?: number;
   all?: boolean;
+  missingCost?: boolean;
   page?: number;
   limit?: number;
 }): Promise<ProductListResponse> {
@@ -42,6 +43,9 @@ export interface ProductWritePayload {
   unit?: string;
   imageUrl?: string;
   lowStockAt?: number;
+  reorderPoint?: number;
+  reorderQty?: number;
+  expiryDate?: string | null;
   categoryId?: number;
   isActive?: boolean;
   initialStock?: number;

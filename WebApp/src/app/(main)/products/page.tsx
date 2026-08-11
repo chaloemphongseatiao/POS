@@ -25,6 +25,7 @@ export default function ProductsPage() {
   const importInputRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState<number | undefined>();
+  const [missingCost, setMissingCost] = useState(false);
   const [page, setPage] = useState(1);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -34,8 +35,8 @@ export default function ProductsPage() {
   const [isExporting, setIsExporting] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["products-all", search, categoryId, page],
-    queryFn: () => listProducts({ search, categoryId, all: true, page, limit: PAGE_SIZE }),
+    queryKey: ["products-all", search, categoryId, missingCost, page],
+    queryFn: () => listProducts({ search, categoryId, missingCost, all: true, page, limit: PAGE_SIZE }),
   });
 
   const products = data?.products ?? [];
@@ -197,14 +198,25 @@ export default function ProductsPage() {
 
         <div className="min-w-0 flex-1 space-y-4">
           {/* Search */}
-          <div className="relative w-full sm:max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              placeholder="ค้นหาสินค้า..."
-              className="pl-9"
-              value={search}
-              onChange={(e) => handleSearch(e.target.value)}
-            />
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative w-full sm:max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="ค้นหาสินค้า..."
+                className="pl-9"
+                value={search}
+                onChange={(e) => handleSearch(e.target.value)}
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-gray-600 select-none">
+              <input
+                type="checkbox"
+                className="w-4 h-4 rounded border-gray-300"
+                checked={missingCost}
+                onChange={(e) => { setMissingCost(e.target.checked); setPage(1); }}
+              />
+              ยังไม่ได้กรอกต้นทุน
+            </label>
           </div>
 
           {/* Table */}

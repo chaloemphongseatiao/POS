@@ -10,9 +10,11 @@ import {
   LayoutDashboard,
   LogOut,
   Package,
+  Printer,
   ReceiptText,
   Settings,
   ShoppingCart,
+  Tags,
 } from "lucide-react";
 
 const navItems = [
@@ -22,6 +24,8 @@ const navItems = [
   { href: "/stock", icon: Boxes, label: "สต็อก", adminOnly: true },
   { href: "/orders", icon: ReceiptText, label: "ประวัติ" },
   { href: "/reports", icon: BarChart3, label: "รายงาน", adminOnly: true },
+  { href: "/labels", icon: Printer, label: "ฉลาก", adminOnly: true },
+  { href: "/promotions", icon: Tags, label: "โปรโมชัน", adminOnly: true },
   { href: "/settings", icon: Settings, label: "ตั้งค่า", adminOnly: true },
 ];
 
@@ -39,11 +43,7 @@ export default function Sidebar() {
   return (
     <>
       <aside className="glass-sidebar sticky top-0 hidden h-dvh w-24 shrink-0 flex-col items-center overflow-y-auto border-r border-white/60 py-6 md:flex">
-        <Link
-          href="/pos"
-          aria-label="หน้าขายสินค้า"
-          className="mb-6 flex size-20 items-center justify-center"
-        >
+        <Link href="/pos" aria-label="หน้าขายสินค้า" className="mb-6 flex size-20 items-center justify-center">
           <img src="/logo.png" alt="โลโก้ร้าน" className="size-20 object-contain" />
         </Link>
 
@@ -65,27 +65,12 @@ export default function Sidebar() {
       </aside>
 
       <nav
-        // Column count follows the role: a CASHIER sees fewer items than an ADMIN.
         style={{ gridTemplateColumns: `repeat(${visibleItems.length}, minmax(0, 1fr))` }}
         className="fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-30 grid overflow-hidden rounded-2xl border border-white/75 bg-white/90 shadow-xl shadow-indigo-950/10 backdrop-blur-xl md:hidden"
       >
-        {visibleItems.map((item) => {
-          const active = pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 px-1 text-[10px] font-semibold text-slate-500 sm:text-[11px]",
-                active && "text-primary"
-              )}
-            >
-              <item.icon className="size-5" />
-              <span className="max-w-full truncate">{item.label}</span>
-            </Link>
-          );
-        })}
+        {visibleItems.map((item) => (
+          <NavItem key={item.href} item={item} pathname={pathname} mobile />
+        ))}
       </nav>
     </>
   );
@@ -94,9 +79,11 @@ export default function Sidebar() {
 function NavItem({
   item,
   pathname,
+  mobile = false,
 }: {
   item: { href: string; icon: React.ComponentType<{ className?: string }>; label: string };
   pathname: string;
+  mobile?: boolean;
 }) {
   const active = pathname.startsWith(item.href);
 
@@ -105,12 +92,14 @@ function NavItem({
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex w-16 flex-col items-center gap-1 rounded-2xl py-2.5 text-[11px] font-semibold text-slate-500 hover:bg-white/50 hover:text-slate-800",
-        active && "bg-white/70 text-primary shadow-md shadow-indigo-950/10"
+        mobile
+          ? "flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 px-1 text-[10px] font-semibold text-slate-500 sm:text-[11px]"
+          : "flex w-16 flex-col items-center gap-1 rounded-2xl py-2.5 text-[11px] font-semibold text-slate-500 hover:bg-white/50 hover:text-slate-800",
+        active && (mobile ? "text-primary" : "bg-white/70 text-primary shadow-md shadow-indigo-950/10")
       )}
     >
       <item.icon className="size-5" />
-      <span>{item.label}</span>
+      <span className={cn(mobile && "max-w-full truncate")}>{item.label}</span>
     </Link>
   );
 }

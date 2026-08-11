@@ -60,3 +60,54 @@ export async function hourly(req: Request, res: Response, next: NextFunction) {
     res.json(await svc.getHourly(date));
   } catch (err) { next(err); }
 }
+
+export async function salesOverview(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { from, to } = parseRange(req);
+    res.json(await svc.getSalesOverview(from, to));
+  } catch (err) { next(err); }
+}
+
+export async function refundVoid(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { from, to } = parseRange(req);
+    res.json(await svc.getRefundVoidReport(from, to));
+  } catch (err) { next(err); }
+}
+
+export async function cashierPerformance(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { from, to } = parseRange(req);
+    const result = await svc.getCashierPerformance(from, to);
+    res.json(isAdmin(req) ? result : result.map(({ cost, profit, ...visible }) => visible));
+  } catch (err) { next(err); }
+}
+
+export async function lowStockReorder(_req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json(await svc.getLowStockReorder());
+  } catch (err) { next(err); }
+}
+
+export async function expiryLoss(req: Request, res: Response, next: NextFunction) {
+  try {
+    const asOf = parseBangkok(req.query.asOf as string | undefined) ?? new Date();
+    const result = await svc.getExpiryLoss(asOf);
+    res.json(isAdmin(req) ? result : result.map(({ costLoss, ...visible }) => visible));
+  } catch (err) { next(err); }
+}
+
+export async function profitByCategory(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { from, to } = parseRange(req);
+    const result = await svc.getProfitByCategory(from, to);
+    res.json(isAdmin(req) ? result : result.map(({ cost, profit, margin, ...visible }) => visible));
+  } catch (err) { next(err); }
+}
+
+export async function paymentBreakdown(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { from, to } = parseRange(req);
+    res.json(await svc.getPaymentBreakdown(from, to));
+  } catch (err) { next(err); }
+}

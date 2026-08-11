@@ -5,6 +5,7 @@ import { CalendarRange } from "lucide-react";
 import SalesReport from "@/components/reports/SalesReport";
 import StockOnHandReport from "@/components/reports/StockOnHandReport";
 import MovementsReport from "@/components/reports/MovementsReport";
+import AdvancedReports from "@/components/reports/AdvancedReports";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { cn } from "@/lib/utils/cn";
@@ -16,7 +17,7 @@ const QUICK_RANGES = [
   { label: "30 วัน", days: 30 },
 ];
 
-type TabId = "stock" | "movements" | "receive" | "sales" | "adjust";
+type TabId = "stock" | "movements" | "receive" | "sales" | "adjust" | "advanced";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "stock", label: "สต็อกคงเหลือ" },
@@ -24,6 +25,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "receive", label: "รับสินค้า" },
   { id: "sales", label: "การขาย" },
   { id: "adjust", label: "ปรับปรุงสต็อก" },
+  { id: "advanced", label: "วิเคราะห์เพิ่มเติม" },
 ];
 
 /** The first day of a quick range that ends today — a 1-day range is today alone. */
@@ -125,6 +127,8 @@ export default function ReportsPage() {
       )}
 
       {tab === "sales" && <SalesReport fromDate={fromDate} toDate={toDate} />}
+
+      {tab === "advanced" && <AdvancedReports from={fromDate} to={to} />}
 
       {tab === "adjust" && (
         <MovementsReport

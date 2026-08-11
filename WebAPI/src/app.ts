@@ -13,6 +13,7 @@ import refundsRoutes from "./modules/refunds/refunds.routes";
 import reportsRoutes from "./modules/reports/reports.routes";
 import settingsRoutes from "./modules/settings/settings.routes";
 import lineRoutes from "./modules/line/line.routes";
+import promotionsRoutes from "./modules/promotions/promotions.routes";
 import { errorHandler } from "./middleware/errorHandler";
 
 const app = express();
@@ -44,6 +45,7 @@ app.use("/api/refunds", refundsRoutes);
 app.use("/api/reports", reportsRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/line", lineRoutes);
+app.use("/api/promotions", promotionsRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ message: "ไม่พบ endpoint ที่เรียก" });

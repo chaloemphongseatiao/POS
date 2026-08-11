@@ -43,6 +43,9 @@ export interface Product {
   imageUrl: string | null;
   isActive: boolean;
   lowStockAt: number;
+  reorderPoint: number;
+  reorderQty: number;
+  expiryDate: string | null;
   createdAt: string;
   category: { id: number; name: string };
   stock: StockInfo | null;
@@ -63,6 +66,9 @@ export interface StockItem {
     costPrice: string;
     sellPrice: string;
     lowStockAt: number;
+    reorderPoint: number;
+    reorderQty: number;
+    expiryDate: string | null;
     isActive: boolean;
     imageUrl: string | null;
     category: { id: number; name: string };
@@ -177,6 +183,79 @@ export interface TopProduct {
   revenue: number;
   cost?: number;
   profit?: number;
+}
+
+export interface SalesOverviewReport {
+  grossSales: number;
+  discounts: number;
+  refundTotal: number;
+  voidTotal: number;
+  netSales: number;
+  orderCount: number;
+  voidCount: number;
+  refundCount: number;
+}
+
+export interface CashierPerformanceReport {
+  cashierId: number;
+  cashier: string;
+  orders: number;
+  revenue: number;
+  cost?: number;
+  profit?: number;
+  voids: number;
+}
+
+export interface LowStockReorderReport {
+  productId: number;
+  barcode: string | null;
+  name: string;
+  unit: string;
+  category: string;
+  quantity: number;
+  lowStockAt: number;
+  reorderPoint: number;
+  reorderQty: number;
+}
+
+export interface ExpiryLossReport {
+  productId: number;
+  barcode: string | null;
+  name: string;
+  unit: string;
+  category: string;
+  expiryDate: string | null;
+  quantity: number;
+  costLoss?: number;
+  retailLoss: number;
+}
+
+export interface ProfitByCategoryReport {
+  categoryId: number;
+  category: string;
+  revenue: number;
+  cost?: number;
+  qty: number;
+  profit?: number;
+  margin?: number;
+}
+
+export interface PaymentBreakdownReport {
+  paymentMethod: PaymentMethod;
+  orders: number;
+  revenue: number;
+}
+
+export interface Promotion {
+  id: number;
+  name: string;
+  type: "PERCENT_OFF" | "AMOUNT_OFF";
+  value: string;
+  minQty: number;
+  startsAt: string | null;
+  endsAt: string | null;
+  isActive: boolean;
+  products: { product: { id: number; name: string; barcode: string | null } }[];
 }
 
 // Cart types (client-side only)

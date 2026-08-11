@@ -51,6 +51,9 @@ model Product {
   imageUrl    String?
   isActive    Boolean  @default(true)
   lowStockAt  Int      @default(5)
+  reorderPoint Int     @default(5)
+  reorderQty   Int     @default(10)
+  expiryDate   DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -61,6 +64,7 @@ model Product {
   orderItems     OrderItem[]
   stockMovements StockMovement[]
   refundItems    RefundItem[]
+  promotions     ProductPromotion[]
 }
 
 // ─── Stock ────────────────────────────────────────────────────────────────────
@@ -208,6 +212,33 @@ model Shift {
   refunds Refund[]
 
   @@index([openedAt])
+}
+
+// ─── Promotions ───────────────────────────────────────────────────────────────
+
+model Promotion {
+  id        Int       @id @default(autoincrement())
+  name      String
+  type      String
+  value     Decimal
+  minQty    Int       @default(1)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  products ProductPromotion[]
+}
+
+model ProductPromotion {
+  id          Int       @id @default(autoincrement())
+  productId   Int
+  product     Product   @relation(fields: [productId], references: [id])
+  promotionId Int
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, promotionId])
 }
 
 // ─── Settings ─────────────────────────────────────────────────────────────────

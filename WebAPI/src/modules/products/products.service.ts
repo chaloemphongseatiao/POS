@@ -16,6 +16,9 @@ const productSelect = {
   imageUrl: true,
   isActive: true,
   lowStockAt: true,
+  reorderPoint: true,
+  reorderQty: true,
+  expiryDate: true,
   createdAt: true,
   updatedAt: true,
   category: { select: { id: true, name: true } },
@@ -43,15 +46,17 @@ export async function listProducts(params: {
   lowStock?: boolean;
   activeOnly?: boolean;
   includeCost?: boolean;
+  missingCost?: boolean;
   page?: number;
   limit?: number;
 }) {
-  const { search, categoryId, lowStock, activeOnly = true, includeCost = false } = params;
+  const { search, categoryId, lowStock, activeOnly = true, includeCost = false, missingCost = false } = params;
   const page = Math.max(1, params.page ?? 1);
   const limit = Math.min(200, Math.max(1, params.limit ?? 20));
   const where = {
     isActive: activeOnly ? true : undefined,
     ...(categoryId && { categoryId }),
+    ...(missingCost && { costPrice: 0 }),
     ...(search && {
       OR: [
         // Postgres `contains` is a case-sensitive LIKE without this — searching
@@ -266,6 +271,10 @@ export async function deleteProduct(id: number) {
   const orderItemCount = await prisma.orderItem.count({ where: { productId: id } });
   if (orderItemCount > 0)
     throw createError("ไม่สามารถลบสินค้าที่มีประวัติการขายได้", 409);
+
+  const promotionLinkCount = await prisma.productPromotion.count({ where: { productId: id } });
+  if (promotionLinkCount > 0)
+    throw createError("ไม่สามารถลบสินค้าที่อยู่ในโปรโมชันได้ กรุณานำออกจากโปรโมชันก่อน", 409);
 
   return prisma.$transaction(async (tx) => {
     await tx.stockMovement.deleteMany({ where: { productId: id } });

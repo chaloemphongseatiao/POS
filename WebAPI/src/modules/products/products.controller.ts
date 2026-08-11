@@ -9,7 +9,7 @@ import { isAdmin } from "../../lib/permissions";
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
-    const { search, categoryId, lowStock, all, page, limit } = req.query;
+    const { search, categoryId, lowStock, all, missingCost, page, limit } = req.query;
     res.json(
       await svc.listProducts({
         search: search as string,
@@ -17,6 +17,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
         lowStock: lowStock === "true",
         activeOnly: all !== "true",
         includeCost: isAdmin(req),
+        missingCost: missingCost === "true",
         page: page ? Number(page) : 1,
         limit: limit ? Number(limit) : 20,
       })
