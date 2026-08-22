@@ -10,22 +10,20 @@ import {
   LayoutDashboard,
   LogOut,
   Package,
-  Printer,
   ReceiptText,
   Settings,
   ShoppingCart,
-  Tags,
+  Wallet,
 } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "สรุป" },
   { href: "/pos", icon: ShoppingCart, label: "ขาย" },
-  { href: "/products", icon: Package, label: "สินค้า", adminOnly: true },
-  { href: "/stock", icon: Boxes, label: "สต็อก", adminOnly: true },
+  { href: "/products", icon: Package, label: "สินค้า" },
+  { href: "/stock", icon: Boxes, label: "สต็อก" },
   { href: "/orders", icon: ReceiptText, label: "ประวัติ" },
-  { href: "/reports", icon: BarChart3, label: "รายงาน", adminOnly: true },
-  { href: "/labels", icon: Printer, label: "ฉลาก", adminOnly: true },
-  { href: "/promotions", icon: Tags, label: "โปรโมชัน", adminOnly: true },
+  { href: "/reports", icon: BarChart3, label: "รายงาน" },
+  { href: "/ledger", icon: Wallet, label: "บัญชี", adminOnly: true },
   { href: "/settings", icon: Settings, label: "ตั้งค่า", adminOnly: true },
 ];
 

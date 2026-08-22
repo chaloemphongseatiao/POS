@@ -26,6 +26,7 @@ model User {
   shiftsOpened   Shift[]         @relation("ShiftOpenedBy")
   shiftsClosed   Shift[]         @relation("ShiftClosedBy")
   refunds        Refund[]
+  ledgerEntries  LedgerEntry[]
 }
 
 // ─── Categories ───────────────────────────────────────────────────────────────
@@ -239,6 +240,40 @@ model ProductPromotion {
   promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
 
   @@unique([productId, promotionId])
+}
+
+// ─── Ledger (income / expense) ─────────────────────────────────────────────────
+
+model LedgerCategory {
+  id        Int      @id @default(autoincrement())
+  name      String
+  /// "INCOME" | "EXPENSE"
+  type      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  entries LedgerEntry[]
+
+  @@unique([name, type])
+}
+
+model LedgerEntry {
+  id     Int     @id @default(autoincrement())
+  /// Snapshotted from the category at creation, so re-typing a category later can't reclassify old entries.
+  type   String
+  amount Decimal
+  note   String?
+  /// The Bangkok calendar day this entry books to (not necessarily when it was entered).
+  entryDate DateTime
+  createdAt DateTime @default(now())
+
+  categoryId Int
+  category   LedgerCategory @relation(fields: [categoryId], references: [id])
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  @@index([entryDate])
 }
 
 // ─── Settings ─────────────────────────────────────────────────────────────────

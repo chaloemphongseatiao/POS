@@ -14,6 +14,7 @@ import reportsRoutes from "./modules/reports/reports.routes";
 import settingsRoutes from "./modules/settings/settings.routes";
 import lineRoutes from "./modules/line/line.routes";
 import promotionsRoutes from "./modules/promotions/promotions.routes";
+import ledgerRoutes from "./modules/ledger/ledger.routes";
 import { errorHandler } from "./middleware/errorHandler";
 
 const app = express();
@@ -46,6 +47,7 @@ app.use("/api/reports", reportsRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/line", lineRoutes);
 app.use("/api/promotions", promotionsRoutes);
+app.use("/api/ledger", ledgerRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ message: "ไม่พบ endpoint ที่เรียก" });

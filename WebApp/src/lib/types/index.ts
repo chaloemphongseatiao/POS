@@ -258,6 +258,36 @@ export interface Promotion {
   products: { product: { id: number; name: string; barcode: string | null } }[];
 }
 
+export type LedgerType = "INCOME" | "EXPENSE";
+
+export interface LedgerCategory {
+  id: number;
+  name: string;
+  type: LedgerType;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface LedgerEntry {
+  id: number;
+  type: LedgerType;
+  amount: string;
+  note: string | null;
+  entryDate: string;
+  createdAt: string;
+  category: { id: number; name: string };
+  user: { id: number; displayName: string };
+}
+
+export interface LedgerSummary {
+  income: number;
+  expense: number;
+  net: number;
+  byCategory: { categoryId: number; category: string; type: LedgerType; total: number }[];
+  from: string;
+  to: string;
+}
+
 // Cart types (client-side only)
 export interface CartItem {
   productId: number;
