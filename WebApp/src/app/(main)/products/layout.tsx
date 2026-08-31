@@ -1,40 +1,24 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useAuth } from "@/lib/hooks/useAuth";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 
 const TABS = [
-  { href: "/stock", label: "คงเหลือ" },
-  { href: "/stock/receive", label: "รับสต็อกเข้า" },
-  { href: "/stock/history", label: "ประวัติสต็อก" },
+  { href: "/products", label: "สินค้าและหมวดหมู่" },
+  { href: "/products/promotions", label: "โปรโมชั่น" },
 ];
 
-/**
- * Receiving and adjusting stock are ADMIN-only on the API, so a CASHIER who
- * types the URL would otherwise fill in a whole receipt before hitting 403.
- */
-export default function StockLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
+export default function ProductsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { initialized, isAdmin } = useAuth();
-  const allowed = isAdmin();
-
-  useEffect(() => {
-    if (initialized && !allowed) router.replace("/pos");
-  }, [initialized, allowed, router]);
-
-  if (!initialized || !allowed) return null;
 
   return (
     <>
       <div className="mx-auto w-full max-w-[1600px] px-3 pt-3 sm:px-4 sm:pt-4 md:px-6 md:pt-6 lg:px-8 lg:pt-8 print:hidden">
         <div className="glass flex flex-wrap gap-1.5 rounded-2xl p-2">
           {TABS.map((tab) => {
-            // Only the exact route is current — "/stock" is a prefix of them all.
+            // Only the exact route is current — "/products" is a prefix of them all.
             const active = pathname === tab.href;
             return (
               <Button

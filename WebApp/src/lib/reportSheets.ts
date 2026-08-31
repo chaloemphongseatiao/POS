@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import { StockItem, StockMovement } from "@/lib/types";
+import { StockMovement } from "@/lib/types";
 import { movementTypeLabel } from "@/lib/utils/movements";
 
 type ExcelRow = Record<string, string | number>;
@@ -53,31 +53,3 @@ export function exportMovementsExcel(
   save(rows, headers, [20, 16, 28, 12, 10, 10, 18, 30, 18], sheetName, fileName);
 }
 
-export function exportStockOnHandExcel(stocks: StockItem[], fileName: string) {
-  const headers = [
-    "Barcode",
-    "สินค้า",
-    "หมวดหมู่",
-    "หน่วย",
-    "คงเหลือ",
-    "จุดแจ้งเตือน",
-    "ต้นทุน/หน่วย",
-    "มูลค่าต้นทุน",
-  ];
-
-  const rows: ExcelRow[] = stocks.map((stock) => {
-    const cost = Number(stock.product.costPrice);
-    return {
-      Barcode: stock.product.barcode ?? "",
-      "สินค้า": stock.product.name,
-      "หมวดหมู่": stock.product.category.name,
-      "หน่วย": stock.product.unit,
-      "คงเหลือ": stock.quantity,
-      "จุดแจ้งเตือน": stock.product.lowStockAt,
-      "ต้นทุน/หน่วย": cost,
-      "มูลค่าต้นทุน": round2(cost * stock.quantity),
-    };
-  });
-
-  save(rows, headers, [16, 28, 20, 10, 12, 14, 14, 16], "สต็อกคงเหลือ", fileName);
-}

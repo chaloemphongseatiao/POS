@@ -13,4 +13,4 @@ A user-managed label for grouping `LedgerEntry` rows (e.g. ค่าเช่า
 _Avoid_: Category (reserved for product categories)
 
 **Income / Expense**:
-The two `LedgerEntry` directions. Income is cash in, Expense is cash out. Order sales revenue is not Income in this sense — it stays reported through the existing Reports module.
+The two `LedgerEntry` directions. Income is cash in, Expense is cash out. Till sales revenue is not Income in this sense: it is read straight off `Order`, never keyed as a `LedgerEntry`. The profit-and-loss figure adds the two sources together, so a sale entered as an Income row as well would be counted twice.

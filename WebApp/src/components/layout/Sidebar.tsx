@@ -5,9 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { cn } from "@/lib/utils/cn";
 import {
-  BarChart3,
   Boxes,
-  LayoutDashboard,
   LogOut,
   Package,
   ReceiptText,
@@ -17,12 +15,12 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "สรุป" },
   { href: "/pos", icon: ShoppingCart, label: "ขาย" },
   { href: "/products", icon: Package, label: "สินค้า" },
-  { href: "/stock", icon: Boxes, label: "สต็อก" },
+  // The stock section is ADMIN-only on the API and behind a guard in its layout;
+  // showing it to a CASHIER only offers a menu that bounces them back to /pos.
+  { href: "/stock", icon: Boxes, label: "สต็อก", adminOnly: true },
   { href: "/orders", icon: ReceiptText, label: "ประวัติ" },
-  { href: "/reports", icon: BarChart3, label: "รายงาน" },
   { href: "/ledger", icon: Wallet, label: "บัญชี", adminOnly: true },
   { href: "/settings", icon: Settings, label: "ตั้งค่า", adminOnly: true },
 ];

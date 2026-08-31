@@ -67,7 +67,7 @@ Core chain: `Category` → `Product` → `Stock` (1:1 current qty) + `StockMovem
 
 ### WebApp: App Router + Zustand stores + axios client
 
-Route groups: `(auth)/login` (public) and `(main)/*` (dashboard, pos, products, stock, orders, reports, promotions, labels, ledger, settings) wrapped by [WebApp/src/app/(main)/layout.tsx](WebApp/src/app/(main)/layout.tsx), which redirects to `/login` if unauthenticated once the auth store is `initialized`.
+Route groups: `(auth)/login` (public) and `(main)/*` (pos, products + products/promotions, stock + stock/receive + stock/history, orders, ledger, settings) wrapped by [WebApp/src/app/(main)/layout.tsx](WebApp/src/app/(main)/layout.tsx), which redirects to `/login` if unauthenticated once the auth store is `initialized`.
 
 State is Zustand, not React context:
 - `useAuth` (`src/lib/hooks/useAuth.ts`) — token/user, persisted to `localStorage` (remember-me) or `sessionStorage`; `initAuth()` must run once on client startup to hydrate from storage
