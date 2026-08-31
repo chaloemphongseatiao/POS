@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatCurrency";
 import { markupOf } from "@/lib/utils/profit";
+import { bangkokDaysAgo, bangkokToday } from "@/lib/utils/date";
 import { orderStatusInfo } from "@/lib/utils/orderStatus";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { RefundDialog } from "@/components/orders/RefundDialog";
@@ -271,7 +272,7 @@ function OrderDetailModal({ orderId, onClose }: { orderId: number | null; onClos
 
 export default function OrdersPage() {
   const isAdmin = useAuth((s) => s.user?.role === "ADMIN");
-  const today = new Date().toISOString().slice(0, 10);
+  const today = bangkokToday();
 
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
@@ -304,9 +305,7 @@ export default function OrdersPage() {
   }
 
   function setQuickRange(days: number) {
-    const d = new Date();
-    d.setDate(d.getDate() - (days - 1));
-    setFromDate(d.toISOString().slice(0, 10));
+    setFromDate(bangkokDaysAgo(days - 1));
     setToDate(today);
     setPage(1);
   }
@@ -316,10 +315,20 @@ export default function OrdersPage() {
 
   // A refunded bill still made a sale; only a voided one never happened.
   const soldOrders = orders.filter((o) => o.status !== "VOIDED");
-  const totalRevenue = soldOrders.reduce((s, o) => s + Number(o.totalAmt), 0);
-  // Only what this page shows — the same scope as the revenue figure beside it.
-  const pageCost = soldOrders.reduce((s, o) => s + (o.cost?.cost ?? 0), 0);
-  const pageProfit = soldOrders.reduce((s, o) => s + (o.cost?.profit ?? 0), 0);
+  // The cards cover the whole selected date range, which only the API can add
+  // up — the page itself only ever holds one page of bills. An API a version
+  // behind sends no summary, so fall back to summing the rows on screen and
+  // say so in the label rather than showing range totals that aren't.
+  const summary = data?.summary;
+  const scopeLabel = summary ? "" : " (หน้านี้)";
+  const soldCount = summary?.soldCount ?? soldOrders.length;
+  // Net of refunds, so a partially/fully refunded bill only counts what it
+  // actually brought in — matching how the cost and profit cards beside it
+  // are already scoped.
+  const totalRevenue = summary?.revenue ?? soldOrders.reduce((s, o) => s + o.netRevenue, 0);
+  const totalCost = summary?.cost ?? soldOrders.reduce((s, o) => s + (o.cost?.cost ?? 0), 0);
+  const totalProfit = summary?.profit ?? soldOrders.reduce((s, o) => s + (o.cost?.profit ?? 0), 0);
+  const profitMarkup = summary?.markup ?? markupOf(totalCost, totalProfit);
 
   function itemsSummary(order: Order): string {
     const names = order.items.map((item) => `${item.product.name} x${item.quantity}`);
@@ -386,25 +395,25 @@ export default function OrdersPage() {
           </div>
           <div className="glass rounded-2xl px-4 py-3">
             <p className="text-xs text-violet-500/70">ไม่ถูกยกเลิก</p>
-            <p className="text-xl font-bold text-emerald-600 mt-0.5">{soldOrders.length} รายการ</p>
+            <p className="text-xl font-bold text-emerald-600 mt-0.5">{soldCount} รายการ</p>
           </div>
           <div className="glass rounded-2xl px-4 py-3">
-            <p className="text-xs text-violet-500/70">ยอดขายรวม (หน้านี้)</p>
+            <p className="text-xs text-violet-500/70">ยอดขายรวม{scopeLabel}</p>
             <p className="text-xl font-bold text-primary mt-0.5">{formatCurrency(totalRevenue)}</p>
           </div>
           {isAdmin && (
             <>
               <div className="glass rounded-2xl px-4 py-3">
-                <p className="text-xs text-violet-500/70">ต้นทุนรวม (หน้านี้)</p>
-                <p className="mt-0.5 text-xl font-bold text-slate-600">{formatCurrency(pageCost)}</p>
+                <p className="text-xs text-violet-500/70">ต้นทุนรวม{scopeLabel}</p>
+                <p className="mt-0.5 text-xl font-bold text-slate-600">{formatCurrency(totalCost)}</p>
               </div>
               <div className="glass rounded-2xl px-4 py-3">
-                <p className="text-xs text-violet-500/70">กำไรรวม (หน้านี้)</p>
+                <p className="text-xs text-violet-500/70">กำไรรวม{scopeLabel}</p>
                 <p className="mt-0.5 text-xl font-bold text-emerald-600">
-                  {formatCurrency(pageProfit)}
+                  {formatCurrency(totalProfit)}
                 </p>
                 <p className="text-xs text-slate-500">
-                  {formatPercent(markupOf(pageCost, pageProfit))} ของทุน
+                  {formatPercent(profitMarkup)} ของทุน
                 </p>
               </div>
             </>

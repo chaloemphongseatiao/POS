@@ -7,6 +7,7 @@ import { listStock, stockIn, adjustStock, importStock } from "@/lib/api/stock";
 import { exportStockExcel, readStockExcel } from "@/lib/stockExcel";
 import { listCategories } from "@/lib/api/categories";
 import { StockItem } from "@/lib/types";
+import { useAuth } from "@/lib/hooks/useAuth";
 import { useToast } from "@/lib/hooks/useToast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,7 @@ function stockTone(item: StockItem) {
 export default function StockPage() {
   const qc = useQueryClient();
   const addToast = useToast((state) => state.addToast);
+  const isAdmin = useAuth((state) => state.isAdmin)();
 
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState<number | undefined>();
@@ -204,7 +206,7 @@ export default function StockPage() {
             variant="outline"
             className="w-full sm:w-auto"
             onClick={() => importInputRef.current?.click()}
-            disabled={importMutation.isPending}
+            disabled={!isAdmin || importMutation.isPending}
           >
             <Upload className="w-4 h-4 mr-2" />
             {importMutation.isPending ? "กำลัง Import..." : "นำเข้า Excel"}
@@ -213,12 +215,19 @@ export default function StockPage() {
             <Download className="w-4 h-4 mr-2" />
             {isExporting ? "กำลัง Export..." : "ส่งออก Excel"}
           </Button>
-          <Button asChild className="col-span-2 w-full sm:w-auto">
-            <Link href="/stock/receive">
+          {isAdmin ? (
+            <Button asChild className="col-span-2 w-full sm:w-auto">
+              <Link href="/stock/receive">
+                <Truck className="w-4 h-4 mr-2" />
+                รับสต็อกเข้าร้าน
+              </Link>
+            </Button>
+          ) : (
+            <Button disabled className="col-span-2 w-full sm:w-auto">
               <Truck className="w-4 h-4 mr-2" />
               รับสต็อกเข้าร้าน
-            </Link>
-          </Button>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -351,6 +360,7 @@ export default function StockPage() {
                           </Button>
                           <Button
                             size="sm"
+                            disabled={!isAdmin}
                             onClick={() => { closeDialogs(); setInTarget(item); }}
                           >
                             <Plus className="w-4 h-4 mr-1" />
@@ -359,6 +369,7 @@ export default function StockPage() {
                           <Button
                             size="sm"
                             variant="outline"
+                            disabled={!isAdmin}
                             onClick={() => { closeDialogs(); setAdjustTarget(item); setQuantity(String(item.quantity)); }}
                           >
                             <SlidersHorizontal className="w-4 h-4 mr-1" />

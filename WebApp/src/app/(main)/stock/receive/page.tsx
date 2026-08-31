@@ -8,6 +8,7 @@ import { listProducts, getProductByBarcode } from "@/lib/api/products";
 import { listCategories } from "@/lib/api/categories";
 import { receiveStock, ReceiveStockResult } from "@/lib/api/stock";
 import { Product } from "@/lib/types";
+import { useAuth } from "@/lib/hooks/useAuth";
 import { useToast } from "@/lib/hooks/useToast";
 import { createBarcodeListener, useScannerSafeDigitKeyDown } from "@/lib/utils/barcodeScanner";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ export default function ReceiveStockPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const addToast = useToast((state) => state.addToast);
+  const isAdmin = useAuth((state) => state.isAdmin)();
 
   const [search, setSearch] = useState("");
   const handleDigitKeyDown = useScannerSafeDigitKeyDown(search, setSearch);
@@ -58,6 +60,7 @@ export default function ReceiveStockPage() {
   const products = productData?.products ?? [];
 
   const addProduct = useCallback((product: Product) => {
+    if (!isAdmin) return;
     setLines((prev) => {
       const existing = prev.find((line) => line.productId === product.id);
       if (existing) {
@@ -78,7 +81,7 @@ export default function ReceiveStockPage() {
         },
       ];
     });
-  }, []);
+  }, [isAdmin]);
 
   const lookupByBarcode = useCallback(
     async (barcode: string) => {
@@ -217,9 +220,10 @@ export default function ReceiveStockPage() {
                   <button
                     key={product.id}
                     type="button"
+                    disabled={!isAdmin}
                     onClick={() => addProduct(product)}
                     className={cn(
-                      "glass flex items-center gap-2 rounded-2xl p-2.5 text-left transition-colors hover:bg-white/70",
+                      "glass flex items-center gap-2 rounded-2xl p-2.5 text-left transition-colors hover:bg-white/70 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent",
                       inReceipt && "ring-2 ring-primary/50"
                     )}
                   >
@@ -350,7 +354,7 @@ export default function ReceiveStockPage() {
               <span className="font-semibold text-gray-900">{formatCurrency(totalCost)}</span>
             </div>
 
-            <Button className="w-full" disabled={!canSubmit || mutation.isPending} onClick={submit}>
+            <Button className="w-full" disabled={!isAdmin || !canSubmit || mutation.isPending} onClick={submit}>
               {mutation.isPending ? "กำลังบันทึก..." : "บันทึกรับเข้า"}
             </Button>
             <p className="text-center text-[11px] text-gray-400">

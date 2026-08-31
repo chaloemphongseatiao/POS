@@ -1,12 +1,12 @@
 import apiClient from "./client";
-import { Order, PaymentMethod } from "@/lib/types";
+import { Order, OrdersSummary, PaymentMethod } from "@/lib/types";
 
 export async function listOrders(params?: {
   from?: string;
   to?: string;
   page?: number;
   limit?: number;
-}): Promise<{ orders: Order[]; total: number; page: number }> {
+}): Promise<{ orders: Order[]; total: number; page: number; summary?: OrdersSummary }> {
   const { data } = await apiClient.get("/api/orders", { params });
   return data;
 }

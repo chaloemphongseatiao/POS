@@ -4,6 +4,7 @@ import { ChangeEvent, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listProducts, createProduct, updateProduct, deleteProduct, importProducts, ProductWritePayload } from "@/lib/api/products";
 import { listCategories } from "@/lib/api/categories";
+import { useAuth } from "@/lib/hooks/useAuth";
 import { Product } from "@/lib/types";
 import { exportProductsExcel, readProductsExcel } from "@/lib/productsExcel";
 import { useToast } from "@/lib/hooks/useToast";
@@ -12,9 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import ProductFormDialog, { ProductFormData } from "@/components/products/ProductFormDialog";
 import CategoryPanel from "@/components/products/CategoryPanel";
+import PrintLabelsDialog from "@/components/products/PrintLabelsDialog";
 import { useCategoryCounts } from "@/lib/hooks/useCategoryCounts";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
-import { Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, Download, Upload } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, Download, Upload, Printer } from "lucide-react";
 import { ProductImage } from "@/components/ui/product-image";
 
 const PAGE_SIZE = 20;
@@ -22,6 +24,7 @@ const PAGE_SIZE = 20;
 export default function ProductsPage() {
   const qc = useQueryClient();
   const addToast = useToast((state) => state.addToast);
+  const isAdmin = useAuth((state) => state.isAdmin)();
   const importInputRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState<number | undefined>();
@@ -33,6 +36,7 @@ export default function ProductsPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [savedInfo, setSavedInfo] = useState<{ name: string; isNew: boolean } | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [showLabels, setShowLabels] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["products-all", search, categoryId, missingCost, page],
@@ -171,7 +175,7 @@ export default function ProductsPage() {
             variant="outline"
             className="w-full sm:w-auto"
             onClick={() => importInputRef.current?.click()}
-            disabled={importMutation.isPending}
+            disabled={!isAdmin || importMutation.isPending}
           >
             <Upload className="w-4 h-4 mr-2" />
             {importMutation.isPending ? "กำลัง Import..." : "นำเข้า Excel"}
@@ -180,7 +184,11 @@ export default function ProductsPage() {
             <Download className="w-4 h-4 mr-2" />
             {isExporting ? "กำลัง Export..." : "ส่งออก Excel"}
           </Button>
-          <Button className="col-span-2 w-full sm:w-auto" onClick={() => { setEditProduct(null); setShowForm(true); }}>
+          <Button className="w-full sm:w-auto" variant="outline" onClick={() => setShowLabels(true)}>
+            <Printer className="w-4 h-4 mr-2" />
+            พิมพ์ฉลาก
+          </Button>
+          <Button className="w-full sm:w-auto" disabled={!isAdmin} onClick={() => { setEditProduct(null); setShowForm(true); }}>
             <Plus className="w-4 h-4 mr-2" />
             เพิ่มสินค้า
           </Button>
@@ -255,13 +263,14 @@ export default function ProductsPage() {
                       <td className="px-4 py-3 text-right font-medium">{formatCurrency(p.sellPrice)}</td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 justify-end">
-                          <Button aria-label={`แก้ไขสินค้า ${p.name}`} size="icon" variant="ghost" onClick={() => { setEditProduct(p); setShowForm(true); }}>
+                          <Button aria-label={`แก้ไขสินค้า ${p.name}`} size="icon" variant="ghost" disabled={!isAdmin} onClick={() => { setEditProduct(p); setShowForm(true); }}>
                             <Pencil className="w-4 h-4" />
                           </Button>
                           <Button
                             aria-label={`ลบสินค้า ${p.name}`}
                             size="icon" variant="ghost"
                             className="text-red-400 hover:text-red-600"
+                            disabled={!isAdmin}
                             onClick={() => handleDelete(p)}
                           >
                             <Trash2 className="w-4 h-4" />
@@ -331,6 +340,8 @@ export default function ProductsPage() {
           </div>
         </div>
       </div>
+
+      <PrintLabelsDialog open={showLabels} onClose={() => setShowLabels(false)} />
 
       <ProductFormDialog
         open={showForm}

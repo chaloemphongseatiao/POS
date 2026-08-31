@@ -22,6 +22,16 @@ function visibleTo<T extends CostedOrder>(req: Request, order: T) {
   };
 }
 
+/**
+ * The range summary carries the same owner-only figures a single bill does, so
+ * a cashier keeps the counts and the sales total but loses cost and profit.
+ */
+function summaryVisibleTo(req: Request, summary: svc.OrdersSummary) {
+  if (isAdmin(req)) return summary;
+  const { cost, profit, margin, markup, ...rest } = summary;
+  return rest;
+}
+
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const { from, to, page, limit } = req.query;
@@ -31,7 +41,11 @@ export async function list(req: Request, res: Response, next: NextFunction) {
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 50,
     });
-    res.json({ ...result, orders: result.orders.map((order) => visibleTo(req, order)) });
+    res.json({
+      ...result,
+      orders: result.orders.map((order) => visibleTo(req, order)),
+      summary: summaryVisibleTo(req, result.summary),
+    });
   } catch (err) { next(err); }
 }
 

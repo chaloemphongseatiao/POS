@@ -3,7 +3,7 @@ import { prisma } from "../../lib/prisma";
 import { createError } from "../../middleware/errorHandler";
 import { generateOrderNumber } from "../../lib/orderNumber";
 import { sendLineOrderNotification } from "../../lib/line";
-import { orderCost } from "../../lib/profit";
+import { marginPct, markupPct, orderCost, round2 } from "../../lib/profit";
 import type { CreateOrderInput } from "./orders.schema";
 
 const MAX_ORDER_NUMBER_ATTEMPTS = 5;
@@ -34,7 +34,7 @@ export async function listOrders(params: { from?: Date; to?: Date; page?: number
       : {}),
   };
 
-  const [orders, total] = await Promise.all([
+  const [orders, total, summary] = await Promise.all([
     prisma.order.findMany({
       where,
       include: {
@@ -48,14 +48,78 @@ export async function listOrders(params: { from?: Date; to?: Date; page?: number
       take: limit,
     }),
     prisma.order.count({ where }),
+    summarizeOrders(where),
   ]);
 
-  return { orders: orders.map(withCost), total, page, limit };
+  return { orders: orders.map(withCost), total, page, limit, summary };
 }
 
-/** Every bill leaves the service costed; the controller strips it for cashiers. */
+export type OrdersSummary = {
+  /** Every bill in the range, voided ones included. */
+  orderCount: number;
+  /** Bills that actually sold something — a voided bill never happened. */
+  soldCount: number;
+  revenue: number;
+  cost: number;
+  profit: number;
+  margin: number;
+  markup: number;
+};
+
+/**
+ * Totals for the whole date range, not just the page being shown. Each bill is
+ * costed through `orderCost` so a partially refunded sale nets out here the
+ * same way it does in its own row and in the reports over the same range.
+ */
+async function summarizeOrders(where: Prisma.OrderWhereInput): Promise<OrdersSummary> {
+  const orders = await prisma.order.findMany({
+    where,
+    select: {
+      status: true,
+      subtotal: true,
+      totalAmt: true,
+      items: {
+        select: { quantity: true, refundedQty: true, unitPrice: true, costPrice: true },
+      },
+    },
+  });
+
+  let soldCount = 0;
+  let revenue = 0;
+  let cost = 0;
+  for (const order of orders) {
+    if (order.status === "VOIDED") continue;
+    soldCount += 1;
+    const costed = orderCost(order);
+    revenue += costed.netRevenue;
+    cost += costed.cost;
+  }
+
+  revenue = round2(revenue);
+  cost = round2(cost);
+  const profit = round2(revenue - cost);
+
+  return {
+    orderCount: orders.length,
+    soldCount,
+    revenue,
+    cost,
+    profit,
+    margin: marginPct(revenue, profit),
+    markup: markupPct(cost, profit),
+  };
+}
+
+/**
+ * Every bill leaves the service costed; the controller strips `cost` for
+ * cashiers. `netRevenue` is duplicated onto the top level because it isn't
+ * sensitive like cost/profit — callers that only need "how much did this
+ * bill actually bring in" (e.g. the sales-total summary) shouldn't need
+ * admin access just to net out refunds correctly.
+ */
 function withCost<T extends Parameters<typeof orderCost>[0]>(order: T) {
-  return { ...order, cost: orderCost(order) };
+  const cost = orderCost(order);
+  return { ...order, cost, netRevenue: cost.netRevenue };
 }
 
 export async function getOrder(id: number) {
