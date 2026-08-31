@@ -26,22 +26,22 @@ export default function AdvancedReports({ from, to }: { from: string; to: string
   return (
     <div className="space-y-4">
       <section className="grid gap-3 md:grid-cols-4">
-        <Metric label="Gross sales" value={formatCurrency(overview.data?.grossSales ?? 0)} />
-        <Metric label="Net sales" value={formatCurrency(overview.data?.netSales ?? 0)} />
-        <Metric label="Refunds" value={formatCurrency(overview.data?.refundTotal ?? 0)} />
-        <Metric label="Voids" value={formatCurrency(overview.data?.voidTotal ?? 0)} />
+        <Metric label="ยอดขายรวม" value={formatCurrency(overview.data?.grossSales ?? 0)} />
+        <Metric label="ยอดขายสุทธิ" value={formatCurrency(overview.data?.netSales ?? 0)} />
+        <Metric label="คืนเงิน" value={formatCurrency(overview.data?.refundTotal ?? 0)} />
+        <Metric label="ยกเลิกบิล" value={formatCurrency(overview.data?.voidTotal ?? 0)} />
       </section>
 
-      <ReportBlock title="Payment method breakdown">
+      <ReportBlock title="แยกตามวิธีชำระเงิน">
         <SimpleTable
-          headers={["Payment", "Orders", "Revenue"]}
-          rows={(payments.data ?? []).map((row) => [row.paymentMethod === "CASH" ? "เงินสด" : "QR PromptPay", row.orders, formatCurrency(row.revenue)])}
+          headers={["วิธีชำระเงิน", "จำนวนบิล", "ยอดขาย"]}
+          rows={(payments.data ?? []).map((row) => [row.paymentMethod === "CASH" ? "เงินสด" : "QR พร้อมเพย์", row.orders, formatCurrency(row.revenue)])}
         />
       </ReportBlock>
 
-      <ReportBlock title="Cashier performance">
+      <ReportBlock title="ผลงานพนักงานขาย">
         <SimpleTable
-          headers={showCost ? ["Cashier", "Orders", "Revenue", "Profit", "Voids"] : ["Cashier", "Orders", "Revenue", "Voids"]}
+          headers={showCost ? ["พนักงาน", "จำนวนบิล", "ยอดขาย", "กำไร", "บิลที่ยกเลิก"] : ["พนักงาน", "จำนวนบิล", "ยอดขาย", "บิลที่ยกเลิก"]}
           rows={(cashiers.data ?? []).map((row) =>
             showCost
               ? [row.cashier, row.orders, formatCurrency(row.revenue), formatCurrency(row.profit ?? 0), row.voids]
@@ -50,9 +50,9 @@ export default function AdvancedReports({ from, to }: { from: string; to: string
         />
       </ReportBlock>
 
-      <ReportBlock title="Profit by category">
+      <ReportBlock title="กำไรตามหมวดหมู่">
         <SimpleTable
-          headers={showCost ? ["Category", "Qty", "Revenue", "Profit", "Margin"] : ["Category", "Qty", "Revenue"]}
+          headers={showCost ? ["หมวดหมู่", "จำนวน", "ยอดขาย", "กำไร", "อัตรากำไร"] : ["หมวดหมู่", "จำนวน", "ยอดขาย"]}
           rows={(categories.data ?? []).map((row) =>
             showCost
               ? [row.category, row.qty, formatCurrency(row.revenue), formatCurrency(row.profit ?? 0), formatPercent(row.margin ?? 0)]
@@ -61,16 +61,16 @@ export default function AdvancedReports({ from, to }: { from: string; to: string
         />
       </ReportBlock>
 
-      <ReportBlock title="Low stock + reorder list">
+      <ReportBlock title="สินค้าใกล้หมด ควรสั่งเพิ่ม">
         <SimpleTable
-          headers={["Product", "Category", "On hand", "Reorder point", "Order qty"]}
+          headers={["สินค้า", "หมวดหมู่", "คงเหลือ", "จุดสั่งซื้อ", "จำนวนที่ควรสั่ง"]}
           rows={(lowStock.data ?? []).map((row) => [row.name, row.category, `${row.quantity} ${row.unit}`, row.reorderPoint, row.reorderQty])}
         />
       </ReportBlock>
 
-      <ReportBlock title="Expiry loss">
+      <ReportBlock title="สินค้าหมดอายุ">
         <SimpleTable
-          headers={showCost ? ["Product", "Expiry", "Qty", "Cost loss", "Retail loss"] : ["Product", "Expiry", "Qty", "Retail loss"]}
+          headers={showCost ? ["สินค้า", "วันหมดอายุ", "จำนวน", "เสียหายตามต้นทุน", "เสียหายตามราคาขาย"] : ["สินค้า", "วันหมดอายุ", "จำนวน", "เสียหายตามราคาขาย"]}
           rows={(expiry.data ?? []).map((row) =>
             showCost
               ? [row.name, row.expiryDate ? new Date(row.expiryDate).toLocaleDateString("th-TH") : "-", `${row.quantity} ${row.unit}`, formatCurrency(row.costLoss ?? 0), formatCurrency(row.retailLoss)]
@@ -79,12 +79,12 @@ export default function AdvancedReports({ from, to }: { from: string; to: string
         />
       </ReportBlock>
 
-      <ReportBlock title="Refund / void report">
+      <ReportBlock title="รายการคืนเงินและยกเลิกบิล">
         <SimpleTable
-          headers={["Type", "Number", "Staff", "Amount"]}
+          headers={["ประเภท", "เลขที่", "ผู้ทำรายการ", "จำนวนเงิน"]}
           rows={[
-            ...((refundVoid.data?.refunds ?? []).map((row: any) => ["Refund", row.refundNumber, row.user.displayName, formatCurrency(row.totalAmt)])),
-            ...((refundVoid.data?.voided ?? []).map((row: any) => ["Void", row.orderNumber, row.cashier.displayName, formatCurrency(row.totalAmt)])),
+            ...((refundVoid.data?.refunds ?? []).map((row: any) => ["คืนเงิน", row.refundNumber, row.user.displayName, formatCurrency(row.totalAmt)])),
+            ...((refundVoid.data?.voided ?? []).map((row: any) => ["ยกเลิกบิล", row.orderNumber, row.cashier.displayName, formatCurrency(row.totalAmt)])),
           ]}
         />
       </ReportBlock>
