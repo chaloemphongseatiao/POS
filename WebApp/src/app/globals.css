@@ -179,10 +179,17 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   transform: scale(1.1);
 }
 
+/*
+ * Printing targets one element at a time: the till's receipt, or an accounting
+ * statement. Everything else is hidden rather than laid out for paper, so a
+ * glass panel does not print as a grey slab.
+ */
 @media print {
   body * { visibility: hidden; }
-  #receipt-content, #receipt-content * { visibility: visible; }
-  #receipt-content {
+  #receipt-content, #receipt-content *,
+  #print-area, #print-area * { visibility: visible; }
+  #receipt-content,
+  #print-area {
     position: fixed;
     inset: 0;
     margin: 0;
@@ -190,6 +197,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     border: none;
     background: #fff;
     backdrop-filter: none;
+    overflow: visible;
   }
 }
 

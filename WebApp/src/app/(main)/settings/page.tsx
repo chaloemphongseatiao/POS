@@ -2,7 +2,7 @@
 
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getSettings, upsertSetting } from "@/lib/api/settings";
+import { getSettings, upsertSetting, getBackup } from "@/lib/api/settings";
 import { listUsers, createUser, updateUser, toggleUser } from "@/lib/api/users";
 import { listCategories, createCategory, updateCategory, deleteCategory } from "@/lib/api/categories";
 import { listLineFollowers, syncLineFollowers, getLineBotInfo } from "@/lib/api/line";
@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useCategoryCounts } from "@/lib/hooks/useCategoryCounts";
-import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, CheckCircle2, AlertCircle, AlertTriangle, ImagePlus, X, Loader2, Copy, Check } from "lucide-react";
+import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, CheckCircle2, AlertCircle, AlertTriangle, ImagePlus, X, Loader2, Copy, Check, DatabaseBackup } from "lucide-react";
 
 function UsersTab() {
   const qc = useQueryClient();
@@ -851,16 +851,203 @@ function LineTab() {
   );
 }
 
+function BackupTab() {
+  const [error, setError] = useState<string | null>(null);
+  const [lastDownload, setLastDownload] = useState<string | null>(null);
+
+  const backupMutation = useMutation({
+    mutationFn: getBackup,
+    onMutate: () => setError(null),
+    onSuccess: (dump) => {
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const blob = new Blob([JSON.stringify(dump, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `pos-backup-${stamp}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setLastDownload(new Date().toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "medium" }));
+    },
+    onError: (err: unknown) => setError(extractApiError(err, "สำรองข้อมูลไม่สำเร็จ")),
+  });
+
+  return (
+    <Card>
+      <CardHeader><CardTitle>สำรองข้อมูล</CardTitle></CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-start gap-3 rounded-xl border border-white/70 bg-white/50 p-4">
+          <DatabaseBackup className="h-8 w-8 shrink-0 text-brand-600" />
+          <div className="space-y-1 text-sm text-gray-600">
+            <p>ดาวน์โหลดข้อมูลทั้งหมดในระบบเป็นไฟล์ JSON — สินค้า, สต๊อก, บิลขาย, การคืนสินค้า, บัญชีรายรับรายจ่าย, ผู้ใช้งาน และการตั้งค่าร้าน</p>
+            <p className="text-xs text-gray-400">ไฟล์นี้มีข้อมูลอ่อนไหว (รหัสผ่านที่เข้ารหัสแล้ว, LINE token) เก็บไว้ในที่ปลอดภัย</p>
+          </div>
+        </div>
+        <Button onClick={() => backupMutation.mutate()} disabled={backupMutation.isPending}>
+          {backupMutation.isPending ? (
+            <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" />กำลังสำรองข้อมูล...</>
+          ) : (
+            <><DatabaseBackup className="mr-1.5 h-4 w-4" />ดาวน์โหลดข้อมูลสำรอง</>
+          )}
+        </Button>
+        {lastDownload && !error && (
+          <p className="text-xs text-gray-500">ดาวน์โหลดล่าสุด: {lastDownload}</p>
+        )}
+        {error && (
+          <div className="flex items-start gap-2 text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span className="break-all">{error}</span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * VAT setup. The shop quotes VAT-inclusive prices — the shelf price is what the
+ * customer pays — so turning this on does not change a single price; it only
+ * tells the receipts and the accounting screens how much tax is already inside
+ * each of them.
+ */
+function VatTab() {
+  const qc = useQueryClient();
+  const { data: settings = {}, isLoading } = useQuery({ queryKey: ["settings"], queryFn: getSettings });
+  const [enabled, setEnabled] = useState(false);
+  const [rate, setRate] = useState("7");
+  const [taxId, setTaxId] = useState("");
+  const [costInclusive, setCostInclusive] = useState(false);
+
+  useEffect(() => {
+    setEnabled(settings.vat_enabled === "true");
+    setRate(settings.vat_rate ?? "7");
+    setTaxId(settings.tax_id ?? "");
+    setCostInclusive(settings.vat_cost_inclusive === "true");
+  }, [settings.vat_enabled, settings.vat_rate, settings.tax_id, settings.vat_cost_inclusive]);
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      await upsertSetting("vat_enabled", String(enabled));
+      await upsertSetting("vat_rate", rate);
+      await upsertSetting("tax_id", taxId);
+      await upsertSetting("vat_cost_inclusive", String(costInclusive));
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["settings"] });
+      qc.invalidateQueries({ queryKey: ["public-settings"] });
+      qc.invalidateQueries({ queryKey: ["ledger-profit-loss"] });
+      qc.invalidateQueries({ queryKey: ["ledger-vat"] });
+    },
+  });
+
+  const parsedRate = Number(rate);
+  const rateValid = Number.isFinite(parsedRate) && parsedRate >= 0 && parsedRate < 100;
+  const example = rateValid && parsedRate > 0 ? 100 / (1 + parsedRate / 100) : 100;
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader><CardTitle>ภาษีมูลค่าเพิ่ม</CardTitle></CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center gap-2 py-8 text-gray-400">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">กำลังโหลด...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader><CardTitle>ภาษีมูลค่าเพิ่ม (VAT)</CardTitle></CardHeader>
+      <CardContent className="space-y-4">
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="mt-0.5 size-4 accent-indigo-600"
+            checked={enabled}
+            onChange={(e) => setEnabled(e.target.checked)}
+          />
+          <span>
+            <span className="font-medium">เปิดใช้งาน VAT</span>
+            <span className="mt-0.5 block text-xs text-gray-500">
+              ราคาขายที่ตั้งไว้ถือว่ารวม VAT แล้ว — เปิดแล้วราคาสินค้าไม่เปลี่ยน ระบบแค่แยก VAT ออกมาแสดง
+            </span>
+          </span>
+        </label>
+
+        <div>
+          <label className="text-sm font-medium" htmlFor="vat-rate">อัตรา VAT (%)</label>
+          <Input
+            id="vat-rate"
+            type="number"
+            min={0}
+            max={99}
+            step="0.01"
+            value={rate}
+            disabled={!enabled}
+            onChange={(e) => setRate(e.target.value)}
+            className="mt-1"
+          />
+          {enabled && !rateValid && <p className="mt-1 text-sm text-red-600">อัตราต้องอยู่ระหว่าง 0 ถึง 99</p>}
+          {enabled && rateValid && (
+            <p className="mt-1 text-xs text-gray-500">
+              ขาย 100.00 บาท = มูลค่าก่อน VAT {example.toFixed(2)} + VAT {(100 - example).toFixed(2)}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="text-sm font-medium" htmlFor="vat-tax-id">เลขประจำตัวผู้เสียภาษี</label>
+          <Input
+            id="vat-tax-id"
+            value={taxId}
+            placeholder="0000000000000"
+            disabled={!enabled}
+            onChange={(e) => setTaxId(e.target.value)}
+            className="mt-1"
+          />
+          <p className="mt-1 text-xs text-gray-500">พิมพ์บนใบเสร็จ/ใบกำกับภาษีอย่างย่อ</p>
+        </div>
+
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="mt-0.5 size-4 accent-indigo-600"
+            checked={costInclusive}
+            disabled={!enabled}
+            onChange={(e) => setCostInclusive(e.target.checked)}
+          />
+          <span>
+            <span className="font-medium">ต้นทุนสินค้ารวม VAT แล้ว</span>
+            <span className="mt-0.5 block text-xs text-gray-500">
+              ติ๊กเมื่อซื้อสินค้าเข้าร้านโดยมีใบกำกับภาษี ระบบจะคิดภาษีซื้อจากต้นทุนให้ ถ้าซื้อจากร้านที่ไม่มีใบกำกับภาษี อย่าติ๊ก
+            </span>
+          </span>
+        </label>
+
+        <Button onClick={() => mutation.mutate()} disabled={mutation.isPending || (enabled && !rateValid)}>
+          {mutation.isPending ? "กำลังบันทึก..." : "บันทึก"}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 function OverviewTab() {
   return (
     <div className="grid gap-5 lg:grid-cols-[380px_1fr] lg:items-start">
-      <StoreTab />
+      <div className="space-y-5">
+        <StoreTab />
+        <VatTab />
+      </div>
       <CategoriesTab />
     </div>
   );
 }
 
-const TABS = ["ภาพรวม", "ผู้ใช้งาน", "LINE แจ้งเตือน"];
+const TABS = ["ภาพรวม", "ผู้ใช้งาน", "LINE แจ้งเตือน", "สำรองข้อมูล"];
 
 export default function SettingsPage() {
   const [tab, setTab] = useState(0);
@@ -891,6 +1078,7 @@ export default function SettingsPage() {
       {tab === 0 && <OverviewTab />}
       {tab === 1 && <UsersTab />}
       {tab === 2 && <LineTab />}
+      {tab === 3 && <BackupTab />}
     </div>
   );
 }

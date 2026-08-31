@@ -42,21 +42,21 @@ model Category {
 // ─── Products ─────────────────────────────────────────────────────────────────
 
 model Product {
-  id          Int      @id @default(autoincrement())
-  barcode     String?  @unique
-  name        String
-  description String?
-  costPrice   Decimal
-  sellPrice   Decimal
-  unit        String   @default("ชิ้น")
-  imageUrl    String?
-  isActive    Boolean  @default(true)
-  lowStockAt  Int      @default(5)
-  reorderPoint Int     @default(5)
-  reorderQty   Int     @default(10)
+  id           Int       @id @default(autoincrement())
+  barcode      String?   @unique
+  name         String
+  description  String?
+  costPrice    Decimal
+  sellPrice    Decimal
+  unit         String    @default("ชิ้น")
+  imageUrl     String?
+  isActive     Boolean   @default(true)
+  lowStockAt   Int       @default(5)
+  reorderPoint Int       @default(5)
+  reorderQty   Int       @default(10)
   expiryDate   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   categoryId Int
   category   Category @relation(fields: [categoryId], references: [id])
@@ -125,13 +125,13 @@ model Order {
 }
 
 model OrderItem {
-  id        Int     @id @default(autoincrement())
-  quantity  Int
-  unitPrice Decimal
-  costPrice Decimal
-  subtotal  Decimal
+  id          Int     @id @default(autoincrement())
+  quantity    Int
+  unitPrice   Decimal
+  costPrice   Decimal
+  subtotal    Decimal
   /// How many of `quantity` have been given back to the customer.
-  refundedQty Int   @default(0)
+  refundedQty Int     @default(0)
 
   orderId Int
   order   Order @relation(fields: [orderId], references: [id])
@@ -190,18 +190,18 @@ model RefundItem {
 // ─── Shifts ───────────────────────────────────────────────────────────────────
 
 model Shift {
-  id          Int       @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   /// Cash in the drawer when the shift was opened.
-  openingCash Decimal
+  openingCash  Decimal
   /// Cash counted at close; null while the shift is still open.
-  closingCash Decimal?
+  closingCash  Decimal?
   /// Opening cash + cash sales - cash refunds, frozen at close.
   expectedCash Decimal?
   /// closingCash - expectedCash: negative means the drawer is short.
-  diffCash    Decimal?
-  note        String?
-  openedAt    DateTime  @default(now())
-  closedAt    DateTime?
+  diffCash     Decimal?
+  note         String?
+  openedAt     DateTime  @default(now())
+  closedAt     DateTime?
 
   openedById Int
   openedBy   User @relation("ShiftOpenedBy", fields: [openedById], references: [id])
@@ -252,17 +252,23 @@ model LedgerCategory {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 
-  entries LedgerEntry[]
+  entries   LedgerEntry[]
+  recurring RecurringEntry[]
 
   @@unique([name, type])
 }
 
 model LedgerEntry {
-  id     Int     @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   /// Snapshotted from the category at creation, so re-typing a category later can't reclassify old entries.
-  type   String
-  amount Decimal
-  note   String?
+  type      String
+  /// VAT-inclusive, like every other price in the system.
+  amount    Decimal
+  /// True when this amount carries claimable/payable VAT (a tax invoice exists).
+  hasVat    Boolean  @default(false)
+  /// Rate snapshotted at entry time, so changing the shop's rate can't rewrite old tax.
+  vatRate   Decimal  @default(0)
+  note      String?
   /// The Bangkok calendar day this entry books to (not necessarily when it was entered).
   entryDate DateTime
   createdAt DateTime @default(now())
@@ -273,7 +279,42 @@ model LedgerEntry {
   userId Int
   user   User @relation(fields: [userId], references: [id])
 
+  /// Set when the entry was posted from a recurring template rather than typed by hand.
+  recurringId Int?
+  recurring   RecurringEntry? @relation(fields: [recurringId], references: [id], onDelete: SetNull)
+
+  /// One posting per template per day, so re-running the poster can't double-charge.
+  /// Hand-typed entries have a null recurringId, which Postgres treats as distinct,
+  /// so they are not constrained by this.
+  @@unique([recurringId, entryDate])
   @@index([entryDate])
+}
+
+/// A fixed cost that repeats on a schedule (rent, salary, internet). Nothing is
+/// booked until the poster runs, so the ledger only ever holds real postings.
+model RecurringEntry {
+  id        Int       @id @default(autoincrement())
+  name      String
+  /// Snapshotted from the category, same reason as LedgerEntry.type.
+  type      String
+  amount    Decimal
+  hasVat    Boolean   @default(false)
+  note      String?
+  /// "MONTHLY" | "WEEKLY"
+  frequency String
+  /// Day of the month (1-31) when MONTHLY, day of the week (0 = Sunday) when WEEKLY.
+  /// A monthly day past the end of a short month books on that month's last day.
+  dayOf     Int       @default(1)
+  startDate DateTime
+  endDate   DateTime?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  categoryId Int
+  category   LedgerCategory @relation(fields: [categoryId], references: [id])
+
+  entries LedgerEntry[]
 }
 
 // ─── Settings ─────────────────────────────────────────────────────────────────

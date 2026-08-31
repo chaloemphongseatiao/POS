@@ -14,3 +14,8 @@ export async function upsertSetting(key: string, value: string) {
   const { data } = await apiClient.post("/api/settings", { key, value });
   return data;
 }
+
+export async function getBackup(): Promise<Record<string, unknown>> {
+  const { data } = await apiClient.get("/api/settings/backup");
+  return data;
+}

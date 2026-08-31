@@ -1,8 +1,11 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { getPublicSettings } from "@/lib/api/settings";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
+import { readVatSettings, splitVat } from "@/lib/utils/vat";
 import { Order } from "@/lib/types";
 import { Printer, X } from "lucide-react";
 
@@ -13,20 +16,36 @@ interface Props {
 }
 
 export default function ReceiptModal({ open, order, onClose }: Props) {
+  // Public settings, so a cashier's till can print a complete receipt without
+  // the admin-only endpoint.
+  const { data: settings } = useQuery({
+    queryKey: ["public-settings"],
+    queryFn: getPublicSettings,
+    staleTime: 5 * 60 * 1000,
+  });
+
   if (!order) return null;
 
+  const vat = readVatSettings(settings);
+  // The bill total already includes the tax — it is broken out for the customer,
+  // never added on top.
+  const split = splitVat(order.totalAmt, vat.rate);
   const paymentLabel = order.paymentMethod === "CASH" ? "เงินสด" : "QR พร้อมเพย์";
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>ใบเสร็จรับเงิน</DialogTitle>
+          <DialogTitle>{vat.enabled ? "ใบเสร็จรับเงิน / ใบกำกับภาษีอย่างย่อ" : "ใบเสร็จรับเงิน"}</DialogTitle>
         </DialogHeader>
 
         <div id="receipt-content" className="space-y-3 text-sm font-mono rounded-2xl bg-white/50 border border-white/70 p-4">
           <div className="text-center border-b border-dashed border-slate-300 pb-3">
-            <p className="font-bold text-base">ร้านค้า POS</p>
+            <p className="font-bold text-base">{settings?.store_name || "ร้านค้า POS"}</p>
+            {settings?.store_address && <p className="text-slate-500 text-xs">{settings.store_address}</p>}
+            {vat.enabled && vat.taxId && (
+              <p className="text-slate-500 text-xs">เลขประจำตัวผู้เสียภาษี {vat.taxId}</p>
+            )}
             <p className="text-slate-500 text-xs">{order.orderNumber}</p>
             <p className="text-slate-400 text-xs">
               {new Date(order.createdAt).toLocaleString("th-TH")}
@@ -56,8 +75,20 @@ export default function ReceiptModal({ open, order, onClose }: Props) {
                 <span>-{formatCurrency(order.discountAmt)}</span>
               </div>
             )}
+            {vat.enabled && (
+              <>
+                <div className="flex justify-between text-slate-500">
+                  <span>มูลค่าก่อน VAT</span>
+                  <span>{formatCurrency(split.net)}</span>
+                </div>
+                <div className="flex justify-between text-slate-500">
+                  <span>VAT {vat.rate}%</span>
+                  <span>{formatCurrency(split.vat)}</span>
+                </div>
+              </>
+            )}
             <div className="flex justify-between font-bold text-base">
-              <span>ยอดรวม</span>
+              <span>ยอดรวม{vat.enabled ? " (รวม VAT)" : ""}</span>
               <span>{formatCurrency(order.totalAmt)}</span>
             </div>
             <div className="flex justify-between text-slate-500">

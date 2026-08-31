@@ -12,10 +12,16 @@ const ALLOWED_SETTING_KEYS = new Set([
   "store_name",
   "store_address",
   "store_logo",
+  "tax_id",
+  "vat_enabled",
+  "vat_rate",
+  "vat_cost_inclusive",
   "line_channel_token",
   "line_channel_secret",
   "line_user_id",
 ]);
+
+const BOOLEAN_SETTING_KEYS = new Set(["vat_enabled", "vat_cost_inclusive"]);
 
 function validateSetting(key: unknown, value: unknown): asserts key is string {
   if (typeof key !== "string" || !ALLOWED_SETTING_KEYS.has(key)) {
@@ -37,6 +43,23 @@ function validateSetting(key: unknown, value: unknown): asserts key is string {
       throw createError("ต้องระบุ User ID อย่างน้อย 1 รายการ", 400);
     }
   }
+  if (BOOLEAN_SETTING_KEYS.has(key) && value !== "true" && value !== "false") {
+    throw createError("ค่านี้ต้องเป็น true หรือ false", 400);
+  }
+
+  // Kept in a range the tax split can actually use: a rate of 100 or more makes
+  // the VAT-inclusive division meaningless.
+  if (key === "vat_rate") {
+    const rate = Number(value);
+    if (!Number.isFinite(rate) || rate < 0 || rate >= 100) {
+      throw createError("อัตรา VAT ต้องอยู่ระหว่าง 0 ถึง 99", 400);
+    }
+  }
+
+  if (key === "tax_id" && value.trim() !== "" && !/^[0-9]{10,13}$/.test(value.trim())) {
+    throw createError("เลขประจำตัวผู้เสียภาษีต้องเป็นตัวเลข 10-13 หลัก", 400);
+  }
+
   if (key === "store_logo") {
     if (value === "") return;
 
@@ -58,6 +81,15 @@ export async function get(req: Request, res: Response, next: NextFunction) {
 
 export async function getPublic(req: Request, res: Response, next: NextFunction) {
   try { res.json(await svc.getPublicSettings()); } catch (err) { next(err); }
+}
+
+export async function backup(req: Request, res: Response, next: NextFunction) {
+  try {
+    const dump = await svc.createBackup();
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    res.setHeader("Content-Disposition", `attachment; filename="pos-backup-${stamp}.json"`);
+    res.json(dump);
+  } catch (err) { next(err); }
 }
 
 export async function upsert(req: Request, res: Response, next: NextFunction) {

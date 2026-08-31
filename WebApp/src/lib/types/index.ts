@@ -113,6 +113,8 @@ export interface Order {
   createdAt: string;
   cashier: { displayName: string };
   items: OrderItem[];
+  /** What the bill actually brought in, after refunded lines are taken back out. Visible to every role. */
+  netRevenue: number;
   /** Owner-only — the API omits it for CASHIER accounts. */
   cost?: OrderCost;
 }
@@ -126,6 +128,20 @@ export interface OrderCost {
   margin: number;
   /** Profit as a percentage of what the goods cost. */
   markup: number;
+}
+
+/** Totals for every bill in the selected date range, not just the page shown. */
+export interface OrdersSummary {
+  /** Every bill in the range, voided ones included. */
+  orderCount: number;
+  /** Bills that actually sold something — a voided bill never happened. */
+  soldCount: number;
+  revenue: number;
+  /** Owner-only — the API omits these for CASHIER accounts. */
+  cost?: number;
+  profit?: number;
+  margin?: number;
+  markup?: number;
 }
 
 export interface RefundItem {
@@ -271,12 +287,110 @@ export interface LedgerCategory {
 export interface LedgerEntry {
   id: number;
   type: LedgerType;
+  /** VAT-inclusive, like every other price in the system. */
   amount: string;
+  hasVat: boolean;
+  /** Rate frozen at entry time, so a later rate change cannot restate old tax. */
+  vatRate: string;
   note: string | null;
   entryDate: string;
   createdAt: string;
   category: { id: number; name: string };
   user: { id: number; displayName: string };
+  /** Set when the entry was posted from a recurring template. */
+  recurring: { id: number; name: string } | null;
+}
+
+export type RecurringFrequency = "MONTHLY" | "WEEKLY";
+
+export interface RecurringEntry {
+  id: number;
+  name: string;
+  type: LedgerType;
+  amount: string;
+  hasVat: boolean;
+  note: string | null;
+  frequency: RecurringFrequency;
+  /** Day of the month (1-31) when MONTHLY, day of the week (0 = Sunday) when WEEKLY. */
+  dayOf: number;
+  startDate: string;
+  endDate: string | null;
+  isActive: boolean;
+  category: { id: number; name: string };
+}
+
+export interface RecurringDue {
+  count: number;
+  templates: {
+    id: number;
+    name: string;
+    type: LedgerType;
+    category: string;
+    amount: number;
+    dates: string[];
+    total: number;
+  }[];
+}
+
+/**
+ * The shop's profit and loss: sales from the tills plus the manual ledger, every
+ * line stated excluding VAT because tax collected on a sale is the revenue
+ * department's money passing through, not income.
+ */
+export interface ProfitLoss {
+  from: string;
+  to: string;
+  vat: {
+    enabled: boolean;
+    rate: number;
+    /** Tax charged to customers. */
+    outputVat: number;
+    /** Tax already paid on goods and expenses, claimable back. */
+    inputVat: number;
+    /** Positive means the shop owes this much. */
+    payable: number;
+  };
+  sales: {
+    gross: number;
+    net: number;
+    vat: number;
+    refundTotal: number;
+    orderCount: number;
+    refundCount: number;
+  };
+  cogs: { gross: number; net: number; vat: number };
+  grossProfit: number;
+  grossMargin: number;
+  otherIncome: number;
+  expense: number;
+  netProfit: number;
+  byCategory: {
+    categoryId: number;
+    category: string;
+    type: LedgerType;
+    net: number;
+    vat: number;
+    gross: number;
+  }[];
+}
+
+export interface VatReportMonth {
+  month: string;
+  salesNet: number;
+  outputVat: number;
+  purchaseNet: number;
+  inputVat: number;
+  payable: number;
+}
+
+export interface VatReport {
+  from: string;
+  to: string;
+  enabled: boolean;
+  rate: number;
+  taxId: string;
+  months: VatReportMonth[];
+  total: Omit<VatReportMonth, "month">;
 }
 
 export interface LedgerSummary {

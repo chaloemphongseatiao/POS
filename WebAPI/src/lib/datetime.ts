@@ -63,6 +63,43 @@ export function bangkokCurrentMonth(): string {
   return bangkokToday().slice(0, 7);
 }
 
+/**
+ * The helpers below work on "YYYY-MM-DD" / "YYYY-MM" calendar strings rather
+ * than instants. A recurring schedule ("the 1st of every month", "every
+ * Monday") is a statement about the shop's calendar, so stepping it through
+ * Date arithmetic on instants would drift across the UTC+7 boundary the same
+ * way raw timestamps do. Stepping the string keeps every generated date on the
+ * day the owner actually meant.
+ */
+
+function dayKeyToUtc(key: string): number {
+  const [year, month, day] = key.split("-").map(Number);
+  return Date.UTC(year, month - 1, day);
+}
+
+/** Day of the week (0 = Sunday) of a "YYYY-MM-DD" calendar day. */
+export function dayKeyWeekday(key: string): number {
+  return new Date(dayKeyToUtc(key)).getUTCDay();
+}
+
+/** The "YYYY-MM-DD" that is `days` after the given one (negative goes back). */
+export function addDayKey(key: string, days: number): string {
+  return new Date(dayKeyToUtc(key) + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+/** The "YYYY-MM" that is `months` after the given one. */
+export function addMonthKey(month: string, months: number): string {
+  const [year, monthNo] = month.split("-").map(Number);
+  const shifted = new Date(Date.UTC(year, monthNo - 1 + months, 1));
+  return shifted.toISOString().slice(0, 7);
+}
+
+/** How many days the "YYYY-MM" month has — 28 to 31. */
+export function daysInMonthKey(month: string): number {
+  const [year, monthNo] = month.split("-").map(Number);
+  return new Date(Date.UTC(year, monthNo, 0)).getUTCDate();
+}
+
 /** Inclusive [from, to] range covering a Bangkok month given as "YYYY-MM". */
 export function bangkokMonthRange(month: string): { from: Date; to: Date } {
   const match = month.match(/^(\d{4})-(\d{2})$/);
